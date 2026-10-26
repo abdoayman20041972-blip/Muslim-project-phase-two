@@ -1,0 +1,163 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up JDK 21 (required by Capacitor 7)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licenses and install required packages
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then
+            SDKM=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)
+          fi
+          export PATH="$(dirname "$SDKM"):$PATH"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      # `npm install` (not `npm ci`) so the build still works while package.json
+      # and package-lock.json are being brought back in sync.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Upload the resolved package-lock.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+
+      # Bundles the Qibla background into the APK so it also shows offline. If the
+      # download fails the page still works (the CSS keeps a remote fallback).
+      - name: Bundle remote images for offline use
+        run: |
+          curl -fsSL --retry 3 -o public/img/qibla-mobile.jpg \
+            "https://assets.macaly-user-data.dev/ggd0w45kqitomgzmp851kynr/hep5hp2bq6qerrvl27y8ffds/J5mrY94yrFtDATUEzqgIi/qibla-mobile-6GBq8tz3.jpg" \
+            || echo "::warning::Could not download the Qibla background; the page falls back to the remote image / solid colour"
+
+      # Typecheck and tests report their result in the run summary but never
+      # block the APK, so a build is always available to try on the phone.
+      - name: Typecheck (reported, non-blocking)
+        continue-on-error: true
+        run: |
+          set +e
+          npm run typecheck > typecheck.log 2>&1
+          CODE=$?
+          {
+            echo "### Typecheck: $([ $CODE -eq 0 ] && echo passed || echo "FAILED ($(grep -c 'error TS' typecheck.log) errors)")"
+            if [ $CODE -ne 0 ]; then echo '```'; head -n 60 typecheck.log; echo '```'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $CODE
+
+      - name: Tests (reported, non-blocking)
+        continue-on-error: true
+        run: |
+          set +e
+          npm run test:run > tests.log 2>&1
+          CODE=$?
+          {
+            echo "### Tests: $([ $CODE -eq 0 ] && echo passed || echo FAILED)"
+            echo '```'; tail -n 40 tests.log; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $CODE
+
+      - name: Build web app (static, same as the Macaly preview)
+        run: DEV_BUILD=1 npm run build
+
+      - name: Verify web build output exists
+        run: |
+          test -f .output/public/index.html || {
+            echo "::error::Web build did not produce .output/public/index.html"
+            exit 1
+          }
+
+      - name: Create Android project (generated during build, not committed)
+        run: npx cap add android
+
+      - name: Patch Android project (manifest permissions, splash theme)
+        run: node scripts/patch-android.mjs
+
+      - name: Set version name to 1.1.0
+        run: |
+          GRADLE=android/app/build.gradle
+          sed -i 's/versionName "1.0"/versionName "1.1.0"/' "$GRADLE"
+          grep -q 'versionName "1.1.0"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+
+      - name: Bundle adhan sound into raw resources
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cp native/adhan.mp3 android/app/src/main/res/raw/adhan.mp3
+
+      - name: Apply release signing configuration
+        run: python3 scripts/apply-signing.py
+
+      - name: Generate app icons and splash screen
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#0d2b23' --splashBackgroundColor '#0d2b23'
+
+      - name: Sync web assets into Android project
+        run: npx cap sync android
+
+      - name: Prepare signing secrets
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/muslim-release.keystore
+            {
+              echo "storeFile=muslim-release.keystore"
+              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+              echo "keyAlias=$ANDROID_KEY_ALIAS"
+              echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            } > android/keystore.properties
+            echo "variant=Release" >> "$GITHUB_OUTPUT"
+            echo "Signing with the release keystore."
+          else
+            echo "variant=Debug" >> "$GITHUB_OUTPUT"
+            echo "Release secrets not set; building a debug APK (fine for personal installs)."
+          fi
+
+      - name: Build APK
+        run: cd android && ./gradlew "assemble${{ steps.signing.outputs.variant }}" --no-daemon
+
+      - name: Verify APK exists and is non-empty
+        run: |
+          APK="android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk"
+          test -s "$APK" || { echo "::error::APK missing or empty at $APK"; exit 1; }
+          file "$APK"
+
+      - name: Verify APK permissions
+        run: |
+          APK="android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          PERMS=$("$AAPT" dump permissions "$APK")
+          echo "$PERMS"
+          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE; do
+            echo "$PERMS" | grep -q "android.permission.$P" || { echo "::error::APK is missing android.permission.$P"; exit 1; }
+          done
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: muslim-app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}-apk
+          path: android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk
+          if-no-files-found: error

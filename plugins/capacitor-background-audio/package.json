@@ -1,0 +1,13 @@
+{
+  "name": "@muslim/background-audio",
+  "version": "1.0.0",
+  "description": "Foreground MediaSession service so Quran audio keeps playing in the background on Android",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "appId": "com.muslim.zikrapp",
+  "appName": "مسلم",
+  "webDir": ".output/public",
+  "backgroundColor": "#0d2b23",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0d2b23"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": false,
+      "backgroundColor": "#0d2b23",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  }
+}

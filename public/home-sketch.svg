@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#164a3d"/><stop offset=".7" stop-color="#255d4e"/><stop offset="1" stop-color="#7c9b91"/></linearGradient>
+ <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9bb4ac" stop-opacity="0"/><stop offset="1" stop-color="#dce6e2" stop-opacity=".78"/></linearGradient>
+</defs>
+<rect width="1200" height="620" fill="url(#sky)"/>
+<path d="M0 375 Q160 300 310 355 T600 340 T900 360 T1200 315 V620H0Z" fill="#234f44" opacity=".78"/>
+<path d="M0 445 Q180 385 350 430 T690 410 T1000 440 T1200 400 V620H0Z" fill="#4e7569" opacity=".62"/>
+<g fill="#0d3b31" opacity=".96">
+ <path d="M250 450V305Q250 245 315 220Q380 245 380 305V450Z"/>
+ <path d="M210 450V285H245V450ZM225 285L227 225L232 200L237 225L240 285Z"/>
+ <path d="M385 450V275H420V450ZM392 275L394 220L400 190L406 220L410 275Z"/>
+ <path d="M430 450V305Q430 260 475 235Q520 260 520 305V450Z"/>
+ <path d="M535 450V300H570V450ZM542 300L544 240L552 205L560 240L562 300Z"/>
+ <path d="M600 450V290Q600 245 645 220Q690 245 690 290V450Z"/>
+ <path d="M710 450V280H746V450ZM717 280L720 225L728 190L736 225L739 280Z"/>
+ <path d="M770 450V310Q770 270 810 245Q850 270 850 310V450Z"/>
+ <path d="M875 450V285H910V450ZM882 285L885 230L893 195L901 230L904 285Z"/>
+ <path d="M930 450V320Q930 285 965 260Q1000 285 1000 320V450Z"/>
+</g>
+<g fill="#0a322a">
+ <path d="M300 450V350Q300 305 345 305Q390 305 390 350V450Z"/>
+ <path d="M535 450V335Q535 285 585 285Q635 285 635 335V450Z"/>
+ <path d="M760 450V345Q760 300 805 300Q850 300 850 345V450Z"/>
+</g>
+<g fill="#d5bf7c">
+ <path d="M1000 92a48 48 0 1 0 30 82a42 42 0 1 1-30-82Z"/>
+ <circle cx="1065" cy="105" r="3"/><circle cx="1100" cy="160" r="2"/><circle cx="930" cy="115" r="2"/>
+</g>
+<g fill="none" stroke="#9bb1aa" stroke-width="5" opacity=".34">
+ <path d="M0 390 Q150 330 300 385 T600 375 T900 395 T1200 350"/>
+ <path d="M0 470 Q160 405 330 460 T650 450 T960 475 T1200 430"/>
+ <path d="M0 535 Q180 475 360 525 T720 515 T1000 540 T1200 500"/>
+</g>
+<rect width="1200" height="620" fill="url(#mist)"/>
+</svg>

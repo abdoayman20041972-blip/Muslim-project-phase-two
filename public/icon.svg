@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="مسلم">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D5A4A"/><stop offset="1" stop-color="#07372E"/></linearGradient>
+  <radialGradient id="glow" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#F7D982"/><stop offset=".55" stop-color="#D8A94C" stop-opacity=".75"/><stop offset="1" stop-color="#D8A94C" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF0B5"/><stop offset=".5" stop-color="#E8BE62"/><stop offset="1" stop-color="#B77B28"/></linearGradient>
+  <clipPath id="round"><rect x="16" y="16" width="480" height="480" rx="112"/></clipPath>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<g clip-path="url(#round)">
+  <g opacity=".12" fill="none" stroke="#F4D47E" stroke-width="3">
+    <path d="M55 118l35-35 35 35-35 35zM387 118l35-35 35 35-35 35zM55 365l35-35 35 35-35 35zM387 365l35-35 35 35-35 35z"/>
+    <path d="M20 210h80m312 0h80M20 280h80m312 0h80"/>
+  </g>
+  <path d="M105 270c0-105 67-172 151-172s151 67 151 172" fill="none" stroke="url(#gold)" stroke-width="10"/>
+  <path d="M105 270h302v230H105z" fill="url(#glow)" opacity=".82"/>
+  <circle cx="256" cy="178" r="145" fill="url(#glow)" opacity=".55"/>
+  <path d="M207 119a63 63 0 1 0 78 91 59 59 0 1 1-78-91z" fill="#FFF1B6"/>
+  <g fill="#0B493D">
+    <path d="M104 354V206h34v148z"/><path d="M96 214h50l-8-13h-34z"/><path d="M110 181h22v33h-22z"/><path d="M106 176h30l-5-9h-20z"/>
+    <path d="M374 354V206h34v148z"/><path d="M366 214h50l-8-13h-34z"/><path d="M380 181h22v33h-22z"/><path d="M376 176h30l-5-9h-20z"/>
+    <path d="M168 355V270h24v85z"/><path d="M163 275h34l-6-10h-22z"/>
+    <path d="M320 355V270h24v85z"/><path d="M315 275h34l-6-10h-22z"/>
+    <path d="M157 352c8-47 43-77 99-77s91 30 99 77z"/>
+    <path d="M178 350v-42c0-35 31-63 78-63s78 28 78 63v42z"/>
+    <path d="M211 253c0-30 20-55 45-65 25 10 45 35 45 65z"/>
+    <path d="M250 188h12v-25h-12z"/><path d="M244 164h24l-6-9h-12z"/>
+  </g>
+  <g fill="#F5D27A">
+    <path d="M122 258h12v30h-12zM376 258h12v30h-12z"/>
+    <path d="M222 332h24v23h-24zM266 332h24v23h-24z"/>
+    <path d="M184 319h12v28h-12zM316 319h12v28h-12z"/>
+  </g>
+  <path d="M0 405c75-35 130-23 192 8 64 32 122 31 184 1 54-26 90-30 136-9v107H0z" fill="#062F28"/>
+  <path d="M0 433c78-30 135-18 198 13 58 28 114 29 176 1 54-24 91-28 138-9" fill="none" stroke="url(#gold)" stroke-width="4" opacity=".85"/>
+</g>
+<rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="url(#gold)" stroke-width="8"/>
+</svg>
