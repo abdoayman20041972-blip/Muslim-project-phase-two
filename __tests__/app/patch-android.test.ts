@@ -16,7 +16,10 @@ function fixture() {
   )
   writeFileSync(
     join(main, 'res', 'values', 'styles.xml'),
-    '<resources>\n    <style name="AppTheme.NoActionBar" parent="AppTheme"></style>\n    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\n        <item name="android:background">@drawable/splash</item>\n    </style>\n</resources>\n',
+    // Mirrors the Capacitor android template exactly (npx cap add android):
+    // AppTheme.NoActionBar ships windowActionBar/windowNoTitle + a @null
+    // background, and the launch theme uses androidx Theme.SplashScreen.
+    '<resources>\n    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar"></style>\n    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">\n        <item name="windowActionBar">false</item>\n        <item name="windowNoTitle">true</item>\n        <item name="android:background">@null</item>\n    </style>\n    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\n        <item name="android:background">@drawable/splash</item>\n    </style>\n</resources>\n',
   )
   return { root, main }
 }
@@ -53,10 +56,38 @@ describe('patch-android.mjs', () => {
     // while the WebView boots, so no flat "empty green" stage can appear
     // between the system splash and the prerendered in-app splash.
     expect(block).toContain('<item name="android:windowBackground">@drawable/muslim_splash_window</item>')
-    expect(block).toContain('<item name="android:background">@color/muslim_splash_background</item>')
+    // android:background is the SAME layer-list, not a flat color: OEM
+    // starting windows that draw this attribute during the pre-window launch
+    // stage show the mosque emblem instead of an empty green screen.
+    expect(block).toContain('<item name="android:background">@drawable/muslim_splash_window</item>')
     expect(block).toContain('<item name="android:windowSplashScreenBackground">@color/muslim_splash_background</item>')
     expect(block).toContain('<item name="android:windowSplashScreenIconBackgroundColor">@color/muslim_splash_background</item>')
+    // The Android 12+ system splash icon is set explicitly so the mosque
+    // launcher icon always shows on the brand green.
+    expect(block).toContain('<item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>')
     expect(block).not.toMatch(/android:windowBackground[^<]*@drawable\/splash\b/)
+  })
+
+  it('patches AppTheme.NoActionBar — the theme Capacitor switches to before setContentView (root fix for the gray web-boot stage)', () => {
+    const { root, main } = fixture()
+    run(root)
+    const styles = readFileSync(join(main, 'res', 'values', 'styles.xml'), 'utf8')
+    const block = /<style\s+name="AppTheme\.NoActionBar"[^>]*>[\s\S]*?<\/style>/.exec(styles)![0]
+    // Capacitor's BridgeActivity.onCreate() calls setTheme(AppTheme_NoActionBar)
+    // BEFORE setContentView(), so the DecorView resolves its window background
+    // from THIS theme. Left at the template default it is Material DayNight's
+    // #303030 dark gray, which shone through the transparent WebView for the
+    // whole WebView boot — the gray "web trace" in the user's recording.
+    // The layer-list here makes the visible window paint mosque-on-green from
+    // its very first frame.
+    expect(block).toContain('<item name="android:windowBackground">@drawable/muslim_splash_window</item>')
+    expect(block).toContain('<item name="android:background">@drawable/muslim_splash_window</item>')
+    expect(block).not.toContain('@null')
+    // The AppCompat items and the DayNight parent are preserved so Capacitor's
+    // own theme resolution keeps working.
+    expect(block).toContain('<item name="windowActionBar">false</item>')
+    expect(block).toContain('<item name="windowNoTitle">true</item>')
+    expect(block).toContain('parent="Theme.AppCompat.DayNight.NoActionBar"')
   })
 
   it('writes the splash window layer-list (green + centered icon, never stretched)', () => {

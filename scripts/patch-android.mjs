@@ -15,7 +15,14 @@
 //         .requestPermissions() shows the genuine OS dialog (approximate-only
 //         grant is accepted: it is accurate enough for prayer times).
 //   - colors.xml: splash background colour
-//   - styles.xml: the single-stage launch theme (best effort, warns instead of failing)
+//   - styles.xml: BOTH themes carry the mosque layer-list —
+//       * AppTheme.NoActionBar: Capacitor's BridgeActivity switches to it BEFORE
+//         setContentView(), so this theme's windowBackground is what actually
+//         paints behind the booting transparent WebView (replaces Material's
+//         flat #303030 dark gray — the "web trace" recorded between the OS
+//         splash and the in-app splash).
+//       * AppTheme.NoActionBarLaunch: the launch theme (pre-window stage +
+//         Android 12+ system splash colors + explicit animated icon).
 //   - res/drawable/muslim_splash_window.xml: layer-list window background — brand
 //     green + the mosque splash bitmap centered WITHOUT stretching. While the
 //     WebView boots, the window behind it shows the same mosque icon on the same
@@ -93,20 +100,51 @@ function patchColors() {
   write(COLORS, next, 'colors.xml')
 }
 
-function patchStyles() {
-  if (!existsSync(STYLES)) {
-    warnings.push('styles.xml not found; splash theme not patched')
+const styleBlockRegex = (name) =>
+  new RegExp(`<style\\s+name="${name.replace(/\./g, '\\.')}"[^>]*>[\\s\\S]*?<\\/style>`)
+
+// Capacitor's BridgeActivity.onCreate() calls
+//   setTheme(R.style.AppTheme_NoActionBar)   ← BEFORE setContentView()
+// so the DecorView — the window the user actually sees — resolves its
+// android:windowBackground from AppTheme.NoActionBar, NOT from the launch
+// theme. The stock template leaves that to Material DayNight, whose dark
+// colorBackground is #303030: on a dark-mode phone the transparent WebView
+// then shows that flat GRAY for the whole WebView boot (measured ~1.1 s in the
+// user's launch recording) — the "web trace" between the OS splash and the
+// in-app splash. Putting the same mosque layer-list here makes the visible
+// window paint mosque-on-brand-green from its very first frame instead.
+function patchAppTheme() {
+  const xml = read(STYLES)
+  const match = styleBlockRegex('AppTheme.NoActionBar').exec(xml)
+  if (!match) {
+    warnings.push('AppTheme.NoActionBar not found; window background not patched (gray boot stage would show)')
     return
   }
+  if (match[0].includes(SPLASH_WINDOW_DRAWABLE)) return
+  // Keep whatever parent the template shipped (Theme.AppCompat.DayNight…):
+  // only the background items change, so AppCompat resolution is untouched.
+  const parent = /parent="([^"]+)"/.exec(match[0])?.[1] || 'Theme.AppCompat.DayNight.NoActionBar'
+  const replacement = [
+    `    <style name="AppTheme.NoActionBar" parent="${parent}">`,
+    '        <item name="windowActionBar">false</item>',
+    '        <item name="windowNoTitle">true</item>',
+    `        <item name="android:windowBackground">@drawable/${SPLASH_WINDOW_DRAWABLE}</item>`,
+    `        <item name="android:background">@drawable/${SPLASH_WINDOW_DRAWABLE}</item>`,
+    '    </style>',
+  ].join('\n')
+  write(STYLES, xml.replace(match[0], replacement), 'styles.xml (app theme window background: mosque on green)')
+}
+
+function patchLaunchTheme() {
   const xml = read(STYLES)
-  const match = /<style\s+name="AppTheme\.NoActionBarLaunch"[^>]*>[\s\S]*?<\/style>/.exec(xml)
+  const match = styleBlockRegex('AppTheme.NoActionBarLaunch').exec(xml)
   if (!match) {
     warnings.push('AppTheme.NoActionBarLaunch not found; splash theme not patched')
     return
   }
   const block = match[0]
-  if (block.includes('muslim_splash_window')) return
-  if (!/<style\s+name="AppTheme\.NoActionBar"/.test(xml)) {
+  if (block.includes(SPLASH_WINDOW_DRAWABLE)) return
+  if (!styleBlockRegex('AppTheme.NoActionBar').test(xml)) {
     warnings.push('AppTheme.NoActionBar not found; splash theme not patched')
     return
   }
@@ -114,27 +152,42 @@ function patchStyles() {
   //   * parent is AppTheme.NoActionBar — NOT androidx Theme.SplashScreen,
   //     which (without installSplashScreen()) silently falls back to a black
   //     Material background in dark mode and drags in the splash-screen plugin.
+  //     (AppTheme.NoActionBar itself now carries the same windowBackground, so
+  //     even after Capacitor's runtime setTheme() the window keeps the mosque.)
   //   * android:windowBackground is a LAYER-LIST (muslim_splash_window.xml):
   //     brand green + the generated @drawable/splash (mosque icon on the same
   //     green, both day and night variants) centered via gravity so the bitmap
-  //     never stretches. The window behind the booting WebView therefore keeps
-  //     showing the mosque icon on green — the hand-off from the Android 12+
-  //     system splash is seamless and users never see an "empty green" stage.
-  //     (Referencing @drawable/splash directly as a window background stretches
-  //     it; the layer-list with gravity is what makes it safe.)
-  //   * android:background stays the flat brand green as a fallback for paths
-  //     that read it instead of windowBackground.
+  //     never stretches. (Referencing @drawable/splash directly as a window
+  //     background stretches it; the layer-list with gravity is what makes it
+  //     safe.)
+  //   * android:background is the SAME layer-list (not a flat color): several
+  //     OEM starting-window implementations draw the theme's android:background
+  //     during the pre-window launch stage. With the flat color they showed an
+  //     empty green screen for ~1 s before the activity's first frame (seen in
+  //     the user's recording); with the layer-list they show the mosque emblem.
   //   * android:windowSplashScreen* (Android 12+ framework attributes) colors
-  //     the OS splash screen itself: mosque icon on the same brand green.
+  //     the OS splash screen itself, and windowSplashScreenAnimatedIcon is set
+  //     explicitly so the system splash always carries the mosque icon on the
+  //     same brand green.
   const replacement = [
     '    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">',
     `        <item name="android:windowBackground">@drawable/${SPLASH_WINDOW_DRAWABLE}</item>`,
-    `        <item name="android:background">@color/${SPLASH_COLOR_NAME}</item>`,
+    `        <item name="android:background">@drawable/${SPLASH_WINDOW_DRAWABLE}</item>`,
     `        <item name="android:windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>`,
     `        <item name="android:windowSplashScreenIconBackgroundColor">@color/${SPLASH_COLOR_NAME}</item>`,
+    '        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>',
     '    </style>',
   ].join('\n')
   write(STYLES, xml.replace(block, replacement), 'styles.xml (single-stage launch theme)')
+}
+
+function patchStyles() {
+  if (!existsSync(STYLES)) {
+    warnings.push('styles.xml not found; splash theme not patched')
+    return
+  }
+  patchAppTheme()
+  patchLaunchTheme()
 }
 
 function patchSplashWindowDrawable() {
