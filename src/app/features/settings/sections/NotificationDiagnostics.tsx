@@ -129,7 +129,11 @@ export function NotificationDiagnostics() {
           onClick={() =>
             void run('test', async () => {
               const ok = await scheduleTestNotification()
-              setMessage(ok ? 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ. أغلق التطبيق للتأكد.' : 'تعذّر جدولة الإشعار التجريبي.')
+              setMessage(
+                ok
+                  ? 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ — لا تفتح التطبيق حتى يصل. لو كان وضع «عدم الإزعاج» مفعّلًا فسيظهر الإشعار بصمت داخل القائمة.'
+                  : 'تعذّر جدولة الإشعار التجريبي.',
+              )
             })
           }
         >

@@ -39,6 +39,22 @@ describe('patch-android.mjs', () => {
     expect(readFileSync(join(main, 'res', 'values', 'styles.xml'), 'utf8')).toContain('windowSplashScreenIconBackgroundColor')
   })
 
+  it('installs the single-stage launch theme (same green in light and dark)', () => {
+    const { root, main } = fixture()
+    run(root)
+    const styles = readFileSync(join(main, 'res', 'values', 'styles.xml'), 'utf8')
+    const block = /<style\s+name="AppTheme\.NoActionBarLaunch"[^>]*>[\s\S]*?<\/style>/.exec(styles)![0]
+    // The launch theme must NOT depend on androidx Theme.SplashScreen (black
+    // fallback in dark mode without installSplashScreen) and must color the
+    // Android 12+ system splash itself with the framework attributes.
+    expect(block).toContain('parent="AppTheme.NoActionBar"')
+    expect(block).not.toContain('Theme.SplashScreen')
+    expect(block).toContain('<item name="android:background">@color/muslim_splash_background</item>')
+    expect(block).toContain('<item name="android:windowSplashScreenBackground">@color/muslim_splash_background</item>')
+    expect(block).toContain('<item name="android:windowSplashScreenIconBackgroundColor">@color/muslim_splash_background</item>')
+    expect(block).not.toContain('@drawable/splash')
+  })
+
   it('is idempotent', () => {
     const { root, main } = fixture()
     run(root)

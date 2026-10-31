@@ -162,19 +162,10 @@ export function App() {
     };
   }, []);
   const [mounted, setMounted] = useState(false);
-  // The native launch screen (same green as the in-app splash) hides at the
-  // first painted frame of the in-app splash, so the designed splash is the
-  // ONLY splash the user ever perceives: logo → artwork → app, no gaps.
-  const nativeSplashHiddenRef = useRef(false);
-  const hideNativeSplash = useCallback(() => {
-    if (nativeSplashHiddenRef.current || !Capacitor.isNativePlatform()) return;
-    nativeSplashHiddenRef.current = true;
-    void import("@capacitor/splash-screen")
-      .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 0 }))
-      .catch(() => {
-        // Plugin bridge unavailable; the OS default behavior applies.
-      });
-  }, []);
+  // The launch screen is handled purely by the Android launch theme now:
+  // the system splash (mosque icon on the brand green) flows into the same
+  // green window background while the WebView boots, then the designed
+  // in-app splash paints — one continuous brand moment, no plugin stage.
   const [surahSearch, setSurahSearch] = useState("");
   const [, setSettingsVersion] = useState(0);
   const [lastSurah, setLastSurah] = useState<number | null>(null);
@@ -286,9 +277,10 @@ export function App() {
   useEffect(() => {
     setMounted(true);
     // Single-stage splash: the designed in-app splash is the only splash. The
-    // native launch screen (same background green) is dismissed the moment
-    // this splash paints its first frame, and the timings below keep the
-    // brand moment short but readable.
+    // Android launch theme (patched in scripts/patch-android.mjs) paints the
+    // same brand green for the system splash and the window background, so the
+    // whole launch reads as one continuous splash on every Android version
+    // and in both light and dark mode.
     const SPLASH_MIN_MS = 900;
     const SPLASH_EXIT_MS = 320;
     const SPLASH_IMAGE_WAIT_MS = 1600;
@@ -330,14 +322,10 @@ export function App() {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         painted = true;
-        // The webview has produced the first splash frame: retire the native
-        // launch screen now so only the designed splash remains visible.
-        hideNativeSplash();
         finishSplash();
       }),
     );
     const hardStop = window.setTimeout(() => {
-      hideNativeSplash();
       beginExit();
     }, 2800);
     try {
@@ -374,10 +362,38 @@ export function App() {
         import("./features/hadith/HadithView"),
         import("./features/tasbih/TasbihView"),
       ]);
+    const prefetchImages = () => {
+      // Warm the biggest background images too, so the first navigation to
+      // each screen shows its artwork instantly. All local files inside the
+      // APK: warming them costs no network and no permission.
+      for (const src of [
+        "/img/tasbih-mosque-background.jpg",
+        "/img/tasbih-mosque-night.jpg",
+        "/img/qibla-mobile.jpg",
+        "/img/azkar-morning-wide-mosque.jpg",
+        "/img/azkar-evening-wide-sunset-mosque.jpg",
+      ]) {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = src;
+      }
+    };
+    let prefetchStarted = false;
+    const startPrefetch = () => {
+      if (prefetchStarted) return;
+      prefetchStarted = true;
+      void prefetchScreens();
+      prefetchImages();
+    };
+    // Runs on idle after boot… and also on the very first touch, in case the
+    // device is busy and the idle callback would arrive only after the user
+    // has already started navigating.
+    const onFirstTouch = () => startPrefetch();
+    window.addEventListener("pointerdown", onFirstTouch, { once: true });
     const cancelPrefetch = idle(() => {
       // In the native shell the chunks are local files, so prefetching is
       // always safe and makes first navigation instant.
-      if (!cancelled) void prefetchScreens();
+      if (!cancelled) startPrefetch();
     }, 2200);
     return () => {
       cancelled = true;
@@ -385,9 +401,10 @@ export function App() {
       window.clearTimeout(exitTimer);
       window.clearTimeout(waitTimer);
       window.clearTimeout(imageGuard);
+      window.removeEventListener("pointerdown", onFirstTouch);
       cancelPrefetch();
     };
-  }, [loadTasbih, hideNativeSplash]);
+  }, [loadTasbih]);
 
   const go = (s: Section) => {
     setNavOrigin("default");

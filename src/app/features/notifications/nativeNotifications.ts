@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits } from '../../constants'
-import { ID_BASE, ID_RANGE, KIND, makeId, planNotifications, PRAYER_GROUP, type PlannedNotification } from './notificationPlan'
+import { ID_BASE, ID_RANGE, planNotifications, PRAYER_GROUP, TEST_NOTIFICATION_ID, type PlannedNotification } from './notificationPlan'
 import { patchDiagnostics, recordError } from './nativeDiagnostics'
 import { computeTimingsLocally } from '../prayer/prayerTimings'
 import {
@@ -333,10 +333,16 @@ export async function scheduleTestNotification(): Promise<boolean> {
   try {
     if (!(await requestPermission())) return false
     await ensureChannels()
+    // A previous test may still be pending (double tap): replace it cleanly
+    // instead of stacking a second one.
+    await LocalNotifications.cancel({ notifications: [{ id: TEST_NOTIFICATION_ID }] }).catch(() => {})
     await LocalNotifications.schedule({
       notifications: [
         {
-          id: makeId(KIND.test, 0, 0),
+          // Deliberately OUTSIDE the [ID_BASE, ID_BASE + ID_RANGE) window that
+          // every re-scheduling run cancels: a resume, a settings change or
+          // «جدولة الآن» during the 10 seconds must NOT kill the pending test.
+          id: TEST_NOTIFICATION_ID,
           title: 'إشعار تجريبي',
           body: 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.',
           schedule: { at: new Date(Date.now() + 10_000), allowWhileIdle: true },

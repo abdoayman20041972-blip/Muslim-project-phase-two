@@ -1490,7 +1490,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   min-height:100dvh!important;
   background:transparent!important;
 }
-.tasbih-background-photo{
+.tasbih-background-photo,
+.tasbih-background-photo-dark{
   position:fixed!important;
   inset:0!important;
   z-index:0!important;
@@ -1502,6 +1503,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   opacity:.72!important;
   pointer-events:none!important;
   user-select:none!important;
+}
+/* The night mosque shows only in dark mode (and the day mosque only in light
+   mode): dark mode is a genuinely dark IMAGE, never a dark veil over the
+   bright day photo. */
+.tasbih-background-photo-dark{
+  display:none!important;
 }
 .tasbih-background-shade{
   position:fixed!important;
@@ -1519,6 +1526,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 /* Tasbih background stays visually locked; foreground controls keep their normal interaction/motion. */
 .tasbih-background-photo,
+.tasbih-background-photo-dark,
 .tasbih-background-shade{
   position:fixed!important;
   inset:0!important;
@@ -1528,7 +1536,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   pointer-events:none!important;
   will-change:auto!important;
 }
-.tasbih-minimal>*:not(.tasbih-background-photo):not(.tasbih-background-shade){
+.tasbih-minimal>*:not(.tasbih-background-photo):not(.tasbih-background-photo-dark):not(.tasbih-background-shade){
   position:relative;
   z-index:1;
 }
@@ -1536,16 +1544,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   background:hsl(165 25% 7%)!important;
 }
 .dark .tasbih-background-photo{
-  /* Dark mode keeps the mosque photo clearly visible: full opacity with only a
-     gentle dim, unlike the old veil which swallowed the background. Readability
-     is restored by the lighter shade below, concentrated behind the counter. */
+  display:none!important;
+}
+.dark .tasbih-background-photo-dark{
+  display:block!important;
+  /* The night image is already dark by design: full opacity, no dimming
+     filter — the mosque, moon and golden lights stay clearly visible. */
   opacity:1!important;
-  filter:brightness(.82) saturate(.9)!important;
+  filter:none!important;
 }
 .dark .tasbih-background-shade{
-  /* A light veil: barely-there at the top so the photo shows, a soft darkening
-     only at the bottom third where the counter card and nav need contrast. */
-  background:linear-gradient(180deg,hsl(220 30% 6%/.05) 0%,hsl(165 30% 6%/.02) 46%,hsl(165 35% 4%/.30) 100%)!important;
+  /* A barely-there contrast veil only where the counter card sits (bottom),
+     so the dark artwork itself carries the look. */
+  background:linear-gradient(180deg,hsl(220 30% 4%/.06) 0%,hsl(165 30% 4%/.03) 48%,hsl(165 35% 3%/.34) 100%)!important;
 }
 
 /* Tasbih is a locked single-screen surface: nothing scrolls vertically, while controls remain interactive. */

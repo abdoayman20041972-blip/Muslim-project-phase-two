@@ -15,7 +15,7 @@
 //         .requestPermissions() shows the genuine OS dialog (approximate-only
 //         grant is accepted: it is accurate enough for prayer times).
 //   - colors.xml: splash background colour
-//   - styles.xml: Android 12+ splash attributes (best effort, warns instead of failing)
+//   - styles.xml: the single-stage launch theme (best effort, warns instead of failing)
 //   - res/drawable: the white status-bar icon and gold notification icon used by
 //     every scheduled notification (instead of the squished launcher icon)
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
@@ -99,23 +99,29 @@ function patchStyles() {
     return
   }
   const block = match[0]
-  if (block.includes('windowSplashScreenBackground')) return
-  if (!/parent="Theme\.SplashScreen"/.test(block)) {
-    warnings.push('AppTheme.NoActionBarLaunch does not extend Theme.SplashScreen; splash theme not patched')
+  if (block.includes('android:windowSplashScreenBackground')) return
+  if (!/<style\s+name="AppTheme\.NoActionBar"/.test(xml)) {
+    warnings.push('AppTheme.NoActionBar not found; splash theme not patched')
     return
   }
-  // The Android 12+ system splash shows the app icon on this background: with
-  // the same green and an icon background tint, the OS splash, the Capacitor
-  // splash and the in-app splash read as ONE continuous splash screen.
-  const items = [
-    `        <item name="windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>\n`,
-    `        <item name="windowSplashScreenIconBackgroundColor">@color/${SPLASH_COLOR_NAME}</item>\n`,
-  ]
-  if (/<style\s+name="AppTheme\.NoActionBar"/.test(xml) && !block.includes('postSplashScreenTheme')) {
-    items.push(`        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>\n`)
-  }
-  const patched = block.replace('</style>', `${items.join('')}    </style>`)
-  write(STYLES, xml.replace(block, patched), 'styles.xml (splash theme)')
+  // ONE launch theme, one green, every Android version, light AND dark mode:
+  //   * parent is AppTheme.NoActionBar — NOT androidx Theme.SplashScreen,
+  //     which (without installSplashScreen()) silently falls back to a black
+  //     Material background in dark mode and drags in the splash-screen plugin.
+  //   * android:background is the flat brand green (never @drawable/splash:
+  //     window backgrounds stretch bitmaps, and @capacitor/assets generates
+  //     *-night splash drawables on a default BLACK background), so the window
+  //     behind the booting WebView is the same green as everything else.
+  //   * android:windowSplashScreen* (Android 12+ framework attributes) colors
+  //     the OS splash screen itself: mosque icon on the same brand green.
+  const replacement = [
+    '    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">',
+    `        <item name="android:background">@color/${SPLASH_COLOR_NAME}</item>`,
+    `        <item name="android:windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>`,
+    `        <item name="android:windowSplashScreenIconBackgroundColor">@color/${SPLASH_COLOR_NAME}</item>`,
+    '    </style>',
+  ].join('\n')
+  write(STYLES, xml.replace(block, replacement), 'styles.xml (single-stage launch theme)')
 }
 
 function patchNotificationIcons() {

@@ -118,3 +118,35 @@ describe('TasbihView dialog migration', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'إلغاء' }))
     expect(JSON.parse(localStorage.getItem('azkar_custom_tasbih_list')!)).toEqual(initial)
   })
+
+describe('TasbihView backgrounds', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('renders the day mosque and a genuinely dark night mosque for dark mode', () => {
+    // Dark mode = a real dark IMAGE, never a dark veil over the bright day
+    // photo: both <img> elements exist and CSS toggles which one is shown.
+    render(
+      <ConfirmDialogProvider>
+        <TasbihView
+          counts={{}}
+          dayTotal={0}
+          selectedWord={null}
+          roundCounts={{}}
+          rounds={{}}
+          onTap={vi.fn()}
+          onResetWord={vi.fn()}
+          onResetToday={vi.fn()}
+          onSelectWord={vi.fn()}
+          setView={vi.fn()}
+        />
+      </ConfirmDialogProvider>,
+    )
+
+    const day = document.querySelector('img.tasbih-background-photo') as HTMLImageElement
+    const night = document.querySelector('img.tasbih-background-photo-dark') as HTMLImageElement
+    expect(day).toBeTruthy()
+    expect(night).toBeTruthy()
+    expect(day.getAttribute('src')).toBe('/img/tasbih-mosque-background.jpg')
+    expect(night.getAttribute('src')).toBe('/img/tasbih-mosque-night.jpg')
+  })
+})

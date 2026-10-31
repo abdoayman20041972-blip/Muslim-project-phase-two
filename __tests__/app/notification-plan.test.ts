@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ID_BASE, KIND, makeId, planNotifications, type PlanInput } from '../../src/app/features/notifications/notificationPlan'
+import { ID_BASE, ID_RANGE, KIND, makeId, planNotifications, TEST_NOTIFICATION_ID, type PlanInput } from '../../src/app/features/notifications/notificationPlan'
 
 const timings = { Fajr: '04:50', Sunrise: '06:10', Dhuhr: '11:40', Asr: '14:50', Maghrib: '17:20', Isha: '18:40', Sunset: '17:19' }
 const start = new Date(2026, 9, 26)
@@ -105,5 +105,13 @@ describe('planNotifications', () => {
     expect(plan).toHaveLength(6)
     expect(plan.every((n) => n.at!.getHours() === 6 && n.at!.getMinutes() === 10)).toBe(true)
     expect(start.getDate()).toBe(26)
+  })
+
+  it('keeps the diagnostic test notification outside the cancelable window', () => {
+    // Every re-scheduling run cancels [ID_BASE, ID_BASE + ID_RANGE); the test
+    // notification must survive it or a resume/settings change inside the 10
+    // seconds silently kills the pending test.
+    expect(TEST_NOTIFICATION_ID).toBeGreaterThanOrEqual(ID_BASE + ID_RANGE)
+    expect(TEST_NOTIFICATION_ID).toBeLessThan(2 ** 31 - 1)
   })
 })

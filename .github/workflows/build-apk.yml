@@ -110,11 +110,11 @@ jobs:
       - name: Patch Android project (manifest permissions, splash theme)
         run: node scripts/patch-android.mjs
 
-      - name: Set version name to 1.2.1
+      - name: Set version name to 1.2.2
         run: |
           GRADLE=android/app/build.gradle
-          sed -i 's/versionName "1.0"/versionName "1.2.1"/' "$GRADLE"
-          grep -q 'versionName "1.2.1"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+          sed -i 's/versionName "1.0"/versionName "1.2.2"/' "$GRADLE"
+          grep -q 'versionName "1.2.2"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
 
       - name: Bundle adhan sound into raw resources
         run: |
@@ -125,7 +125,10 @@ jobs:
         run: python3 scripts/apply-signing.py
 
       - name: Generate app icons and splash screen
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#0d2b23' --splashBackgroundColor '#0d2b23'
+        run: >-
+          npx @capacitor/assets generate --android
+          --iconBackgroundColor '#0d2b23' --iconBackgroundColorDark '#0d2b23'
+          --splashBackgroundColor '#0d2b23' --splashBackgroundColorDark '#0d2b23'
 
       - name: Sync web assets into Android project
         run: npx cap sync android

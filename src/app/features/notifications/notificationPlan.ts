@@ -15,6 +15,15 @@ export const LABELS: Record<string, string> = {
 export const ID_BASE = 700_000_000
 export const ID_RANGE = 100_000
 
+/**
+ * The 10-second diagnostic notification id lives OUTSIDE the
+ * [ID_BASE, ID_BASE + ID_RANGE) window that every re-scheduling run cancels.
+ * Inside it, any settings change, app resume or «جدولة الآن» tap during the
+ * ten seconds would silently cancel the pending test before it ever fires —
+ * exactly what users reported as "the test notification never arrived".
+ */
+export const TEST_NOTIFICATION_ID = ID_BASE + ID_RANGE + 1
+
 // Deterministic ids: BASE + kind * 1000 + dayIndex * 10 + slot (no hashing, no collisions).
 export const KIND = { at: 0, before: 1, morning: 2, evening: 3, ayah: 4, quran: 5, test: 6 } as const
 export const makeId = (kind: number, dayIndex: number, slot: number) => ID_BASE + kind * 1000 + dayIndex * 10 + slot
