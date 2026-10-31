@@ -93,7 +93,7 @@ export function TasbihView({
       }
       window.dispatchEvent(new Event('azkar-tasbih-changed'))
       setWordsVersion((value) => value + 1)
-    } catch {}
+    } catch (error) { console.debug('[TasbihView]', error) }
   }
 
   return (

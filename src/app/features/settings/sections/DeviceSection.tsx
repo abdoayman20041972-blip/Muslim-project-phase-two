@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { openSystemSettings } from '../../permissions/systemSettings'
 import { Geolocation } from '@capacitor/geolocation'
+import { acquireLocation, isLocationPermissionGranted, locationFailureMessage } from '../../location/acquireLocation'
+import { saveCoords } from '../../location/coords'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { Row, Section } from '../settingsPrimitives'
 
@@ -10,6 +12,7 @@ import { Row, Section } from '../settingsPrimitives'
 export function DeviceSection() {
   const [notifState, setNotifState] = useState<string>('')
   const [locState, setLocState] = useState<string>('')
+  const [locMessage, setLocMessage] = useState('')
   const [busy, setBusy] = useState<string>('')
 
   useEffect(() => {
@@ -21,7 +24,10 @@ export function DeviceSection() {
           setNotifState('unknown')
         }
         try {
-          setLocState((await Geolocation.checkPermissions()).location)
+          {
+          const permission = await Geolocation.checkPermissions()
+          setLocState(isLocationPermissionGranted(permission) ? 'granted' : permission.location)
+        }
         } catch {
           setLocState('unknown')
         }
@@ -35,18 +41,15 @@ export function DeviceSection() {
 
   const askLocation = async () => {
     setBusy('loc')
-    try {
-      if (Capacitor.isNativePlatform()) {
-        const res = await Geolocation.requestPermissions()
-        setLocState(res.location)
-      } else if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          () => setLocState('granted'),
-          () => setLocState('denied'),
-          { timeout: 8000 },
-        )
-      }
-    } catch {}
+    setLocMessage('')
+    const result = await acquireLocation()
+    if (result.ok) {
+      saveCoords(result.coords)
+      setLocState('granted')
+    } else {
+      if (result.reason === 'permission-denied') setLocState('denied')
+      setLocMessage(locationFailureMessage(result.reason))
+    }
     setBusy('')
   }
 
@@ -65,7 +68,7 @@ export function DeviceSection() {
       </Row>
       <Row title="الموقع" description="لحساب مواقيت الصلاة واتجاه القبلة تلقائيًا.">
         <div className="flex flex-col items-end gap-1">
-          <span className="text-[9px] text-azkar-ink-soft">{label(locState)}</span>
+          <span className="max-w-[12rem] text-left text-[9px] text-azkar-ink-soft">{locMessage || label(locState)}</span>
           {locState !== 'granted' && (
             <button onClick={() => void askLocation()} disabled={busy === 'loc'} className="rounded-xl bg-azkar-teal px-3 py-2 text-[10px] font-bold text-azkar-card disabled:opacity-60">
               {busy === 'loc' ? '...' : 'طلب الإذن'}

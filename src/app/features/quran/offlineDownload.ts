@@ -1,5 +1,6 @@
 import { quranSurahAudioUrl } from '../../constants'
 import type { QuranAudioReciter } from './quranAudioPlayback'
+import { fetchWithTimeout } from '../../net'
 
 const DB_NAME = 'muslim-quran-offline'
 const DB_VERSION = 1
@@ -180,12 +181,14 @@ async function ensurePersistentStorage(): Promise<void> {
   }
 }
 
+const DOWNLOAD_HEADERS_TIMEOUT_MS = 30_000
+
 async function fetchSurahBlob(reciter: QuranAudioReciter, surahNumber: number): Promise<Blob> {
   let lastError: unknown
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     try {
-      const response = await fetch(quranSurahAudioUrl(reciter, surahNumber))
+      const response = await fetchWithTimeout(quranSurahAudioUrl(reciter, surahNumber), DOWNLOAD_HEADERS_TIMEOUT_MS)
       if (!response.ok) throw new Error(`Audio download failed: HTTP ${response.status}`)
       return await response.blob()
     } catch (error) {

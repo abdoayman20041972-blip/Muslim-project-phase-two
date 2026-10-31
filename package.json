@@ -21,7 +21,6 @@
     "@capacitor/share": "^7.0.4",
     "@capacitor/splash-screen": "^7.0.5",
     "capacitor-native-settings": "^7.0.0",
-    "@macaly/bridge": "^0.1.5",
     "@muslim/background-audio": "file:plugins/capacitor-background-audio",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-devtools": "^0.10.0",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Capacitor } from '@capacitor/core'
-import { Geolocation } from '@capacitor/geolocation'
-import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
+import { acquireLocation, locationFailureMessage } from '../location/acquireLocation'
+import { saveCoords } from '../location/coords'
+import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { formatLocalizedDate } from '../../constants'
 import {
   currentMethod,
@@ -33,11 +33,32 @@ const METHOD_LABELS: Record<string, string> = {
   '5': 'الهيئة المصرية العامة للمساحة',
 }
 const CITIES = [
+  // M7 fix: expanded preset list — every Egyptian governorate capital, all offline.
   ['القاهرة', 30.0444, 31.2357],
   ['الجيزة', 30.0131, 31.2089],
   ['الإسكندرية', 31.2001, 29.9187],
   ['المنصورة', 31.0409, 31.3785],
   ['شبين القناطر', 30.3127, 31.3202],
+  ['طنطا', 30.7865, 30.9982],
+  ['الزقازيق', 30.5877, 31.5020],
+  ['دمنهور', 31.0341, 30.4682],
+  ['كفر الشيخ', 31.1114, 30.9478],
+  ['بورسعيد', 31.2653, 32.3019],
+  ['الإسماعيلية', 30.5965, 32.2715],
+  ['السويس', 29.9668, 32.5498],
+  ['دمياط', 31.4165, 31.8133],
+  ['العريش', 31.1296, 33.8004],
+  ['بني سويف', 29.0661, 31.0994],
+  ['الفيوم', 29.3084, 30.8428],
+  ['المنيا', 28.1099, 30.7503],
+  ['أسيوط', 27.181, 31.1837],
+  ['سوهاج', 26.5591, 31.6957],
+  ['قنا', 26.1551, 32.716],
+  ['الأقصر', 25.6872, 32.6396],
+  ['أسوان', 24.0889, 32.8998],
+  ['الغردقة', 27.2579, 33.7959],
+  ['مرسى مطروح', 31.3534, 27.2243],
+  ['الخارجة', 25.4514, 30.5464],
 ] as const
 function PinIcon() {
   return (
@@ -63,13 +84,6 @@ function BackIcon() {
       />
     </svg>
   )
-}
-function saveCoords(c: Coords) {
-  const n = normalizeCoords(c)
-  if (!n) return
-  writeSetting(APP_SETTINGS_KEYS.coords, JSON.stringify(n))
-  writeSetting(APP_SETTINGS_KEYS.prayerLocationUpdatedAt, new Date().toISOString())
-  window.dispatchEvent(new CustomEvent('azkar-prayer-settings-changed'))
 }
 function PrayerTimeline({
   timings,
@@ -109,12 +123,14 @@ function PrayerTimeline({
 }
 function NextPrayerCard({
   coords,
+  timings: parentTimings,
   onNextKeyChange,
 }: {
   coords: Coords
+  timings: Timings | null
   onNextKeyChange: (key: string | null) => void
 }) {
-  const { next, remainingMs } = useNextPrayer(coords)
+  const { next, remainingMs } = useNextPrayer(coords, parentTimings)
   useEffect(() => {
     onNextKeyChange(next?.key ?? null)
   }, [next?.key, onNextKeyChange])
@@ -154,7 +170,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
     [locating, setLocating] = useState(false),
     [locationError, setLocationError] = useState<string | null>(null),
     [nextKey, setNextKey] = useState<string | null>(null)
-  const { timings, loading, error } = usePrayerTimings(coords)
+  const { timings, loading, error, retry } = usePrayerTimings(coords)
   useEffect(() => {
     const refresh = () => {
       const c = readPrayerCoords()
@@ -167,47 +183,17 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
       window.removeEventListener('azkar-prayer-settings-changed', refresh)
     }
   }, [])
-  const locate = () => {
+  const locate = async () => {
     setLocating(true)
     setLocationError(null)
-    const finish = (c: { lat: number; lng: number } | null, error?: string) => {
-      if (c) {
-        const n = normalizeCoords(c)
-        if (n) {
-          saveCoords(n)
-          setCoords(n)
-        }
-        setLocating(false)
-        return
-      }
-      setLocationError(error || 'تعذر تحديد الموقع. اختر مدينة أو أدخل الإحداثيات يدويًا.')
-      setLocating(false)
+    const result = await acquireLocation()
+    if (result.ok) {
+      saveCoords(result.coords)
+      setCoords(result.coords)
+    } else {
+      setLocationError(locationFailureMessage(result.reason))
     }
-    if (Capacitor.isNativePlatform()) {
-      Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 12000 })
-        .then((pos) => finish({ lat: pos.coords.latitude, lng: pos.coords.longitude }))
-        .catch(() =>
-          finish(null, 'تم رفض إذن الموقع أو تعذر تحديده. اختر مدينة أو أدخل الإحداثيات يدويًا.'),
-        )
-      return
-    }
-    if (!('geolocation' in navigator)) {
-      finish(null, 'المتصفح لا يدعم تحديد الموقع.')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => finish({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (e) =>
-        finish(
-          null,
-          e.code === 1
-            ? 'تم رفض إذن الموقع. يمكنك اختيار مدينة أو إدخال الإحداثيات يدويًا.'
-            : e.code === 2
-              ? 'تعذر تحديد الموقع حاليًا. اختر مدينة أو أدخل الإحداثيات يدويًا.'
-              : 'انتهت مهلة تحديد الموقع. اختر مدينة أو أدخل الإحداثيات يدويًا.',
-        ),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-    )
+    setLocating(false)
   }
   const chooseCity = (lat: number, lng: number) => {
     const c = normalizeCoords({ lat, lng })
@@ -282,7 +268,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           >
             {locating ? 'جاري تحديد الموقع...' : 'تحديد موقعي'}
           </button>
-          {locationError && <p className="mt-3 text-xs text-azkar-ink-soft">{locationError}</p>}
+          {locationError && <p role="alert" className="mt-3 text-xs text-azkar-ink-soft">{locationError}</p>}
           <div className="mt-5">
             <div className="text-[10px] font-bold text-azkar-ink-soft mb-2">اختر مدينة</div>
             <div className="flex flex-wrap justify-center gap-2">
@@ -322,13 +308,16 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
         </div>
       )}
       {coords && loading && !timings && (
-        <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12">
+        <div role="status" className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12">
           جاري حساب مواقيت الصلاة...
         </div>
       )}
       {coords && error && !timings && (
-        <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-10 px-4">
+        <div role="alert" className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-10 px-4">
           <p>{error}</p>
+          <button onClick={retry} className="mt-3 rounded-xl bg-azkar-teal px-4 py-2 text-xs font-bold text-azkar-card">
+            إعادة المحاولة
+          </button>
           <button onClick={locate} className="mt-3 text-xs text-azkar-teal underline">
             تحديث الموقع وإعادة المحاولة
           </button>
@@ -336,7 +325,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
       )}
       {coords && timings && (
         <>
-          <NextPrayerCard coords={coords} onNextKeyChange={setNextKey} />
+          <NextPrayerCard coords={coords} timings={timings} onNextKeyChange={setNextKey} />
           <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card p-4 mb-4 shadow-sm">
             <PrayerTimeline timings={timings} now={new Date()} nextKey={nextKey} />
           </div>
@@ -378,7 +367,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           </div>
           <div className="text-center text-[9px] text-azkar-ink-faint">
             طريقة الحساب: {METHOD_LABELS[methodLabel] || methodLabel} · المدرسة الفقهية للعصر:{' '}
-            {currentSchool() === '1' ? 'حنبلي' : 'شافعي/قياسي'} · آخر تحديث للموقع:{' '}
+            {currentSchool() === '1' ? 'حنفي' : 'شافعي/قياسي'} · آخر تحديث للموقع:{' '}
             {readSetting(APP_SETTINGS_KEYS.prayerLocationUpdatedAt, '')
               ? formatLocalizedDate(
                   new Date(readSetting(APP_SETTINGS_KEYS.prayerLocationUpdatedAt, '')),

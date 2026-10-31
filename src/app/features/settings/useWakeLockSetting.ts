@@ -12,7 +12,7 @@ export function useWakeLockSetting() {
         const { BackgroundAudio } = await import('@muslim/background-audio')
         await BackgroundAudio.setKeepScreenOn({ enabled })
         nativeOn = enabled
-      } catch {}
+      } catch (error) { console.debug('[useWakeLockSetting]', error) }
     }
     const acquire = async () => {
       if (readSetting(APP_SETTINGS_KEYS.keepScreenAwake, '0') !== '1') return
@@ -23,7 +23,7 @@ export function useWakeLockSetting() {
       if (!('wakeLock' in navigator)) return
       try {
         lock = await navigator.wakeLock.request('screen')
-      } catch {}
+      } catch (error) { console.debug('[useWakeLockSetting]', error) }
     }
     const release = () => {
       if (nativeOn) void setNative(false)

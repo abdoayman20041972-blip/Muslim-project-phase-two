@@ -28,11 +28,12 @@ describe('patch-android.mjs', () => {
     const { root, main } = fixture()
     run(root)
     const manifest = readFileSync(join(main, 'AndroidManifest.xml'), 'utf8')
-    for (const name of ['POST_NOTIFICATIONS', 'SCHEDULE_EXACT_ALARM', 'RECEIVE_BOOT_COMPLETED', 'VIBRATE']) {
+    for (const name of ['POST_NOTIFICATIONS', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'RECEIVE_BOOT_COMPLETED', 'VIBRATE']) {
       expect(manifest).toContain(`android.permission.${name}`)
     }
     expect(readFileSync(join(main, 'res', 'values', 'colors.xml'), 'utf8')).toContain('muslim_splash_background')
     expect(readFileSync(join(main, 'res', 'values', 'styles.xml'), 'utf8')).toContain('windowSplashScreenBackground')
+    expect(readFileSync(join(main, 'res', 'values', 'styles.xml'), 'utf8')).toContain('windowSplashScreenIconBackgroundColor')
   })
 
   it('is idempotent', () => {

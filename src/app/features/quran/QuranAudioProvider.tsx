@@ -64,7 +64,7 @@ export function QuranAudioProvider({ children, setView }: Props) {
     try {
       const { BackgroundAudio } = await import('@muslim/background-audio')
       await BackgroundAudio.stop()
-    } catch {}
+    } catch (error) { console.debug('[QuranAudioProvider]', error) }
   }, [])
 
   const stop = useCallback(() => {
@@ -94,7 +94,7 @@ export function QuranAudioProvider({ children, setView }: Props) {
           album: 'مسلم',
         })
       }
-    } catch {}
+    } catch (error) { console.debug('[QuranAudioProvider]', error) }
   }, [])
 
   const playAt = useCallback((
@@ -109,6 +109,8 @@ export function QuranAudioProvider({ children, setView }: Props) {
     const ayah = list[index]
     if (!ayah) return
     stop()
+    // M1 fix: tell the offline player to stop so the two never play at once.
+    window.dispatchEvent(new CustomEvent('quran-online-play'))
     sessionRef.current = { list, index, reciter: selectedReciter, surah: surahNumber, bismillah: withBismillah }
     setCurrent(connected ? null : ayah.numberInSurah)
     setCurrentSurah(surahNumber)
@@ -220,7 +222,7 @@ export function QuranAudioProvider({ children, setView }: Props) {
         try {
           const { BackgroundAudio } = await import('@muslim/background-audio')
           await BackgroundAudio.start({ title: 'تلاوة القرآن', artist: QURAN_AUDIO_RECITER_LABELS[reciter] || reciter })
-        } catch {}
+        } catch (error) { console.debug('[QuranAudioProvider]', error) }
       })()
     } else {
       void stopBackgroundAudio()
@@ -276,9 +278,9 @@ export function QuranAudioProvider({ children, setView }: Props) {
   useEffect(() => {
     if (!('mediaSession' in navigator)) return
     try {
-      navigator.mediaSession.setActionHandler('play', () => { if (audio.current) void audio.current.play().catch(() => {}) })
+      navigator.mediaSession.setActionHandler('play', () => { if (audio.current) void audio.current.play().catch((error) => console.debug('[QuranAudioProvider]', error)) })
       navigator.mediaSession.setActionHandler('pause', () => { audio.current?.pause(); setPlaying(false); setBuffering(false) })
-    } catch {}
+    } catch (error) { console.debug('[QuranAudioProvider]', error) }
     return () => {
       if (!('mediaSession' in navigator)) return
       try {
@@ -288,16 +290,23 @@ export function QuranAudioProvider({ children, setView }: Props) {
         navigator.mediaSession.setActionHandler('nexttrack', null)
         navigator.mediaSession.metadata = null
         navigator.mediaSession.playbackState = 'none'
-      } catch {}
+      } catch (error) { console.debug('[QuranAudioProvider]', error) }
     }
   }, [playAt])
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return
-    try { navigator.mediaSession.playbackState = playing ? 'playing' : 'paused' } catch {}
+    try { navigator.mediaSession.playbackState = playing ? 'playing' : 'paused' } catch (error) { console.debug('[QuranAudioProvider]', error) }
   }, [playing])
 
   useEffect(() => () => stop(), [stop])
+
+  // M1 fix: the offline player announces itself; stop online playback then.
+  useEffect(() => {
+    const handleOfflinePlay = () => stop()
+    window.addEventListener('quran-offline-play', handleOfflinePlay)
+    return () => window.removeEventListener('quran-offline-play', handleOfflinePlay)
+  }, [stop])
 
   return (
     <QuranAudioContext.Provider value={{ reciter, current, currentSurah, playing, buffering, audioProgress, audioDuration, playback, audio: audio.current, playSingleAyah, playConnected, toggleCurrent, toggle, stop, repeat, setRepeat, selectAyah, setReciter }}>

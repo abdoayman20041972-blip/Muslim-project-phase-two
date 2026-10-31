@@ -160,15 +160,34 @@ describe('QuranReaderView', () => {
     rectSpy.mockRestore()
   })
 
-  it('reads the tafsir text from the live response shape', async () => {
+  it('falls back to the live tafsir response shape when the bundled surah file has no entry', async () => {
     const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce({ok:true,json:async()=>tafsirJson} as Response)
+    // First fetch: bundled local muyassar file (default source) — returns no
+    // usable entry for ayah 1 so the reader falls through to the online source.
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({}) } as Response)
+    // Second fetch: the live alfurqan response shape with the tafsir text.
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => tafsirJson } as Response)
     renderReader(view)
     await waitFor(()=>expect(document.querySelector('[data-ayah="1"]')).toBeTruthy())
     fireEvent.click(document.querySelector('[data-ayah="1"]')!)
     fireEvent.click(screen.getByRole('button',{name:'خيارات الآية ١'}))
     fireEvent.click(screen.getByRole('button',{name:'تفسير الآية'}))
     await waitFor(()=>expect(screen.getByText('تفسير تجريبي')).toBeTruthy())
+  })
+
+  it('serves the bundled muyassar tafsir offline with no network calls', async () => {
+    const fetchMock = vi.mocked(fetch)
+    // The bundled per-surah file is the primary source: it answers and no
+    // online request must be issued afterwards.
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ '1': 'تفسير محلي مضمّن' }) } as Response)
+    renderReader(view)
+    await waitFor(()=>expect(document.querySelector('[data-ayah="1"]')).toBeTruthy())
+    fireEvent.click(document.querySelector('[data-ayah="1"]')!)
+    fireEvent.click(screen.getByRole('button',{name:'خيارات الآية ١'}))
+    fireEvent.click(screen.getByRole('button',{name:'تفسير الآية'}))
+    await waitFor(()=>expect(screen.getByText('تفسير محلي مضمّن')).toBeTruthy())
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/data/tafsir/muyassar/')
   })
 
   it('shares the visible card as a PNG file when Web Share files are supported', async () => {

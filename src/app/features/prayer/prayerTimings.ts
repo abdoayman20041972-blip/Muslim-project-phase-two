@@ -1,10 +1,11 @@
 import { Capacitor } from '@capacitor/core'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { currentMethod, currentSchool, dateKey, REQUIRED_TIMINGS } from './prayerTimes'
 import { normalizeCoords } from './prayerCoords'
 import type { Coords, Timings } from './prayerTimes'
 import type { PrayerMethod, PrayerSchool } from './prayerTimes'
 import { writeSetting } from '../../settings'
+import { fetchWithTimeout } from '../../net'
 
 // Local astronomical fallback (adhan) so prayer times, and every reminder
 // scheduled from them, still work with no network at all.
@@ -16,7 +17,12 @@ const METHOD_FACTORIES = {
   '5': 'Egyptian',
 } as const
 
-async function computeTimingsLocally(c: Coords, date: Date, method: PrayerMethod, school: PrayerSchool): Promise<Timings | null> {
+/**
+ * Pure local astronomical calculation (adhan library). No network, no cache:
+ * the exact same numbers every time, which is what the notification
+ * scheduler needs so alarms never depend on connectivity.
+ */
+export async function computeTimingsLocally(c: Coords, date: Date, method: PrayerMethod, school: PrayerSchool): Promise<Timings | null> {
   try {
     const adhan = await import('adhan')
     const factoryName = METHOD_FACTORIES[method] ?? 'Egyptian'
@@ -85,7 +91,7 @@ async function fetchMonth(c:Coords,date:Date,method=currentMethod(),school=curre
   }
   const y=date.getFullYear(),m=date.getMonth()+1
   const qs=new URLSearchParams({latitude:String(c.lat),longitude:String(c.lng),method,school,timezonestring:tz()})
-  const res=await fetch(`${API}/calendar/${y}/${m}?${qs}`,{signal})
+  const res=await fetchWithTimeout(`${API}/calendar/${y}/${m}?${qs}`,12_000,{signal})
   if(!res.ok)throw Error('prayer-api')
   const json=await res.json()
   const map=extractMonth(json)
@@ -93,7 +99,7 @@ async function fetchMonth(c:Coords,date:Date,method=currentMethod(),school=curre
   store(monthCacheKey(date,c,method,school),json.data)
   return map
 }
-export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortSignal}={}):Promise<Timings|null>{
+export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortSignal;offline?:boolean}={}):Promise<Timings|null>{
   const c=normalizeCoords(coords);if(!c)return null
   const method=currentMethod(),school=currentSchool(),key=cacheKey(date,c,method,school)
   const cached=read(key)
@@ -105,6 +111,7 @@ export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortS
     const local=await computeTimingsLocally(c,date,method,school)
     if(local){storeDay(date,c,local,method,school);return local}
   }
+  if(options.offline)return null
   try{
     const map=await fetchMonth(c,date,method,school,options.signal)
     const t=map.get(date.getDate())
@@ -129,19 +136,21 @@ export function cleanupPrayerCache(){
         try{const p=JSON.parse(raw||'');if(p?.savedAt&&Date.now()-Number(p.savedAt)>MAX_CACHE_AGE)localStorage.removeItem(k)}catch{localStorage.removeItem(k)}
       }
     }
-  }catch{}
+  }catch (error) { console.debug('[prayerTimings]', error) }
 }
 export function usePrayerTimings(coords:Coords|null){
   const dayKey=useMemo(()=>dateKey(new Date()),[new Date().getFullYear(),new Date().getMonth(),new Date().getDate()])
   const [timings,setTimings]=useState<Timings|null>(null)
   const [loading,setLoading]=useState(false)
   const [error,setError]=useState<string|null>(null)
+  const [attempt,setAttempt]=useState(0)
   useEffect(()=>{cleanupPrayerCache();if(!coords){setTimings(null);return}
     let cancelled=false
     const controller=new AbortController()
     setLoading(true);setError(null)
     getTimings(coords,new Date(),{signal:controller.signal}).then(t=>{if(!cancelled)setTimings(t);if(!t&&!cancelled)setError('تعذر الحصول على مواقيت الصلاة. تحقق من الاتصال أو حدّث الموقع.')}).catch(()=>{if(!cancelled){setError('تعذر الحصول على مواقيت الصلاة. تحقق من الاتصال أو حدّث الموقع.');setTimings(null)}}).finally(()=>{if(!cancelled)setLoading(false)})
     return()=>{cancelled=true;controller.abort()}
-  },[coords?.lat,coords?.lng,dayKey,currentMethod(),currentSchool()])
-  return {timings,loading,error,dayKey}
+  },[coords?.lat,coords?.lng,dayKey,currentMethod(),currentSchool(),attempt])
+  const retry=useCallback(()=>setAttempt(n=>n+1),[])
+  return {timings,loading,error,dayKey,retry}
 }

@@ -2,21 +2,27 @@ import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
-import { normalizeCoords } from '../location/coords'
-import { scheduleNativeNotifications } from '../notifications/nativeNotifications'
+import { readSetting, writeSetting } from '../../settings'
+import { acquireLocation, isLocationPermissionGranted, locationFailureMessage } from '../location/acquireLocation'
+import { saveCoords } from '../location/coords'
+import { scheduleNativeNotifications, checkExactAlarm, openExactAlarmSettings } from '../notifications/nativeNotifications'
 
 const ONBOARDING_DONE_KEY = 'azkar_native_onboarding_v1'
 
 // First-run permission flow inside the APK: asks for notification and
-// location permission once, stores the prayer coordinates, then triggers
-// native scheduling. Before this, no permission was ever requested unless
-// the user opened the right settings page manually.
+// location permission once, stores the prayer coordinates, promotes exact
+// alarms on Android 12+, then triggers native scheduling. Before this, no
+// permission was ever requested unless the user opened the right settings
+// page manually.
 export function NativeOnboarding() {
   const [visible, setVisible] = useState(false)
   const [notifState, setNotifState] = useState<'unknown' | 'granted' | 'denied'>('unknown')
-  const [locState, setLocState] = useState<'unknown' | 'granted' | 'denied'>('unknown')
+  const [locState, setLocState] = useState<'unknown' | 'granted' | 'denied' | 'failed'>('unknown')
+  const [locMessage, setLocMessage] = useState('')
   const [busy, setBusy] = useState('')
+  // Exact alarms: 'granted' (or auto-granted on Android 13+) needs no step.
+  // Widened to a plain string so the narrowed JSX branches still compare safely.
+  const [exactState, setExactState] = useState<string>('unknown')
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -25,45 +31,58 @@ export function NativeOnboarding() {
       .then((s) => setNotifState(s.display === 'granted' ? 'granted' : 'unknown'))
       .catch((error) => console.error('[onboarding] notification check failed', error))
     void Geolocation.checkPermissions()
-      .then((s) => setLocState(s.location === 'granted' || s.coarseLocation === 'granted' ? 'granted' : 'unknown'))
+      .then((s) => setLocState(isLocationPermissionGranted(s) ? 'granted' : 'unknown'))
       .catch((error) => console.error('[onboarding] location check failed', error))
+    void checkExactAlarm().then((state) => setExactState(state === 'granted' ? 'granted' : state === 'unknown' ? 'unknown' : 'needed'))
     setVisible(true)
   }, [])
 
   if (!visible) return null
 
+  // Derived booleans keep the JSX free of narrowed literal comparisons.
+  const exactNeeded = exactState === 'needed'
+  const exactGranted = exactState === 'granted'
+
   const askNotifications = async () => {
     setBusy('notif')
     try {
       const res = await LocalNotifications.requestPermissions()
-      setNotifState(res.display === 'granted' ? 'granted' : 'denied')
+      const granted = res.display === 'granted'
+      setNotifState(granted ? 'granted' : 'denied')
+      if (granted) {
+        // With notifications allowed, promote exact alarms right away: without
+        // them Android defers alarms in Doze and the adhan arrives late.
+        const state = await checkExactAlarm()
+        setExactState(state === 'granted' ? 'granted' : state === 'unknown' ? 'unknown' : 'needed')
+      }
     } catch {
       setNotifState('denied')
     }
     setBusy('')
   }
 
+  const askExactAlarms = async () => {
+    setBusy('exact')
+    try {
+      const state = await openExactAlarmSettings()
+      setExactState(state === 'granted' ? 'granted' : state === 'unknown' ? 'unknown' : 'needed')
+    } catch {
+      setExactState('needed')
+    }
+    setBusy('')
+  }
+
   const askLocation = async () => {
     setBusy('loc')
-    try {
-      const perm = await Geolocation.requestPermissions()
-      if (perm.location !== 'granted' && perm.coarseLocation !== 'granted') {
-        setLocState('denied')
-        setBusy('')
-        return
-      }
-      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 })
-      const coords = normalizeCoords({ lat: position.coords.latitude, lng: position.coords.longitude })
-      if (coords) {
-        writeSetting(APP_SETTINGS_KEYS.coords, JSON.stringify(coords))
-        writeSetting(APP_SETTINGS_KEYS.prayerLocationUpdatedAt, new Date().toISOString())
-        window.dispatchEvent(new CustomEvent('azkar-prayer-settings-changed'))
-        setLocState('granted')
-      } else {
-        setLocState('denied')
-      }
-    } catch {
-      setLocState('denied')
+    setLocMessage('')
+    const result = await acquireLocation()
+    if (result.ok) {
+      saveCoords(result.coords)
+      setLocState('granted')
+    } else {
+      // Only a refused permission is "denied"; GPS off or a timeout is a failure the user can retry.
+      setLocState(result.reason === 'permission-denied' ? 'denied' : 'failed')
+      setLocMessage(locationFailureMessage(result.reason))
     }
     setBusy('')
   }
@@ -77,7 +96,7 @@ export function NativeOnboarding() {
     void scheduleNativeNotifications()
   }
 
-  const label = (state: typeof notifState) =>
+  const label = (state: string) =>
     state === 'granted' ? 'تم' : state === 'denied' ? 'مرفوض' : ''
 
   return (
@@ -90,7 +109,7 @@ export function NativeOnboarding() {
       <div className="azkar-card w-full max-w-md rounded-3xl border border-azkar-gold-soft p-6 shadow-2xl" dir="rtl">
         <div className="flex flex-col items-center gap-1 text-center">
           <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">أهلًا بك في مسلم</div>
-          <p className="text-xs text-azkar-ink-soft">خطوتان بسيطتان لتعمل كل مزايا التطبيق:</p>
+          <p className="text-xs text-azkar-ink-soft">خطوات بسيطة لتعمل كل مزايا التطبيق بدقة:</p>
         </div>
         <div className="mt-5 flex flex-col gap-4">
           <div className="rounded-2xl border border-azkar-gold-soft p-4">
@@ -110,6 +129,27 @@ export function NativeOnboarding() {
             </div>
             {label(notifState) && <div className="mt-1 text-[9px] text-azkar-ink-soft">{label(notifState)}</div>}
           </div>
+          {exactNeeded && (
+            <div className="rounded-2xl border border-azkar-gold-soft p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-bold">تنبيهات في وقتها بالضبط</div>
+                  <div className="text-[10px] text-azkar-ink-soft">
+                    اسمح بـ«المنبّهات والتذكيرات» من شاشة النظام حتى يؤذن التطبيق في الموعد ولا يتأخر.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void askExactAlarms()}
+                  disabled={busy === 'exact' || exactGranted}
+                  className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[10px] font-bold text-azkar-card disabled:opacity-60"
+                >
+                  {busy === 'exact' ? '...' : exactGranted ? 'مفعّلة' : 'تفعيل'}
+                </button>
+              </div>
+              {exactGranted && <div className="mt-1 text-[9px] text-azkar-ink-soft">تم</div>}
+            </div>
+          )}
           <div className="rounded-2xl border border-azkar-gold-soft p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -125,7 +165,7 @@ export function NativeOnboarding() {
                 {busy === 'loc' ? '...' : locState === 'granted' ? 'تم' : 'تحديد موقعي'}
               </button>
             </div>
-            {label(locState) && <div className="mt-1 text-[9px] text-azkar-ink-soft">{label(locState)}</div>}
+            {(locMessage || label(locState)) && <div className="mt-1 text-[9px] text-azkar-ink-soft">{locMessage || label(locState)}</div>}
           </div>
         </div>
         <button

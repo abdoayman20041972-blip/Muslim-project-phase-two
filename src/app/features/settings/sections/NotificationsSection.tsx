@@ -1,4 +1,4 @@
-import type { NotificationPermissionState } from '../../notifications/notifications'
+import type { NotificationPermissionState } from '../../notifications/notificationPermission'
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting, writeSetting } from '../../../settings'
@@ -8,6 +8,7 @@ import { Row, Section, Choice } from '../settingsPrimitives'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { readAdhanSoundMode } from '../../notifications/nativeNotifications'
+import { checkExactAlarm, openExactAlarmSettings } from '../../notifications/nativeNotifications'
 import { NotificationDiagnostics } from './NotificationDiagnostics'
 import { openSystemSettings } from '../../permissions/systemSettings'
 
@@ -44,6 +45,21 @@ export function NotificationsSection({
   const dismissBatteryHint = () => { try { localStorage.setItem(BATTERY_HINT_KEY,'1') } catch (error) { console.error('[notifications] battery hint flag not saved', error) } setBatteryHintSeen(true) }
   const native = Capacitor.isNativePlatform()
   const [nativeStatus,setNativeStatus] = useState('')
+  // Exact alarms (Android 12+): without them the OS defers our alarms in
+  // Doze and the adhan can arrive hours late. Surfaced here with a direct
+  // fix button so the user never has to hunt for it.
+  const [exactAlarm,setExactAlarm] = useState('unknown')
+  const refreshExactAlarm = () => {
+    if (!native) return
+    void checkExactAlarm().then((state) => setExactAlarm(state))
+  }
+  useEffect(() => {
+    if (!native) return
+    refreshExactAlarm()
+    const onFocus = () => refreshExactAlarm()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [native])
 
   const askNative = async () => {
     try {
@@ -70,6 +86,19 @@ export function NotificationsSection({
           {(native ? nativeStatus : notificationStatus) === 'granted' ? 'مسموحة' : native && nativeStatus === 'denied' ? 'فتح الإعدادات' : 'السماح'}
         </button>
       </Row>
+      {native && exactAlarm !== 'granted' && exactAlarm !== 'unknown' && (
+        <Row title="تنبيهات في وقتها بالضبط" description="بدون «المنبّهات والتذكيرات» قد يؤذن التطبيق متأخرًا. فعّلها من إعدادات النظام ثم ارجع هنا.">
+          <button
+            type="button"
+            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[10px] font-bold text-azkar-card"
+            onClick={() => {
+              void openExactAlarmSettings().then((state) => setExactAlarm(state))
+            }}
+          >
+            تفعيل
+          </button>
+        </Row>
+      )}
       {native && nativeStatus === 'granted' && !batteryHintSeen && (
         <Row title="لضمان وصول الأذان في وقته" description="اسمح للتطبيق بالعمل دون قيود البطارية، فبعض الهواتف توقف التنبيهات في الخلفية.">
           <div className="flex shrink-0 flex-col gap-2">

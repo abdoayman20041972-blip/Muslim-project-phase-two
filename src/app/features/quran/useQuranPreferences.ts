@@ -19,7 +19,7 @@ export function useQuranPreferences() {
       if (savedFont && FONT_ORDER.includes(savedFont as FontSizeKey)) setFontSizeState(savedFont as FontSizeKey)
       if (savedReciter && QURAN_AUDIO_RECITERS.includes(savedReciter as (typeof QURAN_AUDIO_RECITERS)[number])) setReciterState(savedReciter)
       if (savedLayout === 'pages' || savedLayout === 'scroll') setLayoutState(savedLayout)
-    } catch {}
+    } catch (error) { console.debug('[useQuranPreferences]', error) }
   }
 
   useEffect(() => {

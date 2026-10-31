@@ -24,7 +24,7 @@ export function saveAzkarProgress(progress: Record<string, number>, date = new D
     const trimmed: AzkarProgressDays = {}
     recent.forEach(key => { trimmed[key] = days[key] })
     localStorage.setItem(AZKAR_PROGRESS_KEY, JSON.stringify({ version: 2, days: trimmed }))
-  } catch {}
+  } catch (error) { console.debug('[azkarProgress]', error) }
 }
 
 export function readAzkarProgressDays(): AzkarProgressDays {
@@ -82,7 +82,7 @@ export function migrateLegacyProgress(
         recent.forEach(key => { trimmed[key] = days[key] })
         writeStorage(AZKAR_PROGRESS_KEY, JSON.stringify({ version: 2, days: trimmed }))
       }
-      try { removeStorage(LEGACY_AZKAR_PROGRESS_KEY) } catch {}
+      try { removeStorage(LEGACY_AZKAR_PROGRESS_KEY) } catch (error) { console.debug('[azkarProgress]', error) }
     }
     writeStorage(AZKAR_PROGRESS_MIGRATED_KEY, '1')
     return true

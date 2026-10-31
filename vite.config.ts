@@ -1,6 +1,10 @@
 // IMPORTANT (Macaly agent): Do not change or remove anything in this file unless you 100% understand it.
 // This config wires up Macaly-specific behavior (Visual Edits tagger, allowed hosts, dev build, prerender).
 // Modifying it without full understanding can break Macaly app functionality for the user.
+//
+// APK build path (GitHub Actions): PRERENDER=1 npm run build — a clean PRODUCTION build
+// (minified CSS/JS, no Macaly tagger) with prerendering enabled so Capacitor gets a
+// static index.html from .output/public. DEV_BUILD stays untouched for Macaly preview only.
 
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
@@ -50,7 +54,8 @@ const config = defineConfig({
     tanstackStart({
       prerender: {
         // Keep prerender enabled for DEV_BUILD (preview) otherwise preview will not work!
-        enabled: !!process.env.DEV_BUILD,
+        // PRERENDER=1 enables it for the optimized APK production build as well.
+        enabled: !!process.env.DEV_BUILD || !!process.env.PRERENDER,
         autoSubfolderIndex: true,
         autoStaticPathsDiscovery: true,
         crawlLinks: false,

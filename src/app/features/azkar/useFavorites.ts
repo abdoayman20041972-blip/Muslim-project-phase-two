@@ -69,7 +69,7 @@ export function useFavorites(categories: ZikrCategory[] = []) {
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(migrated.keys))
         localStorage.setItem(FAVORITES_VERSION_KEY, FAVORITES_VERSION)
       }
-    } catch {}
+    } catch (error) { console.debug('[useFavorites]', error) }
   }, [categories])
 
   useEffect(() => { load() }, [load])
@@ -79,7 +79,7 @@ export function useFavorites(categories: ZikrCategory[] = []) {
     try {
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
       localStorage.setItem(FAVORITES_VERSION_KEY, FAVORITES_VERSION)
-    } catch {}
+    } catch (error) { console.debug('[useFavorites]', error) }
   }, [favorites])
 
   const toggleFavorite = useCallback((key: string) => {

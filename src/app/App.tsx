@@ -70,10 +70,8 @@ import { useWakeLockSetting } from "./features/settings/useWakeLockSetting";
 import { useAppearanceMode } from "./features/settings/useAppearanceMode";
 import { useUiScaleSync } from "./features/settings/useUiScaleSync";
 import { startPreferencesMirror } from "./features/storage/preferencesMirror";
-import { usePrayerReminders } from "./features/notifications/usePrayerReminders";
 import { scheduleNativeNotifications } from "./features/notifications/nativeNotifications";
 import { NativeOnboarding } from "./features/permissions/NativeOnboarding";
-import { useIslamicNotifications } from "./features/notifications/useIslamicNotifications";
 import { useAppSounds } from "./features/sound/useAppSounds";
 import { useTapSoundFeedback } from "./features/sound/useTapSoundFeedback";
 import { APP_SETTINGS_KEYS, readSetting } from "./settings";
@@ -164,18 +162,19 @@ export function App() {
     };
   }, []);
   const [mounted, setMounted] = useState(false);
-  // Keep the native Android launch screen (dark green splash) visible until
-  // the in-app splash finishes, so tapping the icon never shows a white gap.
-  useEffect(() => {
-    if (booting || !Capacitor.isNativePlatform()) return;
+  // The native launch screen (same green as the in-app splash) hides at the
+  // first painted frame of the in-app splash, so the designed splash is the
+  // ONLY splash the user ever perceives: logo → artwork → app, no gaps.
+  const nativeSplashHiddenRef = useRef(false);
+  const hideNativeSplash = useCallback(() => {
+    if (nativeSplashHiddenRef.current || !Capacitor.isNativePlatform()) return;
+    nativeSplashHiddenRef.current = true;
     void import("@capacitor/splash-screen")
-      .then(({ SplashScreen }) =>
-        SplashScreen.hide({ fadeOutDuration: 250 }),
-      )
+      .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 0 }))
       .catch(() => {
         // Plugin bridge unavailable; the OS default behavior applies.
       });
-  }, [booting]);
+  }, []);
   const [surahSearch, setSurahSearch] = useState("");
   const [, setSettingsVersion] = useState(0);
   const [lastSurah, setLastSurah] = useState<number | null>(null);
@@ -203,23 +202,42 @@ export function App() {
     toggleFavorite,
   } = useAzkarFeature(categories, view);
 
-  usePrayerReminders();
+  // Native notifications: re-armed whenever the app starts, returns to the
+  // foreground, resumes from recents, or the settings change. The scheduler
+  // deduplicates via a fingerprint that includes the day and timezone offset,
+  // so a DST switch re-arms every alarm with the new offset.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const refresh = () => void scheduleNativeNotifications();
     refresh();
     const id = window.setInterval(refresh, 60 * 60 * 1000); // re-schedule next day
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
     window.addEventListener("azkar-settings-changed", refresh);
     window.addEventListener("azkar-prayer-settings-changed", refresh);
-    document.addEventListener("visibilitychange", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    let removeResumeListener = () => {};
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { App: NativeApp } = await import("@capacitor/app");
+        if (cancelled) return;
+        const subscription = await NativeApp.addListener("resume", refresh);
+        removeResumeListener = () => void subscription.remove();
+      } catch {
+        // Native bridge unavailable; visibility events still cover it.
+      }
+    })();
     return () => {
+      cancelled = true;
+      removeResumeListener();
       window.clearInterval(id);
       window.removeEventListener("azkar-settings-changed", refresh);
       window.removeEventListener("azkar-prayer-settings-changed", refresh);
-      document.removeEventListener("visibilitychange", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
-  useIslamicNotifications();
   useWakeLockSetting();
   const { tapFeedback } = useAppSounds();
   const { darkMode, appearance, setAppearance } = useAppearanceMode(mounted);
@@ -250,17 +268,9 @@ export function App() {
         // Native bridge unavailable; fall back to plain app launch.
       }
     })()
-    const onNotificationClick = (event: MessageEvent) => {
-      if (event.data?.type !== 'notification-click' || typeof event.data.url !== 'string') return
-      const targetUrl = new URL(event.data.url, window.location.origin)
-      const target = notificationOpenTarget(targetUrl.searchParams.get('open'))
-      if (target) setView(target)
-    }
-    navigator.serviceWorker?.addEventListener('message', onNotificationClick)
     return () => {
       cancelled = true
       removeTapListener()
-      navigator.serviceWorker?.removeEventListener('message', onNotificationClick)
     }
   }, [])
 
@@ -275,9 +285,13 @@ export function App() {
 
   useEffect(() => {
     setMounted(true);
-    const SPLASH_MIN_MS = 1200;
-    const SPLASH_EXIT_MS = 400;
-    const SPLASH_IMAGE_WAIT_MS = 2500;
+    // Single-stage splash: the designed in-app splash is the only splash. The
+    // native launch screen (same background green) is dismissed the moment
+    // this splash paints its first frame, and the timings below keep the
+    // brand moment short but readable.
+    const SPLASH_MIN_MS = 900;
+    const SPLASH_EXIT_MS = 320;
+    const SPLASH_IMAGE_WAIT_MS = 1600;
     let painted = false;
     let fontsReady = false;
     let cancelled = false;
@@ -306,7 +320,7 @@ export function App() {
     const fonts = document.fonts?.ready
       ? Promise.race([
           document.fonts.ready,
-          new Promise((resolve) => window.setTimeout(resolve, 1500)),
+          new Promise((resolve) => window.setTimeout(resolve, 1200)),
         ])
       : Promise.resolve();
     fonts.finally(() => {
@@ -316,10 +330,16 @@ export function App() {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         painted = true;
+        // The webview has produced the first splash frame: retire the native
+        // launch screen now so only the designed splash remains visible.
+        hideNativeSplash();
         finishSplash();
       }),
     );
-    const hardStop = window.setTimeout(beginExit, 5000);
+    const hardStop = window.setTimeout(() => {
+      hideNativeSplash();
+      beginExit();
+    }, 2800);
     try {
       const savedLastSurah = localStorage.getItem("azkar_last_surah");
       if (savedLastSurah) setLastSurah(parseInt(savedLastSurah, 10) || null);
@@ -331,7 +351,7 @@ export function App() {
         else if (savedView === "azkar-list") setView({ name: "azkar-list" });
         else if (savedView === "tasbih") setView({ name: "tasbih" });
       }
-    } catch {}
+    } catch (error) { console.debug('[App]', error) }
     const idle = (callback: () => void, timeout = 1800) => {
       if ("requestIdleCallback" in window) {
         const id = window.requestIdleCallback(callback, { timeout });
@@ -354,46 +374,10 @@ export function App() {
         import("./features/hadith/HadithView"),
         import("./features/tasbih/TasbihView"),
       ]);
-    const waitForServiceWorkerControl = async () => {
-      // Inside the native Android shell the WebView cache already serves the
-      // bundled app; a service worker would pin a stale copy over APK updates.
-      if (Capacitor.isNativePlatform()) return false;
-      if (!("serviceWorker" in navigator)) return false;
-      try {
-        await navigator.serviceWorker.register("/sw.js");
-        await navigator.serviceWorker.ready;
-        if (navigator.serviceWorker.controller) return true;
-        await new Promise<void>((resolve) => {
-          let settled = false;
-          const finish = () => {
-            if (settled) return;
-            settled = true;
-            navigator.serviceWorker.removeEventListener(
-              "controllerchange",
-              finish,
-            );
-            resolve();
-          };
-          navigator.serviceWorker.addEventListener("controllerchange", finish, {
-            once: true,
-          });
-          window.setTimeout(finish, 2500);
-        });
-        return Boolean(navigator.serviceWorker.controller);
-      } catch {
-        return false;
-      }
-    };
     const cancelPrefetch = idle(() => {
       // In the native shell the chunks are local files, so prefetching is
       // always safe and makes first navigation instant.
-      if (Capacitor.isNativePlatform()) {
-        if (!cancelled) void prefetchScreens();
-        return;
-      }
-      void waitForServiceWorkerControl().then((controlled) => {
-        if (!cancelled && controlled) void prefetchScreens();
-      });
+      if (!cancelled) void prefetchScreens();
     }, 2200);
     return () => {
       cancelled = true;
@@ -403,7 +387,7 @@ export function App() {
       window.clearTimeout(imageGuard);
       cancelPrefetch();
     };
-  }, [loadTasbih]);
+  }, [loadTasbih, hideNativeSplash]);
 
   const go = (s: Section) => {
     setNavOrigin("default");

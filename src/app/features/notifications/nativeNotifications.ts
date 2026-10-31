@@ -1,12 +1,14 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
-import { dailyAyahFor } from '../../../daily-ayahs'
+import { toArabicDigits } from '../../constants'
+import { ID_BASE, ID_RANGE, KIND, makeId, planNotifications, PRAYER_GROUP, type PlannedNotification } from './notificationPlan'
 import { patchDiagnostics, recordError } from './nativeDiagnostics'
+import { computeTimingsLocally } from '../prayer/prayerTimings'
 import {
+  currentMethod,
+  currentSchool,
   dateKey,
-  getTimings,
-  parsePrayerTime,
   readPrayerCoords,
   type Timings,
 } from '../prayer/prayerTimes'
@@ -14,8 +16,21 @@ import {
 // Native Android notifications with an adhan sound, covering prayer times,
 // pre-prayer reminders, the daily ayah, the Quran reading reminder and the
 // morning/evening azkar. All scheduling is local; no server or service worker
-// is involved. Replaces the web timers (useIslamicNotifications /
-// usePrayerReminders) which stop the moment the app is closed inside the APK.
+// is involved.
+//
+// Accuracy design (why notifications used to arrive late or not at all):
+//   1. Timings come from the bundled adhan astronomical calculation only —
+//      never from the network — so scheduling is instant, deterministic and
+//      works offline, and no slow/failed request can drop a day.
+//   2. A 30-day horizon is scheduled at once, and the whole plan is re-armed
+//      whenever the app is opened, brought back to the foreground, resumed,
+//      or the day/timezone changes — so a DST shift or a missed day cannot
+//      silently empty the alarm queue.
+//   3. Exact alarms (SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM) are checked and
+//      promoted from onboarding + settings; without them Android defers
+//      alarms in Doze and "Fajr at 7 AM" happens.
+//   4. The intended prayer time is written into the notification body, so
+//      even a deferred notification is self-explanatory.
 
 export type AdhanSoundMode = 'adhan' | 'default' | 'silent'
 
@@ -24,28 +39,18 @@ export function readAdhanSoundMode(): AdhanSoundMode {
   return v === 'default' || v === 'silent' ? v : 'adhan'
 }
 
-const PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const
-const LABELS: Record<string, string> = {
-  Fajr: 'الفجر',
-  Dhuhr: 'الظهر',
-  Asr: 'العصر',
-  Maghrib: 'المغرب',
-  Isha: 'العشاء',
-}
 const LEGACY_CHANNELS = ['muslim-adhan', 'muslim-prayer', 'muslim-reminders']
 const PRAYER_CHANNEL = 'muslim-prayer-v2'
 const REMINDER_CHANNEL = 'muslim-reminders-v2'
 // Android keeps a deleted channel's old settings when the same id is created
 // again, so each adhan sound mode gets its own channel id.
 const adhanChannelId = (mode: AdhanSoundMode) => `muslim-adhan-v2-${mode}`
-const ID_BASE = 700_000_000
-const ID_RANGE = 100_000
-const DAYS_AHEAD = 7
-const RETRY_AFTER_FAILURE_MS = 60 * 60 * 1000
-
-// Deterministic ids: BASE + kind * 1000 + dayIndex * 10 + slot (no hashing, no collisions).
-const KIND = { at: 0, before: 1, morning: 2, evening: 3, ayah: 4, quran: 5, test: 6 } as const
-const makeId = (kind: number, dayIndex: number, slot: number) => ID_BASE + kind * 1000 + dayIndex * 10 + slot
+const GOLD_LED = '#e6c86e'
+/** How many days of alarms are armed in one scheduling run. */
+export const DAYS_AHEAD = 30
+/** Scheduling is split into chunks this size to stay well inside bridge limits. */
+const SCHEDULE_CHUNK = 60
+const RETRY_AFTER_FAILURE_MS = 15 * 60 * 1000
 
 let scheduledFingerprint = ''
 let lastFailureAt = 0
@@ -64,9 +69,12 @@ async function ensureChannels() {
   await LocalNotifications.createChannel({
     id: PRAYER_CHANNEL,
     name: 'تذكير قبل الصلاة',
+    description: 'تنبيه قبل دخول وقت الصلاة',
     importance: 3,
     visibility: 1,
     vibration: true,
+    lights: true,
+    lightColor: GOLD_LED,
   })
   await LocalNotifications.createChannel({
     id: adhanChannelId(sound),
@@ -76,6 +84,7 @@ async function ensureChannels() {
     visibility: 1,
     ...(sound === 'adhan' ? { sound: 'adhan.mp3' } : {}),
     vibration: sound !== 'silent',
+    ...(sound !== 'silent' ? { lights: true, lightColor: GOLD_LED } : {}),
   })
   await LocalNotifications.createChannel({
     id: REMINDER_CHANNEL,
@@ -84,6 +93,8 @@ async function ensureChannels() {
     importance: 3,
     visibility: 1,
     vibration: true,
+    lights: true,
+    lightColor: GOLD_LED,
   })
 }
 
@@ -127,20 +138,76 @@ async function cancelOurs() {
   if (ours.length) await LocalNotifications.cancel({ notifications: ours.map((n) => ({ id: n.id })) })
 }
 
-function midnightOf(date: Date) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+/** "٤:٥٢" or "٤:٥٢ ص" following the app's clock format and digit style. */
+export function timeLabel(date: Date): string {
+  const use12 = readSetting(APP_SETTINGS_KEYS.timeFormat, '24') === '12'
+  const h = date.getHours()
+  const m = String(date.getMinutes()).padStart(2, '0')
+  if (!use12) return toArabicDigits(`${String(h).padStart(2, '0')}:${m}`)
+  const suffix = h < 12 ? ' ص' : ' م'
+  const hh = h % 12 || 12
+  return toArabicDigits(`${String(hh).padStart(2, '0')}:${m}`) + suffix
 }
 
-type Entry = {
-  id: number
-  title: string
-  body: string
-  channel: string
-  target: string
-  at?: Date
-  daily?: { hour: number; minute: number }
+/** The schedule call that actually arms alarms; chunked and fault tolerant. */
+async function scheduleEntries(entries: PlannedNotification[]): Promise<number> {
+  let armed = 0
+  for (let offset = 0; offset < entries.length; offset += SCHEDULE_CHUNK) {
+    const chunk = entries.slice(offset, offset + SCHEDULE_CHUNK)
+    try {
+      await LocalNotifications.schedule({
+        notifications: chunk.map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          body: entry.body,
+          schedule: entry.daily
+            ? { on: { hour: entry.daily.hour, minute: entry.daily.minute }, allowWhileIdle: true }
+            : { at: entry.at, allowWhileIdle: true },
+          channelId: entry.channel,
+          actionTypeId: '',
+          // Notification-shade design: a proper white status-bar silhouette and
+          // the gold emblem as the large icon, with the brand gold accent —
+          // instead of the squished full-colour launcher icon Android shows by default.
+          smallIcon: 'muslim_stat_icon',
+          largeIcon: 'muslim_large_icon',
+          iconColor: GOLD_LED,
+          extra: { target: entry.target, prayerAt: entry.at ? entry.at.toISOString() : null },
+          ...(entry.group ? { group: entry.group, summaryText: 'مواقيت الصلاة القادمة' } : {}),
+        })),
+      })
+      armed += chunk.length
+    } catch (error) {
+      recordError(`schedule-chunk-${offset}`, error)
+    }
+  }
+  return armed
+}
+
+/**
+ * Enriches the pure plan with the prayer time in the body text. A notification
+ * that arrives late (battery savers can still defer delivery) then explains
+ * itself instead of confusing the user.
+ */
+export function withTimeInBody(entries: PlannedNotification[]): PlannedNotification[] {
+  return entries.map((entry) => {
+    if (!entry.at) return entry
+    if (entry.target !== 'prayer') {
+      const label = timeLabel(entry.at)
+      return entry.body.includes(label) ? entry : { ...entry, body: `${entry.body} (${label})` }
+    }
+    // The adhan time is the prayer time itself; the pre-reminder keeps its lead text.
+    const label = timeLabel(entry.at)
+    if (entry.channel.includes('adhan')) {
+      return { ...entry, body: `${entry.body} · موعد الأذان ${label}` }
+    }
+    return { ...entry, body: `${entry.body} — موعد الأذان ${label}` }
+  })
+}
+
+async function computeAllTimings(coords: { lat: number; lng: number }, days: Date[]): Promise<Array<Timings | null>> {
+  const method = currentMethod()
+  const school = currentSchool()
+  return Promise.all(days.map((date) => computeTimingsLocally(coords, date, method, school)))
 }
 
 async function run(force: boolean) {
@@ -155,8 +222,13 @@ async function run(force: boolean) {
   const lead = Number(readSetting(APP_SETTINGS_KEYS.prayerReminderLead, '5')) || 5
   const sound = readAdhanSoundMode()
   const coords = readPrayerCoords()
-  const needsTimings = (atTimeEnabled || beforeEnabled || morningEnabled || eveningEnabled) && !!coords
+  const wantsPrayerTimes = atTimeEnabled || beforeEnabled || morningEnabled || eveningEnabled
+  patchDiagnostics({ locationMissing: wantsPrayerTimes && !coords })
 
+  const now = new Date()
+  // The fingerprint includes the calendar day AND the timezone offset, so a
+  // DST transition (Egypt switches twice a year) re-arms every alarm with the
+  // new offset the next time the app is opened.
   const fingerprint = [
     coords?.lat ?? '',
     coords?.lng ?? '',
@@ -170,7 +242,8 @@ async function run(force: boolean) {
     eveningEnabled,
     lead,
     sound,
-    dateKey(new Date()),
+    dateKey(now),
+    now.getTimezoneOffset(),
   ].join('|')
   if (!force && fingerprint === scheduledFingerprint) return
   if (!force && lastFailureAt && Date.now() - lastFailureAt < RETRY_AFTER_FAILURE_MS) return
@@ -180,111 +253,39 @@ async function run(force: boolean) {
   if (!granted) return
   await ensureChannels()
 
-  const today = new Date()
   const days = Array.from({ length: DAYS_AHEAD }, (_, i) => {
-    const date = new Date(today)
+    const date = new Date(now)
     date.setDate(date.getDate() + i)
     return date
   })
 
-  let missingDays = 0
-  const timingsByDay: Array<Timings | null> = needsTimings && coords
-    ? await Promise.all(
-        days.map((date) =>
-          getTimings(coords, date).catch((error) => {
-            console.error('[notifications] getTimings failed', dateKey(date), error)
-            return null
-          }),
-        ),
-      )
+  // Local astronomical calculation only: instant, offline and deterministic.
+  // A failed day is retried on the next trigger instead of blocking the rest.
+  const timingsByDay: Array<Timings | null> = coords
+    ? await computeAllTimings(coords, days)
     : days.map(() => null)
-  if (needsTimings) missingDays = timingsByDay.filter((t) => !t).length
+  const missingDays = timingsByDay.filter((t) => !t).length
 
-  const entries: Entry[] = []
-  const now = Date.now()
-  const push = (entry: Omit<Entry, 'at'> & { at: Date }) => {
-    if (entry.at.getTime() <= now) return
-    entries.push(entry)
-  }
-
-  days.forEach((date, dayIndex) => {
-    const timings = timingsByDay[dayIndex]
-    if (timings) {
-      PRAYERS.forEach((prayer, slot) => {
-        const time = parsePrayerTime(timings[prayer], date)
-        if (!time) return
-        if (atTimeEnabled) {
-          push({
-            id: makeId(KIND.at, dayIndex, slot),
-            at: time,
-            title: 'حان وقت صلاة ' + LABELS[prayer],
-            body: 'حي على الصلاة، حي على الفلاح',
-            channel: adhanChannelId(sound),
-            target: 'prayer',
-          })
-        }
-        if (beforeEnabled) {
-          push({
-            id: makeId(KIND.before, dayIndex, slot),
-            at: new Date(time.getTime() - lead * 60_000),
-            title: 'اقترب وقت صلاة ' + LABELS[prayer],
-            body: 'تبقى ' + lead + ' دقائق على الأذان',
-            channel: PRAYER_CHANNEL,
-            target: 'prayer',
-          })
-        }
-      })
-      const sunrise = parsePrayerTime(timings.Sunrise, date)
-      const sunset = parsePrayerTime(timings.Sunset ?? timings.Maghrib, date)
-      if (morningEnabled && sunrise) {
-        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: REMINDER_CHANNEL, target: 'azkar' })
-      }
-      if (eveningEnabled && sunset) {
-        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: REMINDER_CHANNEL, target: 'azkar' })
-      }
-    }
-    if (ayahEnabled) {
-      // One notification per coming date at the user's time (09:00 by default),
-      // because the ayah text changes every day.
-      const ayahMatch = /^(\d{1,2}):(\d{2})$/.exec(ayahTime) ?? /^(\d{1,2}):(\d{2})$/.exec('09:00')
-      const at = new Date(date)
-      at.setHours(Number(ayahMatch![1]), Number(ayahMatch![2]), 0, 0)
-      const ayah = dailyAyahFor(midnightOf(date))
-      push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: REMINDER_CHANNEL, target: 'ayah' })
-    }
-  })
-
-  if (quranEnabled) {
-    const match = /^(\d{1,2}):(\d{2})$/.exec(quranTime)
-    if (match) {
-      // Fixed text, so it repeats daily on its own without the app being opened.
-      entries.push({
-        id: makeId(KIND.quran, 0, 0),
-        title: 'حان وقت قراءة القرآن',
-        body: 'خصص وقتك اليوم لتلاوة القرآن.',
-        channel: REMINDER_CHANNEL,
-        target: 'ayah',
-        daily: { hour: Number(match[1]), minute: Number(match[2]) },
-      })
-    }
-  }
+  const entries = withTimeInBody(
+    planNotifications({
+      now: Date.now(),
+      days,
+      timingsByDay,
+      atTimeEnabled,
+      beforeEnabled,
+      ayahEnabled,
+      ayahTime,
+      quranEnabled,
+      quranTime,
+      morningEnabled,
+      eveningEnabled,
+      lead,
+      channels: { adhan: adhanChannelId(sound), prayer: PRAYER_CHANNEL, reminder: REMINDER_CHANNEL },
+    }),
+  )
 
   await cancelOurs()
-  if (entries.length) {
-    await LocalNotifications.schedule({
-      notifications: entries.map((entry) => ({
-        id: entry.id,
-        title: entry.title,
-        body: entry.body,
-        schedule: entry.daily
-          ? { on: { hour: entry.daily.hour, minute: entry.daily.minute }, allowWhileIdle: true }
-          : { at: entry.at, allowWhileIdle: true },
-        channelId: entry.channel,
-        actionTypeId: '',
-        extra: { target: entry.target },
-      })),
-    })
-  }
+  const armed = entries.length ? await scheduleEntries(entries) : 0
 
   // Only now is the run considered successful; a failure above leaves the
   // fingerprint untouched so the next trigger retries.
@@ -292,7 +293,7 @@ async function run(force: boolean) {
     recordError('getPending', error)
     return null
   })
-  if (missingDays > 0) lastFailureAt = Date.now()
+  if (missingDays > 0 || armed < entries.length) lastFailureAt = Date.now()
   else {
     lastFailureAt = 0
     scheduledFingerprint = fingerprint
@@ -300,13 +301,14 @@ async function run(force: boolean) {
   patchDiagnostics({
     ranAt: new Date().toISOString(),
     scheduled: entries.length,
+    armed,
     pending: pending ? pending.length : null,
     timingsMissingDays: missingDays,
   })
 }
 
 /**
- * Schedules every native notification type for the next 7 days. Safe to call
+ * Schedules every native notification type for the next 30 days. Safe to call
  * repeatedly: in-flight calls are deduplicated and an unchanged state is a
  * no-op unless `force` is set. Failures are logged and stored for the
  * diagnostics card, never swallowed.
@@ -340,6 +342,9 @@ export async function scheduleTestNotification(): Promise<boolean> {
           schedule: { at: new Date(Date.now() + 10_000), allowWhileIdle: true },
           channelId: REMINDER_CHANNEL,
           actionTypeId: '',
+          smallIcon: 'muslim_stat_icon',
+          largeIcon: 'muslim_large_icon',
+          iconColor: GOLD_LED,
           extra: { target: 'azkar' },
         },
       ],
@@ -363,7 +368,7 @@ export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
         title: n.title ?? '',
         at: n.schedule?.at ? new Date(n.schedule.at).toISOString() : n.schedule?.on ? 'daily' : null,
       }))
-      .sort((a, b) => String(a.at).localeCompare(String(b.at)))
+      .sort((a, b) => String(a.at).localeCompare(String(a.at)))
   } catch (error) {
     recordError('list-pending', error)
     return []

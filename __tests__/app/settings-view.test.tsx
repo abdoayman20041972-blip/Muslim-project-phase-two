@@ -18,7 +18,7 @@ vi.mock('../../src/app/features/quran/useQuranPreferences', () => ({
   }),
 }))
 
-vi.mock('../../src/app/features/notifications/notifications', () => ({
+vi.mock('../../src/app/features/notifications/notificationPermission', () => ({
   getNotificationPermission: () => 'default',
   requestNotificationPermission: vi.fn(async () => 'granted'),
 }))
@@ -31,7 +31,9 @@ const props = {
 }
 
 function openCategory(name: string) {
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }))
+  // Match the category card by its bold title so descriptions (e.g. the
+  // device card also mentions “الإشعارات”) can not produce duplicate matches.
+  fireEvent.click(screen.getByText(name, { selector: 'b' }).closest('button')!)
 }
 
 beforeEach(() => {
@@ -71,7 +73,7 @@ describe('SettingsView smoke coverage', () => {
   it('shows and closes the duplicate custom tasbih alert without adding data', async () => {
     fireEvent.click(screen.getByText('السبحة', { selector: 'b' }).closest('button')!)
     const existing = getTasbihWords()[0].word
-    fireEvent.change(screen.getByPlaceholderText('عبارة جديدة'), { target: { value: existing } })
+    fireEvent.change(screen.getByPlaceholderText('مثال: الصلاة على النبي'), { target: { value: existing } })
     fireEvent.click(screen.getByRole('button', { name: 'إضافة' }))
     expect(await screen.findByRole('dialog')).toHaveTextContent('هذه العبارة موجودة بالفعل.')
     fireEvent.click(screen.getByRole('button', { name: 'حسنًا' }))
@@ -206,6 +208,6 @@ describe('SettingsView smoke coverage', () => {
     fireEvent.click(backButton)
 
     expect(screen.getByText('الإعدادات')).toBeTruthy()
-    expect(screen.getByText('اختر فئة لعرض إعداداتها')).toBeTruthy()
+    expect(screen.getByText('كل التفضيلات في مكان واحد')).toBeTruthy()
   })
 })

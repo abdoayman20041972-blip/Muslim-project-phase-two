@@ -1,5 +1,8 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-import { MacalyBridge } from '@macaly/bridge'
+
+// APK-only document shell: no Macaly web bridge, no PWA manifest, no service
+// worker — every asset the first paint needs is bundled inside the APK and
+// preloaded here so the app opens on its brand green with zero network.
 
 // CSS imported as a side effect — do NOT add `?url` or `?inline`.
 //
@@ -12,28 +15,24 @@ import { MacalyBridge } from '@macaly/bridge'
 // A bare side-effect import sidesteps the issue: only the client environment
 // emits the CSS asset, and TanStack Start's manifest collection injects the
 // correct hashed `<link rel="stylesheet">` into the rendered head from the
-// client manifest. The CSS stays a shared, cacheable asset (important if
-// prerender is expanded to multiple static pages — `?inline` would duplicate
-// the CSS into every HTML file).
+// client manifest. The CSS stays a shared, cacheable asset.
 import '../styles.css'
-import siteMetadata from '../metadata.json'
-
-const rootMeta = siteMetadata['/']
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-      { title: rootMeta.title },
-      { name: 'description', content: rootMeta.description },
-      { name: 'theme-color', content: '#1D3A33' },
+      { title: 'مسلم' },
+      { name: 'description', content: 'رفيقك اليومي للعبادة: قرآن وأذكار ومواقيت صلاة وسبحة وقصص الأنبياء.' },
+      { name: 'theme-color', content: '#0d2b23' },
     ],
     links: [
       { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-      { rel: 'manifest', href: '/manifest.json' },
-      { rel: 'preload', as: 'image', href: '/img/muslim-splash-mosque.jpg' },
+      // Bundled locally inside the APK: preloading them shaves the first
+      // paint of the splash and the home hero off the startup path.
+      { rel: 'preload', as: 'image', href: '/img/muslim-splash-mosque.jpg', fetchPriority: 'high' },
+      { rel: 'preload', as: 'image', href: '/img/home-mosque-hero.jpg' },
     ],
   }),
   shellComponent: RootDocument,
@@ -47,12 +46,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#0d2b23}' }} />
         <HeadContent />
       </head>
-      <MacalyBridge>
-        <body>
-          {children}
-          <Scripts />
-        </body>
-      </MacalyBridge>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   )
 }

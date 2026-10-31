@@ -3,9 +3,15 @@
 // `npx cap add android`, never committed). Idempotent: running it twice
 // changes nothing the second time.
 //   - AndroidManifest.xml: permissions the notification features need (fails the build if it cannot)
+//       * USE_EXACT_ALARM (Android 13+) is granted automatically for alarm-style
+//         apps, so the adhan fires at the exact minute without any user action.
+//       * SCHEDULE_EXACT_ALARM (Android 12) needs a one-time user grant that the
+//         app prompts for; without it Android defers alarms in Doze.
 //   - colors.xml: splash background colour
 //   - styles.xml: Android 12+ splash attributes (best effort, warns instead of failing)
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+//   - res/drawable: the white status-bar icon and gold notification icon used by
+//     every scheduled notification (instead of the squished launcher icon)
+import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 const ROOT = process.env.ANDROID_PROJECT_DIR || 'android'
@@ -13,12 +19,20 @@ const MAIN = join(ROOT, 'app', 'src', 'main')
 const MANIFEST = join(MAIN, 'AndroidManifest.xml')
 const COLORS = join(MAIN, 'res', 'values', 'colors.xml')
 const STYLES = join(MAIN, 'res', 'values', 'styles.xml')
+const DRAWABLES = join(MAIN, 'res', 'drawable')
 const SPLASH_COLOR_NAME = 'muslim_splash_background'
 const SPLASH_COLOR = '#0d2b23'
+
+// Binary notification icons committed with the repo (native/ folder).
+const NOTIFICATION_ICONS = [
+  ['native/stat-icon.png', 'muslim_stat_icon.png'],
+  ['native/large-icon.png', 'muslim_large_icon.png'],
+]
 
 export const REQUIRED_PERMISSIONS = [
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.SCHEDULE_EXACT_ALARM',
+  'android.permission.USE_EXACT_ALARM',
   'android.permission.RECEIVE_BOOT_COMPLETED',
   'android.permission.VIBRATE',
 ]
@@ -78,17 +92,38 @@ function patchStyles() {
     warnings.push('AppTheme.NoActionBarLaunch does not extend Theme.SplashScreen; splash theme not patched')
     return
   }
-  const items = [`        <item name="windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>\n`]
+  // The Android 12+ system splash shows the app icon on this background: with
+  // the same green and an icon background tint, the OS splash, the Capacitor
+  // splash and the in-app splash read as ONE continuous splash screen.
+  const items = [
+    `        <item name="windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>\n`,
+    `        <item name="windowSplashScreenIconBackgroundColor">@color/${SPLASH_COLOR_NAME}</item>\n`,
+  ]
   if (/<style\s+name="AppTheme\.NoActionBar"/.test(xml) && !block.includes('postSplashScreenTheme')) {
-    items.push('        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>\n')
+    items.push(`        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>\n`)
   }
   const patched = block.replace('</style>', `${items.join('')}    </style>`)
   write(STYLES, xml.replace(block, patched), 'styles.xml (splash theme)')
 }
 
+function patchNotificationIcons() {
+  mkdirSync(DRAWABLES, { recursive: true })
+  for (const [source, target] of NOTIFICATION_ICONS) {
+    if (!existsSync(source)) {
+      warnings.push(`${source} not found; notification icon ${target} not installed (the launcher icon is used instead)`)
+      continue
+    }
+    const destination = join(DRAWABLES, target)
+    if (existsSync(destination)) continue
+    copyFileSync(source, destination)
+    changed.push(`drawable/${target}`)
+  }
+}
+
 patchManifest()
 patchColors()
 patchStyles()
+patchNotificationIcons()
 
 console.log(changed.length ? `patch-android: ${changed.join(', ')}` : 'patch-android: already up to date')
 for (const warning of warnings) console.warn(`::warning::patch-android: ${warning}`)

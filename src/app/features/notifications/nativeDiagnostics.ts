@@ -9,8 +9,12 @@ export type NotificationDiagnostics = {
   permission: string
   exactAlarm: string
   scheduled: number
+  /** How many notifications the OS actually accepted in the last run. */
+  armed: number | null
   pending: number | null
   timingsMissingDays: number
+  /** Prayer-based notifications are enabled but no location is saved. */
+  locationMissing: boolean
   lastError: string | null
   lastErrorAt: string | null
 }
@@ -20,8 +24,10 @@ const EMPTY: NotificationDiagnostics = {
   permission: 'unknown',
   exactAlarm: 'unknown',
   scheduled: 0,
+  armed: null,
   pending: null,
   timingsMissingDays: 0,
+  locationMissing: false,
   lastError: null,
   lastErrorAt: null,
 }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Capacitor } from '@capacitor/core'
 import { BookOpen, Search, Sparkles, X } from 'lucide-react'
 import {
   API_EDITIONS,
@@ -21,7 +20,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
   const [apiState, setApiState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [apiHadiths, setApiHadiths] = useState<ApiHadith[]>([])
   const [error, setError] = useState('')
-  const [loadedEdition, setLoadedEdition] = useState<string>('')
+  const [attempt, setAttempt] = useState(0)
   const [font, setFont] = useState(() => readSetting('hadith_font', 'md'))
   const [showNote, setShowNote] = useState(() => readSetting('azkar_hadith_show_note', '1') !== '0')
 
@@ -38,22 +37,29 @@ export function HadithView({ onBack }: { onBack: () => void }) {
 
   const activeEdition = editionOf(tab)
 
-  if (activeEdition && loadedEdition !== activeEdition.edition) {
-    const edition = activeEdition.edition
-    setLoadedEdition(edition)
+  const activeEditionId = activeEdition?.edition
+  useEffect(() => {
+    if (!activeEditionId) return
+    let cancelled = false
     setApiState('loading')
     setError('')
     setApiHadiths([])
-    loadApiEdition(edition)
+    loadApiEdition(activeEditionId)
       .then((data) => {
+        if (cancelled) return
         setApiHadiths(data.hadiths)
         setApiState('ready')
       })
       .catch((cause: unknown) => {
+        if (cancelled) return
+        console.error('[hadith] could not load edition', activeEditionId, cause)
         setError(cause instanceof Error ? cause.message : 'تعذّر الاتصال بالشبكة')
         setApiState('error')
       })
-  }
+    return () => {
+      cancelled = true
+    }
+  }, [activeEditionId, attempt])
 
   const curated = useMemo(() => {
     const clean = query.trim()
@@ -90,7 +96,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
         >
           مختارات
         </button>
-        {!Capacitor.isNativePlatform() && API_EDITIONS.map((edition) => (
+        {API_EDITIONS.map((edition) => (
           <button
             key={edition.key}
             type="button"
@@ -144,7 +150,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
             <div className="mb-1 flex items-center justify-between px-1">
               <span className="font-amiri text-base font-bold text-azkar-teal-ink">{activeEdition.name}</span>
               <span className="text-[9px] text-azkar-ink-faint">
-                {apiState === 'ready' ? `${apiFiltered.length} حديثًا` : 'من مكتبة مفتوحة'}
+                {apiState === 'ready' ? `${apiFiltered.length} حديثًا · متاح بدون إنترنت` : 'من مكتبة مفتوحة'}
               </span>
             </div>
           )}
@@ -162,15 +168,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
               <button
                 type="button"
                 className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[11px] font-bold text-azkar-teal-ink"
-                onClick={() => {
-                  if (!activeEdition) return
-                  const edition = activeEdition.edition
-                  setLoadedEdition('')
-                  setTab('curated')
-                  setTimeout(() => {
-                    setTab((editionOf(edition as Tab)?.key ?? 'nawawi') as Tab)
-                  }, 0)
-                }}
+                onClick={() => setAttempt((n) => n + 1)}
               >
                 إعادة المحاولة
               </button>

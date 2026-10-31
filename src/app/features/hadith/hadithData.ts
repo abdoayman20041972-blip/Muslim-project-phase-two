@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from '../../net'
+
 export type Hadith = {
   id: string
   text: string
@@ -188,7 +190,8 @@ export type ApiEdition = {
 }
 
 // Small Arabic editions from the open hadith-api dataset (fawazahmed0/hadith-api, CC0-like open data).
-// These are fetched on demand from jsDelivr and cached in the session.
+// The three editions are bundled in public/data/hadith, so they work offline;
+// jsDelivr is only a fallback if a bundled file cannot be read.
 export const API_EDITIONS: ApiEdition[] = [
   {
     key: 'nawawi',
@@ -238,7 +241,7 @@ export async function loadApiEdition(edition: string): Promise<ApiEditionData> {
   let data: ApiEditionData | null = null
   for (const source of sources) {
     try {
-      const response = await fetch(source)
+      const response = await fetchWithTimeout(source, source.startsWith(HADITH_API_BASE) ? 15_000 : 8_000)
       if (!response.ok) continue
       const parsed = (await response.json()) as ApiEditionData
       if (Array.isArray(parsed.hadiths)) data = parsed

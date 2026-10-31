@@ -33,7 +33,7 @@ export function useTasbih(){
 
  const persist=useCallback(()=>{
   const s=stateRef.current
-  try{localStorage.setItem(COUNTS_KEY,JSON.stringify(s.counts));localStorage.setItem(TOTAL_KEY,String(s.dayTotal));localStorage.setItem(DATE_KEY,todayKey());localStorage.setItem(ROUND_COUNTS_KEY,JSON.stringify(s.roundCounts));localStorage.setItem(ROUNDS_KEY,JSON.stringify(s.rounds))}catch{}
+  try{localStorage.setItem(COUNTS_KEY,JSON.stringify(s.counts));localStorage.setItem(TOTAL_KEY,String(s.dayTotal));localStorage.setItem(DATE_KEY,todayKey());localStorage.setItem(ROUND_COUNTS_KEY,JSON.stringify(s.roundCounts));localStorage.setItem(ROUNDS_KEY,JSON.stringify(s.rounds))}catch (error) { console.debug('[useTasbih]', error) }
   const today=todayKey(),history=readDailyHistory();history[today]=s.dayTotal
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-29);const cutoffKey=todayKey(cutoff)
   Object.keys(history).filter(k=>k<cutoffKey).forEach(k=>delete history[k]);writeDailyHistory(history);window.dispatchEvent(new Event('azkar-tasbih-changed'))
@@ -58,7 +58,7 @@ export function useTasbih(){
   const nextDayTotal=savedDate===today&&Number.isFinite(savedTotal)&&savedTotal>=0?savedTotal:0
   stateRef.current={counts:nextCounts,dayTotal:nextDayTotal,roundCounts:nextRoundCounts,rounds:nextRounds}
   setCounts(nextCounts);setDayTotal(nextDayTotal);setRoundCounts(nextRoundCounts);setRounds(nextRounds);setSelectedWordState(selected)
-  try{localStorage.setItem(SELECTED_WORD_KEY,selected??'');localStorage.setItem(DATE_KEY,today);localStorage.setItem(TOTAL_KEY,String(nextDayTotal))}catch{}
+  try{localStorage.setItem(SELECTED_WORD_KEY,selected??'');localStorage.setItem(DATE_KEY,today);localStorage.setItem(TOTAL_KEY,String(nextDayTotal))}catch (error) { console.debug('[useTasbih]', error) }
  },[])
 
  useEffect(()=>{load();const onFocus=()=>{flush();load();};const onVisibility=()=>{if(document.visibilityState==='visible')load();else flush()};window.addEventListener('focus',onFocus);document.addEventListener('visibilitychange',onVisibility);window.addEventListener('pagehide',flush);return()=>{window.removeEventListener('focus',onFocus);document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('pagehide',flush);flush()}},[load,flush])
@@ -68,7 +68,7 @@ export function useTasbih(){
   const words=getTasbihWords(),word=words.find(w=>w.id===id)||words.find(w=>w.word===id);if(!word)return
   const s=stateRef.current,today=todayKey()
   const lastDate=localStorage.getItem(DATE_KEY)
-  if(lastDate!==today){s.dayTotal=0;try{localStorage.setItem(TOTAL_KEY,'0');localStorage.setItem(DATE_KEY,today)}catch{}}
+  if(lastDate!==today){s.dayTotal=0;try{localStorage.setItem(TOTAL_KEY,'0');localStorage.setItem(DATE_KEY,today)}catch (error) { console.debug('[useTasbih]', error) }}
   const nextTotal=s.dayTotal+1
   const nextCounts={...s.counts,[word.id]:(s.counts[word.id]||0)+1}
   let nextRound=(s.roundCounts[word.id]||0)+1,nextRounds={...s.rounds}
@@ -79,7 +79,7 @@ export function useTasbih(){
   schedulePersist()
  },[schedulePersist])
  const resetWord=useCallback((id:string)=>{const words=getTasbihWords(),word=words.find(w=>w.id===id)||words.find(w=>w.word===id);if(!word)return;const s=stateRef.current,nextRoundCounts={...s.roundCounts,[word.id]:0};stateRef.current={...s,roundCounts:nextRoundCounts};setRoundCounts(nextRoundCounts);schedulePersist()},[schedulePersist])
- const resetToday=useCallback(()=>{const s=stateRef.current;s.dayTotal=0;stateRef.current={...s,dayTotal:0};setDayTotal(0);try{localStorage.setItem(TOTAL_KEY,'0');localStorage.setItem(DATE_KEY,todayKey())}catch{};schedulePersist()},[schedulePersist])
+ const resetToday=useCallback(()=>{const s=stateRef.current;s.dayTotal=0;stateRef.current={...s,dayTotal:0};setDayTotal(0);try{localStorage.setItem(TOTAL_KEY,'0');localStorage.setItem(DATE_KEY,todayKey())}catch (error) { console.debug('[useTasbih]', error) };schedulePersist()},[schedulePersist])
  return {counts,dayTotal,selectedWord,roundCounts,rounds,setSelectedWord,load,tap,resetWord,resetToday}
 }
 export { DAILY_HISTORY_KEY, todayKey }

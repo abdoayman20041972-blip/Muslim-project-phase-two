@@ -15,7 +15,7 @@ export function saveJourneyPosition(categoryId: string, index: number): void {
   try {
     const stored = JSON.parse(localStorage.getItem(KEY) || '{}') as PositionMap
     localStorage.setItem(KEY, JSON.stringify({ ...stored, [categoryId]: index }))
-  } catch {}
+  } catch (error) { console.debug('[journeyPosition]', error) }
 }
 
 export function clearJourneyPosition(categoryId: string): void {
@@ -24,5 +24,5 @@ export function clearJourneyPosition(categoryId: string): void {
     const next = { ...stored }
     delete next[categoryId]
     localStorage.setItem(KEY, JSON.stringify(next))
-  } catch {}
+  } catch (error) { console.debug('[journeyPosition]', error) }
 }

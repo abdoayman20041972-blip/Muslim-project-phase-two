@@ -86,6 +86,11 @@ export function NotificationDiagnostics() {
           </button>
         </Row>
       )}
+      {diag.locationMissing && (
+        <Row title="الموقع غير محدد" description="حدّد موقعك من صفحة مواقيت الصلاة ليعمل الأذان والتذكيرات المرتبطة بالصلاة.">
+          <span className="text-[11px] font-bold text-azkar-ink">!</span>
+        </Row>
+      )}
       <Row title="توفير البطارية" description="إن تأخرت الإشعارات فاسمح للتطبيق بالعمل دون قيود البطارية.">
         <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[10px] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
           فتح الإعدادات

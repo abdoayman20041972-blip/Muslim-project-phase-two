@@ -43,7 +43,7 @@ export function TasbihSection({
     try {
       updateCustomTasbih(id, result)
       emitSettingsChanged()
-    } catch {}
+    } catch (error) { console.debug('[TasbihSection]', error) }
   }
 
   return (
@@ -90,7 +90,7 @@ export function TasbihSection({
                   if (raw && typeof raw === 'object' && !Array.isArray(raw)) raw[selected] = 0
                   localStorage.setItem('azkar_tasbih_round_counts', JSON.stringify(raw))
                   window.dispatchEvent(new Event('azkar-tasbih-changed'))
-                } catch {}
+                } catch (error) { console.debug('[TasbihSection]', error) }
               }}
             >
               تصفير الجولة
@@ -162,7 +162,7 @@ export function TasbihSection({
                     try {
                       deleteCustomTasbih(x.id)
                       emitSettingsChanged()
-                    } catch {}
+                    } catch (error) { console.debug('[TasbihSection]', error) }
                   }}
                   className="rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] font-bold text-red-700"
                 >

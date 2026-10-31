@@ -21,18 +21,24 @@ export function reminderLeadText(n:number){
   const d=n===15||n===20?'دقيقة':'دقائق'
   return 'بعد '+toArabicDigits(n)+' '+d
 }
-export function useNextPrayer(coords:Coords|null){
-  const {timings,loading,error}=usePrayerTimings(coords)
+export function useNextPrayer(coords:Coords|null,preloadedTimings?:Timings|null){
+  // M6 fix: when the parent screen already fetched today's timings, reuse them
+  // instead of issuing a second identical request on the same screen.
+  const {timings:fetched,loading,error}=usePrayerTimings(preloadedTimings!==undefined?null:coords)
+  const timings=preloadedTimings!==undefined?preloadedTimings:fetched
   const [now,setNow]=useState(()=>new Date()),[tf,setTf]=useState<string|null>(null)
-  useEffect(()=>{const t=()=>setNow(new Date());const id=setInterval(t,1000)
+  // The countdown shows seconds, so it ticks every second, but never while the app is in the background.
+  useEffect(()=>{const t=()=>{if(document.visibilityState!=='hidden')setNow(new Date())};const id=setInterval(t,1000)
     window.addEventListener('focus',t);document.addEventListener('visibilitychange',t)
     return()=>{clearInterval(id);window.removeEventListener('focus',t);document.removeEventListener('visibilitychange',t)}},[])
+  const [calc,setCalc]=useState(()=>currentMethod()+'|'+currentSchool())
+  useEffect(()=>{const f=()=>setCalc(currentMethod()+'|'+currentSchool());for(const e of ['azkar-prayer-settings-changed','azkar-settings-changed'])window.addEventListener(e,f);return()=>{for(const e of ['azkar-prayer-settings-changed','azkar-settings-changed'])window.removeEventListener(e,f)}},[])
   const day=dateKey(now)
   useEffect(()=>{if(!coords){setTf(null);return}
     let dead=false;const ac=new AbortController();const d=new Date(now);d.setDate(d.getDate()+1)
     getTimings(coords,d,{signal:ac.signal}).then(t=>{if(!dead)setTf(t?.Fajr??null)}).catch(()=>{if(!dead)setTf(null)})
     return()=>{dead=true;ac.abort()}
-  },[coords?.lat,coords?.lng,day,currentMethod(),currentSchool()])
+  },[coords?.lat,coords?.lng,day,calc])
   const next=useMemo(()=>timings?pickNextPrayer(timings,now,tf):null,[timings,now,tf])
   return {next,remainingMs:next?Math.max(0,next.time.getTime()-now.getTime()):0,loading,error,timings}
 }

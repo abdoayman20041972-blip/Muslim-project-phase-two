@@ -225,6 +225,7 @@ export function HomeView({
               <span className="text-[9px] text-[#e9c875]">الوقت المتبقي على</span>
               <span className="mt-0.5 font-amiri text-[16px] font-bold">{next ? PRAYER_LABELS[next.key] : 'الصلاة القادمة'}</span>
               <span dir="ltr" className="mt-1 text-[20px] font-bold tabular-nums tracking-tight">{formatCountdown(remainingMs)}</span>
+              <span className="sr-only" role="status">{next ? `الصلاة القادمة ${PRAYER_LABELS[next.key]}` : ''}</span>
             </div>
             <div className="grid min-w-0 grid-cols-5 gap-0.5">
               {(['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const).map((key) => {
@@ -241,8 +242,8 @@ export function HomeView({
             </div>
           </div>
           {!coords && <div className="px-4 pb-2.5 text-center text-[9px] text-white/60">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
-          {coords && prayerLoading && !timings && <div className="px-4 pb-2.5 text-center text-[9px] text-white/60">جارٍ حساب المواقيت…</div>}
-          {coords && prayerError && !timings && <div className="px-4 pb-2.5 text-center text-[9px] text-white/60">تعذر تحميل المواقيت حاليًا</div>}
+          {coords && prayerLoading && !timings && <div role="status" className="px-4 pb-2.5 text-center text-[9px] text-white/60">جارٍ حساب المواقيت…</div>}
+          {coords && prayerError && !timings && <div role="alert" className="px-4 pb-2.5 text-center text-[9px] text-white/60">تعذر تحميل المواقيت حاليًا</div>}
         </section>
 
         <section className="grid grid-cols-2 gap-2.5" data-reveal>

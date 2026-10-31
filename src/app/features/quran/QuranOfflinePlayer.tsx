@@ -23,6 +23,8 @@ export function QuranOfflinePlayer({ reciter, surahNumber, autoStart, onAutoStar
   const loadAndPlay = useCallback(async () => {
     const requestId = ++loadRequestRef.current
     setError(null); setLoading(true); releaseObjectUrl()
+    // M1 fix: announce offline playback so the online player stops (no double audio).
+    window.dispatchEvent(new CustomEvent('quran-offline-play'))
     try {
       const downloaded = await isSurahDownloaded(reciter, surahNumber)
       if (!downloaded) { if (requestId === loadRequestRef.current) setAvailable(false); return }
@@ -52,6 +54,13 @@ export function QuranOfflinePlayer({ reciter, surahNumber, autoStart, onAutoStar
     if (!autoStart || !available) return
     onAutoStartConsumed(); void loadAndPlay()
   }, [autoStart, available, loadAndPlay, onAutoStartConsumed])
+
+  // M1 fix: when online playback starts anywhere, stop the offline audio element.
+  useEffect(() => {
+    const handleOnlinePlay = () => releaseObjectUrl()
+    window.addEventListener('quran-online-play', handleOnlinePlay)
+    return () => window.removeEventListener('quran-online-play', handleOnlinePlay)
+  }, [releaseObjectUrl])
 
   const handleEnded = async () => {
     setActive(false)

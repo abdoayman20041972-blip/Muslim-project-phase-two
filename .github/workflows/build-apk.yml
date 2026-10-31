@@ -3,6 +3,11 @@ name: Build Android APK
 on:
   workflow_dispatch:
 
+# Starting a second build on the same branch cancels the one still running.
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +26,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+
+      # Gradle downloads (AGP, Kotlin, Capacitor libraries) are reused between builds.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Accept Android SDK licenses and install required packages
         run: |
@@ -43,18 +59,20 @@ jobs:
           name: package-lock
           path: package-lock.json
 
-      # Bundles the Qibla background into the APK so it also shows offline. If the
-      # download fails the page still works (the CSS keeps a remote fallback).
-      - name: Bundle remote images for offline use
+      # Bundled offline assets are committed with the repo (no network at build time).
+      - name: Verify bundled offline assets
         run: |
-          curl -fsSL --retry 3 -o public/img/qibla-mobile.jpg \
-            "https://assets.macaly-user-data.dev/ggd0w45kqitomgzmp851kynr/hep5hp2bq6qerrvl27y8ffds/J5mrY94yrFtDATUEzqgIi/qibla-mobile-6GBq8tz3.jpg" \
-            || echo "::warning::Could not download the Qibla background; the page falls back to the remote image / solid colour"
+          test -f public/img/qibla-mobile.jpg || { echo "::error::public/img/qibla-mobile.jpg is missing (must be committed for offline use)"; exit 1; }
+          test -f native/adhan.mp3 || { echo "::error::native/adhan.mp3 is missing"; exit 1; }
+          test -f native/stat-icon.png || { echo "::error::native/stat-icon.png is missing (notification status-bar icon)"; exit 1; }
+          test -f native/large-icon.png || { echo "::error::native/large-icon.png is missing (notification large icon)"; exit 1; }
+          test -f resources/icon.png || { echo "::error::resources/icon.png is missing"; exit 1; }
+          test -f resources/splash.png || { echo "::error::resources/splash.png is missing"; exit 1; }
 
-      # Typecheck and tests report their result in the run summary but never
-      # block the APK, so a build is always available to try on the phone.
-      - name: Typecheck (reported, non-blocking)
-        continue-on-error: true
+      # L6 fix: with the suite back to green (310/310), typecheck and tests are
+      # now BLOCKING gates for the APK — a regression can no longer slip into a
+      # shipped build unnoticed. Results are still summarized in the run page.
+      - name: Typecheck (blocking)
         run: |
           set +e
           npm run typecheck > typecheck.log 2>&1
@@ -65,8 +83,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit $CODE
 
-      - name: Tests (reported, non-blocking)
-        continue-on-error: true
+      - name: Tests (blocking)
         run: |
           set +e
           npm run test:run > tests.log 2>&1
@@ -77,8 +94,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit $CODE
 
-      - name: Build web app (static, same as the Macaly preview)
-        run: DEV_BUILD=1 npm run build
+      - name: Build web app (optimized production build, prerendered for Capacitor)
+        run: PRERENDER=1 npm run build
 
       - name: Verify web build output exists
         run: |
@@ -93,11 +110,11 @@ jobs:
       - name: Patch Android project (manifest permissions, splash theme)
         run: node scripts/patch-android.mjs
 
-      - name: Set version name to 1.1.0
+      - name: Set version name to 1.2.0
         run: |
           GRADLE=android/app/build.gradle
-          sed -i 's/versionName "1.0"/versionName "1.1.0"/' "$GRADLE"
-          grep -q 'versionName "1.1.0"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+          sed -i 's/versionName "1.0"/versionName "1.2.0"/' "$GRADLE"
+          grep -q 'versionName "1.2.0"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
 
       - name: Bundle adhan sound into raw resources
         run: |
@@ -151,7 +168,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           PERMS=$("$AAPT" dump permissions "$APK")
           echo "$PERMS"
-          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE; do
+          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM USE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE; do
             echo "$PERMS" | grep -q "android.permission.$P" || { echo "::error::APK is missing android.permission.$P"; exit 1; }
           done
 

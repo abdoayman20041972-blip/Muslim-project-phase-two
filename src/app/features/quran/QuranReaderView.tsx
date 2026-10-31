@@ -16,6 +16,7 @@ import { juzForPage } from './juz'
 import { useQuranAudio } from './QuranAudioProvider'
 import { QuranOfflinePlayer } from './QuranOfflinePlayer'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
+import { fetchWithTimeout } from '../../net'
 
 type Props = { view: Extract<View, { name: 'mushaf-surah' }>; setView: (v: View) => void }
 type QuranPageEntry = { surahNumber: number; numberInSurah: number; number: number }
@@ -300,7 +301,7 @@ export function QuranReaderView({ view, setView }: Props) {
   async function copy(text: string) {
     try {
       await navigator.clipboard?.writeText(text)
-    } catch {}
+    } catch (error) { console.debug('[QuranReaderView]', error) }
   }
   async function openShare(a: Ayah) {
     setPanel(null)
@@ -313,7 +314,7 @@ export function QuranReaderView({ view, setView }: Props) {
       if (document.fonts?.ready) {
         try {
           await document.fonts.ready
-        } catch {}
+        } catch (error) { console.debug('[QuranReaderView]', error) }
       }
       const dataUrl = await toPng(card, {
         cacheBust: true,
@@ -337,7 +338,7 @@ export function QuranReaderView({ view, setView }: Props) {
       anchor.click()
       anchor.remove()
       URL.revokeObjectURL(url)
-    } catch {}
+    } catch (error) { console.debug('[QuranReaderView]', error) }
   }
   async function openTafsir(a: Ayah) {
     setPanel(null)
@@ -371,6 +372,9 @@ export function QuranReaderView({ view, setView }: Props) {
           if (typeof text === 'string' && text.trim()) {
             writeSetting(key, text)
             setTafsirText(text)
+            // Reset the loading flag on this early-return path, otherwise the
+            // dialog stays stuck on «جارٍ تحميل التفسير...» on first open.
+            setTafsirLoading(false)
             return
           }
         }
@@ -380,10 +384,7 @@ export function QuranReaderView({ view, setView }: Props) {
     }
     try {
       const url = `https://alfurqan.online/api/v1/tafseer/${sourceId}/surah/${view.number}/ayah/${a.numberInSurah}`
-      const controller = new AbortController()
-      const timeout = window.setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(url, { signal: controller.signal })
-      window.clearTimeout(timeout)
+      const res = await fetchWithTimeout(url, 10_000)
       if (!res.ok) throw new Error('tafsir')
       const json = await res.json()
       const text = json?.ayah?.text
@@ -392,7 +393,7 @@ export function QuranReaderView({ view, setView }: Props) {
         const entries = Object.keys(localStorage).filter((k) => k.startsWith('azkar_tafsir_'))
         while (entries.length >= 80) localStorage.removeItem(entries.shift()!)
         localStorage.setItem(key, text)
-      } catch {}
+      } catch (error) { console.debug('[QuranReaderView]', error) }
       setTafsirText(text)
     } catch {
       setTafsirError(true)
@@ -605,7 +606,7 @@ export function QuranReaderView({ view, setView }: Props) {
         </div>
       )}
       {error && (
-        <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12 px-4">
+        <div role="alert" className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12 px-4">
           {error}
         </div>
       )}

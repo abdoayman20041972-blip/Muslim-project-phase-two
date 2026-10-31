@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
+import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
 
 export type Coords = { lat: number; lng: number }
 
@@ -8,6 +8,15 @@ export function normalizeCoords(value: unknown): Coords | null {
   const lng = Number((value as { lng?: unknown })?.lng)
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
   return { lat: Number(lat.toFixed(2)), lng: Number(lng.toFixed(2)) }
+}
+
+/** Persists detected or chosen prayer coordinates and tells the prayer screens to refresh. */
+export function saveCoords(value: Coords) {
+  const coords = normalizeCoords(value)
+  if (!coords) return
+  writeSetting(APP_SETTINGS_KEYS.coords, JSON.stringify(coords))
+  writeSetting(APP_SETTINGS_KEYS.prayerLocationUpdatedAt, new Date().toISOString())
+  window.dispatchEvent(new CustomEvent('azkar-prayer-settings-changed'))
 }
 
 export function readStoredCoords(): Coords | null {

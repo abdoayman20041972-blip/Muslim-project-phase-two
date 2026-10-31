@@ -89,7 +89,7 @@ export function QuranSection({
       await action()
       await refreshStatus(id)
     } catch {
-      await refreshStatus(id).catch(() => undefined)
+      await refreshStatus(id).catch((error) => console.debug('[QuranSection]', error))
       setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.')
     } finally {
       setActiveJobs((current) => {

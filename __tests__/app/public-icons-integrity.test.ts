@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -27,11 +27,22 @@ describe('public icon assets', () => {
     }
   })
 
-  it('maskable icons are separate artwork with safe-zone padding, not copies of the regular icons', () => {
-    for (const size of ['192', '512']) {
-      const regular = readFileSync(resolve(publicDir, `icon-${size}.png`))
-      const maskable = readFileSync(resolve(publicDir, `icon-maskable-${size}.png`))
-      expect(maskable.equals(regular), `icon-maskable-${size}.png`).toBe(false)
+  it('PWA/manifest icons are not shipped in the APK-only build', () => {
+    // manifest.json, apple-touch-icon and the PWA icon set were removed as web
+    // traces; only favicon.svg and home-sketch.svg are referenced by the code.
+    const removed = [
+      'manifest.json',
+      'apple-touch-icon.png',
+      'icon-192.png',
+      'icon-512.png',
+      'icon-maskable-192.png',
+      'icon-maskable-512.png',
+      'logo192.png',
+      'logo512.png',
+      'sw.js',
+    ]
+    for (const f of removed) {
+      expect(existsSync(resolve(publicDir, f)), f).toBe(false)
     }
   })
 })

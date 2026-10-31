@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { getNotificationPermission, requestNotificationPermission } from '../notifications/notifications'
+import { getNotificationPermission, requestNotificationPermission } from '../notifications/notificationPermission'
 import {
   BellRing,
   BookOpen,
