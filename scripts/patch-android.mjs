@@ -2,11 +2,18 @@
 // Patches the Capacitor-generated android/ project (created in CI by
 // `npx cap add android`, never committed). Idempotent: running it twice
 // changes nothing the second time.
-//   - AndroidManifest.xml: permissions the notification features need (fails the build if it cannot)
+//   - AndroidManifest.xml: permissions the notification and location features
+//     need (fails the build if it cannot)
 //       * USE_EXACT_ALARM (Android 13+) is granted automatically for alarm-style
 //         apps, so the adhan fires at the exact minute without any user action.
 //       * SCHEDULE_EXACT_ALARM (Android 12) needs a one-time user grant that the
 //         app prompts for; without it Android defers alarms in Doze.
+//       * ACCESS_COARSE_LOCATION / ACCESS_FINE_LOCATION: the @capacitor/geolocation
+//         plugin ships an EMPTY AndroidManifest, so unless the app declares these
+//         itself Android silently auto-denies every location request — the real
+//         system dialog never appears. With them declared, Geolocation
+//         .requestPermissions() shows the genuine OS dialog (approximate-only
+//         grant is accepted: it is accurate enough for prayer times).
 //   - colors.xml: splash background colour
 //   - styles.xml: Android 12+ splash attributes (best effort, warns instead of failing)
 //   - res/drawable: the white status-bar icon and gold notification icon used by
@@ -35,6 +42,11 @@ export const REQUIRED_PERMISSIONS = [
   'android.permission.USE_EXACT_ALARM',
   'android.permission.RECEIVE_BOOT_COMPLETED',
   'android.permission.VIBRATE',
+  // Without these two the OS dialog for location NEVER shows (see header):
+  // previous builds were denied silently, which is why the phone never truly
+  // asked for the permission.
+  'android.permission.ACCESS_COARSE_LOCATION',
+  'android.permission.ACCESS_FINE_LOCATION',
 ]
 
 const changed = []

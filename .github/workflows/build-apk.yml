@@ -110,11 +110,11 @@ jobs:
       - name: Patch Android project (manifest permissions, splash theme)
         run: node scripts/patch-android.mjs
 
-      - name: Set version name to 1.2.0
+      - name: Set version name to 1.2.1
         run: |
           GRADLE=android/app/build.gradle
-          sed -i 's/versionName "1.0"/versionName "1.2.0"/' "$GRADLE"
-          grep -q 'versionName "1.2.0"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+          sed -i 's/versionName "1.0"/versionName "1.2.1"/' "$GRADLE"
+          grep -q 'versionName "1.2.1"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
 
       - name: Bundle adhan sound into raw resources
         run: |
@@ -168,7 +168,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           PERMS=$("$AAPT" dump permissions "$APK")
           echo "$PERMS"
-          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM USE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE; do
+          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM USE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION; do
             echo "$PERMS" | grep -q "android.permission.$P" || { echo "::error::APK is missing android.permission.$P"; exit 1; }
           done
 

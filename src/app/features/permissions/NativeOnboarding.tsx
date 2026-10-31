@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { Geolocation } from '@capacitor/geolocation'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { readSetting, writeSetting } from '../../settings'
-import { acquireLocation, isLocationPermissionGranted, locationFailureMessage } from '../location/acquireLocation'
-import { saveCoords } from '../location/coords'
 import { scheduleNativeNotifications, checkExactAlarm, openExactAlarmSettings } from '../notifications/nativeNotifications'
 
 const ONBOARDING_DONE_KEY = 'azkar_native_onboarding_v1'
 
-// First-run permission flow inside the APK: asks for notification and
-// location permission once, stores the prayer coordinates, promotes exact
-// alarms on Android 12+, then triggers native scheduling. Before this, no
-// permission was ever requested unless the user opened the right settings
-// page manually.
+// First-run permission flow inside the APK. It asks ONLY for notification
+// permission (and promotes exact alarms on Android 12+), then triggers native
+// scheduling.
+//
+// Location is deliberately NOT requested here: nothing at first launch may pop
+// the OS location dialog. The app asks for it later, contextually, when the
+// user actually uses a feature that needs it — the «تحديد موقعي» button on the
+// prayer-times screen or the location card in settings. That call goes through
+// acquireLocation(), whose Geolocation.requestPermissions() now shows the REAL
+// system dialog because the app manifest declares the location permissions
+// (see scripts/patch-android.mjs).
 export function NativeOnboarding() {
   const [visible, setVisible] = useState(false)
   const [notifState, setNotifState] = useState<'unknown' | 'granted' | 'denied'>('unknown')
-  const [locState, setLocState] = useState<'unknown' | 'granted' | 'denied' | 'failed'>('unknown')
-  const [locMessage, setLocMessage] = useState('')
   const [busy, setBusy] = useState('')
   // Exact alarms: 'granted' (or auto-granted on Android 13+) needs no step.
   // Widened to a plain string so the narrowed JSX branches still compare safely.
@@ -30,9 +31,6 @@ export function NativeOnboarding() {
     void LocalNotifications.checkPermissions()
       .then((s) => setNotifState(s.display === 'granted' ? 'granted' : 'unknown'))
       .catch((error) => console.error('[onboarding] notification check failed', error))
-    void Geolocation.checkPermissions()
-      .then((s) => setLocState(isLocationPermissionGranted(s) ? 'granted' : 'unknown'))
-      .catch((error) => console.error('[onboarding] location check failed', error))
     void checkExactAlarm().then((state) => setExactState(state === 'granted' ? 'granted' : state === 'unknown' ? 'unknown' : 'needed'))
     setVisible(true)
   }, [])
@@ -72,25 +70,10 @@ export function NativeOnboarding() {
     setBusy('')
   }
 
-  const askLocation = async () => {
-    setBusy('loc')
-    setLocMessage('')
-    const result = await acquireLocation()
-    if (result.ok) {
-      saveCoords(result.coords)
-      setLocState('granted')
-    } else {
-      // Only a refused permission is "denied"; GPS off or a timeout is a failure the user can retry.
-      setLocState(result.reason === 'permission-denied' ? 'denied' : 'failed')
-      setLocMessage(locationFailureMessage(result.reason))
-    }
-    setBusy('')
-  }
-
   const finish = () => {
-    // Marked done only after both requests were answered (granted or denied);
-    // skipping leaves the flow to appear again on the next launch.
-    if (notifState !== 'unknown' && locState !== 'unknown') writeSetting(ONBOARDING_DONE_KEY, '1')
+    // Marked done only after the notification request was answered (granted or
+    // denied); skipping leaves the flow to appear again on the next launch.
+    if (notifState !== 'unknown') writeSetting(ONBOARDING_DONE_KEY, '1')
     setVisible(false)
     // Schedule immediately so notifications work from this very first session.
     void scheduleNativeNotifications()
@@ -150,23 +133,9 @@ export function NativeOnboarding() {
               {exactGranted && <div className="mt-1 text-[9px] text-azkar-ink-soft">تم</div>}
             </div>
           )}
-          <div className="rounded-2xl border border-azkar-gold-soft p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="text-sm font-bold">موقعك لمواقيت الصلاة</div>
-                <div className="text-[10px] text-azkar-ink-soft">لحساب المواقيت والقبلة تلقائيًا.</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void askLocation()}
-                disabled={busy === 'loc' || locState === 'granted'}
-                className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[10px] font-bold text-azkar-card disabled:opacity-60"
-              >
-                {busy === 'loc' ? '...' : locState === 'granted' ? 'تم' : 'تحديد موقعي'}
-              </button>
-            </div>
-            {(locMessage || label(locState)) && <div className="mt-1 text-[9px] text-azkar-ink-soft">{locMessage || label(locState)}</div>}
-          </div>
+          <p className="rounded-2xl border border-dashed border-azkar-gold-soft p-3 text-center text-[10px] text-azkar-ink-soft">
+            موقعك لن يُطلب الآن — سيطلبه التطبيق من الهاتف عند أول استخدام لمواقيت الصلاة أو القبلة.
+          </p>
         </div>
         <button
           type="button"

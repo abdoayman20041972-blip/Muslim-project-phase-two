@@ -24,11 +24,14 @@ function fixture() {
 const run = (root: string) => execFileSync('node', [script], { env: { ...process.env, ANDROID_PROJECT_DIR: root } }).toString()
 
 describe('patch-android.mjs', () => {
-  it('adds the notification permissions and splash attributes', () => {
+  it('adds the notification and location permissions and splash attributes', () => {
     const { root, main } = fixture()
     run(root)
     const manifest = readFileSync(join(main, 'AndroidManifest.xml'), 'utf8')
-    for (const name of ['POST_NOTIFICATIONS', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'RECEIVE_BOOT_COMPLETED', 'VIBRATE']) {
+    // Location permissions are REQUIRED: the @capacitor/geolocation plugin ships
+    // an empty manifest, so without these the OS dialog never shows and every
+    // request is silently denied.
+    for (const name of ['POST_NOTIFICATIONS', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'RECEIVE_BOOT_COMPLETED', 'VIBRATE', 'ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION']) {
       expect(manifest).toContain(`android.permission.${name}`)
     }
     expect(readFileSync(join(main, 'res', 'values', 'colors.xml'), 'utf8')).toContain('muslim_splash_background')
