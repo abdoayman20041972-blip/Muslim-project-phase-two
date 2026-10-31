@@ -226,6 +226,25 @@ export function App() {
         // Native bridge unavailable; fall back to plain app launch.
       }
     })()
+    // v1.2.7 root-cause fix: COLD-START notification taps. The stock plugin
+    // only fires localNotificationActionPerformed from onNewIntent (warm
+    // start). When the app was killed — the normal state overnight before
+    // Fajr — the tap extras sit unread on the launch intent and the app used
+    // to open Home instead of the prayer view. Read them once through our
+    // exact-alarms plugin (which also consumes them).
+    void (async () => {
+      try {
+        if (cancelled) return
+        const { ExactAlarms } = await import('@muslim/exact-alarms')
+        const launched = await ExactAlarms.launchNotification()
+        const launchTarget = launched?.notification
+          ? notificationOpenTarget((launched.notification.extra?.target as string | undefined) ?? null)
+          : null
+        if (launchTarget) setView(launchTarget)
+      } catch {
+        // Bridge unavailable (web preview / older mock): plain app launch.
+      }
+    })()
     return () => {
       cancelled = true
       removeTapListener()

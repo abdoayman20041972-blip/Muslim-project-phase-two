@@ -9,8 +9,11 @@ export type NotificationDiagnostics = {
   permission: string
   exactAlarm: string
   scheduled: number
-  /** How many notifications the OS actually accepted in the last run. */
+  /** How many alarms the OS actually ARMED in the last run (the 48h window). */
   armed: number | null
+  /** The armed window length in ms, shown so "armed" reads correctly. */
+  armWindowMs: number | null
+  /** How many entries the native side has stored (the full 30-day plan). */
   pending: number | null
   timingsMissingDays: number
   /** Prayer-based notifications are enabled but no location is saved. */
@@ -29,6 +32,7 @@ const EMPTY: NotificationDiagnostics = {
   exactAlarm: 'unknown',
   scheduled: 0,
   armed: null,
+  armWindowMs: null,
   pending: null,
   timingsMissingDays: 0,
   locationMissing: false,

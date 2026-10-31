@@ -3,7 +3,14 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import { ExactAlarms, type ExactAlarm } from '@muslim/exact-alarms'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits } from '../../constants'
-import { ID_BASE, ID_RANGE, planNotifications, PRAYER_GROUP, TEST_NOTIFICATION_ID, type PlannedNotification } from './notificationPlan'
+import {
+  ID_BASE,
+  ID_RANGE,
+  planNotifications,
+  PRAYER_GROUP,
+  TEST_NOTIFICATION_ID,
+  type PlannedNotification,
+} from './notificationPlan'
 import { patchDiagnostics, recordError } from './nativeDiagnostics'
 import { computeTimingsLocally } from '../prayer/prayerTimings'
 import {
@@ -19,24 +26,33 @@ import {
 // morning/evening azkar. All scheduling is local; no server or service worker
 // is involved.
 //
-// Accuracy design (why notifications used to arrive late or not at all):
+// Accuracy design (v1.2.7 rewrite — the root-cause fixes):
 //   1. Timings come from the bundled adhan astronomical calculation only —
 //      never from the network — so scheduling is instant, deterministic and
 //      works offline, and no slow/failed request can drop a day.
-//   2. A 30-day horizon is scheduled at once, and the whole plan is re-armed
-//      whenever the app is opened, brought back to the foreground, resumed,
-//      or the day/timezone changes — so a DST shift or a missed day cannot
-//      silently empty the alarm queue.
+//   2. A 30-day horizon is PLANNED and stored, but only a 48-hour window is
+//      ARMED with setAlarmClock at a time (~40 alarms instead of ~420):
+//      the per-app alarm limit is 500, OEM battery managers flag apps that
+//      register hundreds of alarm clocks as abusive, and the boot receiver
+//      used to re-arm all 420 on the main thread (ANR → no notifications
+//      after reboot). The native fire receiver chain-advances the window on
+//      every alarm that fires, so weeks pass correctly without the app open.
 //   3. TIMING goes through the custom @muslim/exact-alarms plugin:
-//      AlarmManager.setAlarmClock(), the one alarm API Android never defers
-//      ("the system identifies these alarms as the most critical ones and
-//      leaves low-power modes if necessary to deliver the alarms"). The stock
-//      plugin's setExactAndAllowWhileIdle was still postponed by Battery
-//      Saver / OEM battery managers — the root cause of "notifications arrive
-//      but never on time". Channels, permission and tap actions stay with
-//      @capacitor/local-notifications.
-//   4. The intended prayer time is written into the notification body, so
-//      even a deferred notification is self-explanatory.
+//      AlarmManager.setAlarmClock(), the one alarm API Android never defers.
+//      The stock plugin's setExactAndAllowWhileIdle was still postponed by
+//      Battery Saver / OEM battery managers. Channels, permission and tap
+//      actions stay with @capacitor/local-notifications.
+//   4. Channels are created idempotently and NEVER deleted per run: deleting
+//      a channel removes its notifications from the shade, so until v1.2.6
+//      opening the app wiped the adhan notification the user was reading.
+//   5. A replace run is skipped (not emptied) when prayer notifications are
+//      enabled but the location is missing — a transient coord loss used to
+//      cancel the whole armed prayer plan.
+//   6. The intended prayer time is written into the notification body, and
+//      each kind carries a TTL so stale notifications remove themselves.
+//   7. Re-arms happen on app open, resume, hourly while running, settings
+//      change, reboot, package replace; a manual clock/timezone change wipes
+//      the plan (native) because every stored instant is absolute epoch time.
 
 export type AdhanSoundMode = 'adhan' | 'default' | 'silent'
 
@@ -54,27 +70,46 @@ const REMINDER_CHANNEL = 'muslim-reminders-v2'
 // indistinguishable from "it never arrived" for a user watching the screen.
 const TEST_CHANNEL = 'muslim-test-v1'
 // Android keeps a deleted channel's old settings when the same id is created
-// again, so each adhan sound mode gets its own channel id.
+// again, so each adhan sound mode gets its own channel id (created once; the
+// channel's sound is immutable, switching modes switches channel ids).
 const adhanChannelId = (mode: AdhanSoundMode) => `muslim-adhan-v2-${mode}`
+// One-time migration sweep flag. Builds ≤ v1.2.6 deleted the adhan channels on
+// EVERY start (wiping the shade's notifications of that channel); this sweep
+// runs once to retire the channels those builds left behind.
+const CHANNELS_MIGRATED_KEY = 'muslim_channels_v4_ready'
 const GOLD_LED = '#e6c86e'
-/** How many days of alarms are armed in one scheduling run. */
+/** How many days of alarms are planned and stored in one scheduling run. */
 export const DAYS_AHEAD = 30
+/**
+ * Only the alarms inside this window are actually armed with setAlarmClock.
+ * The native fire receiver re-arms the window every time an alarm fires, so
+ * the horizon rolls forward without the app ever being opened.
+ */
+export const ARM_WINDOW_MS = 48 * 60 * 60_000
 const RETRY_AFTER_FAILURE_MS = 15 * 60 * 1000
 
 let scheduledFingerprint = ''
 let lastFailureAt = 0
-let channelsReady = false
 let inFlight: Promise<void> | null = null
+let forceQueued = false
 
 async function ensureChannels() {
-  if (!channelsReady) {
-    for (const id of [...LEGACY_CHANNELS, ...(['adhan', 'default', 'silent'] as const).map(adhanChannelId)]) {
+  const sound = readAdhanSoundMode()
+  if (!localStorage.getItem(CHANNELS_MIGRATED_KEY)) {
+    // One-time: legacy v1 channel ids, plus the v2 adhan channels for the two
+    // sound modes that are NOT active (the active one keeps its posted
+    // notifications alive). Deleting a channel removes its shade entries.
+    const retire = [...LEGACY_CHANNELS, ...(['adhan', 'default', 'silent'] as const)
+      .map(adhanChannelId)
+      .filter((id) => id !== adhanChannelId(sound))]
+    for (const id of retire) {
       // Deleting a channel that does not exist is expected to fail on some versions.
       await LocalNotifications.deleteChannel({ id }).catch((error) => console.debug('[notifications] deleteChannel', id, error))
     }
-    channelsReady = true
+    localStorage.setItem(CHANNELS_MIGRATED_KEY, '1')
   }
-  const sound = readAdhanSoundMode()
+  // createChannel on an unchanged existing channel is a system no-op, so these
+  // calls are safe to repeat on every scheduling run.
   await LocalNotifications.createChannel({
     id: PRAYER_CHANNEL,
     name: 'تذكير قبل الصلاة',
@@ -185,28 +220,6 @@ export function timeLabel(date: Date): string {
   return toArabicDigits(`${String(hh).padStart(2, '0')}:${m}`) + suffix
 }
 
-/** The schedule call that actually arms alarms; fault tolerant. */
-async function scheduleEntries(entries: PlannedNotification[]): Promise<number> {
-  try {
-    const alarms: ExactAlarm[] = entries.map((entry) => ({
-      id: entry.id,
-      at: entry.at.getTime(),
-      title: entry.title,
-      body: entry.body,
-      channel: entry.channel,
-      target: entry.target,
-      group: entry.group ?? null,
-    }))
-    // The pending diagnostic test survives this replace run: a resume or
-    // settings change during its 10 seconds must not cancel it.
-    const result = await ExactAlarms.schedule({ alarms, keepIds: [TEST_NOTIFICATION_ID] })
-    return result.armed
-  } catch (error) {
-    recordError('schedule-exact', error)
-    return 0
-  }
-}
-
 /**
  * Enriches the pure plan with the prayer time in the body text. A notification
  * that arrives late (battery savers can still defer delivery) then explains
@@ -245,8 +258,14 @@ async function run(force: boolean) {
   const lead = Number(readSetting(APP_SETTINGS_KEYS.prayerReminderLead, '5')) || 5
   const sound = readAdhanSoundMode()
   const coords = readPrayerCoords()
-  const wantsPrayerTimes = atTimeEnabled || beforeEnabled || morningEnabled || eveningEnabled
-  patchDiagnostics({ locationMissing: wantsPrayerTimes && !coords })
+  const prayerDependent = atTimeEnabled || beforeEnabled || morningEnabled || eveningEnabled
+  patchDiagnostics({ locationMissing: prayerDependent && !coords })
+
+  // ROOT-CAUSE FIX: a replace run with prayers enabled but no location would
+  // cancel the previously armed prayer plan and store a prayer-less one.
+  // Skip instead — the armed alarms stay correct, the diagnostics explain why,
+  // and the next trigger (resume/settings/coords arrival) retries.
+  if (!coords && prayerDependent) return
 
   const now = new Date()
   // The fingerprint includes the calendar day AND the timezone offset, so a
@@ -309,7 +328,9 @@ async function run(force: boolean) {
 
   await cancelLegacyStockAlarms()
   // Always a replace run — even with an empty plan it must cancel whatever was
-  // armed before (the user just turned every notification off).
+  // armed before (the user just turned every notification off). The native
+  // side stores the full 30-day plan but arms only the 48h window; the fire
+  // receiver chain-advances the window as alarms fire.
   const armed = await scheduleEntries(entries)
 
   // Only now is the run considered successful; a failure above leaves the
@@ -318,7 +339,7 @@ async function run(force: boolean) {
     recordError('pending', error)
     return null
   })
-  if (missingDays > 0 || armed < entries.length) lastFailureAt = Date.now()
+  if (missingDays > 0 || armed < 0) lastFailureAt = Date.now()
   else {
     lastFailureAt = 0
     scheduledFingerprint = fingerprint
@@ -327,20 +348,28 @@ async function run(force: boolean) {
     ranAt: new Date().toISOString(),
     scheduled: entries.length,
     armed,
+    armWindowMs: ARM_WINDOW_MS,
     pending: pending ? pending.items.length : null,
     timingsMissingDays: missingDays,
   })
 }
 
 /**
- * Schedules every native notification type for the next 30 days. Safe to call
- * repeatedly: in-flight calls are deduplicated and an unchanged state is a
- * no-op unless `force` is set. Failures are logged and stored for the
+ * Schedules every native notification type for the next 30 days (arming the
+ * 48-hour window). Safe to call repeatedly: in-flight calls are deduplicated
+ * (a force request during a run queues another run), and an unchanged state
+ * is a no-op unless `force` is set. Failures are logged and stored for the
  * diagnostics card, never swallowed.
  */
 export function scheduleNativeNotifications(options: { force?: boolean } = {}): Promise<void> {
   if (!Capacitor.isNativePlatform()) return Promise.resolve()
-  if (!inFlight) {
+  if (inFlight) {
+    // Don't drop the request: run again right after the in-flight one so a
+    // settings change made mid-run still lands.
+    if (options.force) forceQueued = true
+    return inFlight
+  }
+  const start = () => {
     inFlight = run(Boolean(options.force))
       .catch((error) => {
         lastFailureAt = Date.now()
@@ -348,9 +377,38 @@ export function scheduleNativeNotifications(options: { force?: boolean } = {}): 
       })
       .finally(() => {
         inFlight = null
+        if (forceQueued) {
+          forceQueued = false
+          void scheduleNativeNotifications({ force: true })
+        }
       })
+    return inFlight
   }
-  return inFlight
+  return start()
+}
+
+/** The schedule call that actually arms alarms; fault tolerant. */
+async function scheduleEntries(entries: PlannedNotification[]): Promise<number> {
+  try {
+    const alarms: ExactAlarm[] = entries.map((entry) => ({
+      id: entry.id,
+      at: entry.at.getTime(),
+      title: entry.title,
+      body: entry.body,
+      channel: entry.channel,
+      target: entry.target,
+      group: entry.group ?? null,
+      ttl: entry.ttl ?? 0,
+    }))
+    // The pending diagnostic test survives this replace run: a resume or
+    // settings change during its 10 seconds must not cancel it.
+    const result = await ExactAlarms.schedule({ alarms, keepIds: [TEST_NOTIFICATION_ID], armWithinMs: ARM_WINDOW_MS })
+    return result.armed
+  } catch (error) {
+    recordError('schedule-exact', error)
+    // -1 = failed run: the fingerprint must not be saved (retry next trigger).
+    return -1
+  }
 }
 
 /** Fires one test notification roughly 10 seconds from now. */
@@ -446,7 +504,7 @@ export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
         title: item.title ?? '',
         at: item.at ? new Date(item.at).toISOString() : null,
       }))
-      .sort((a, b) => String(a.at).localeCompare(String(a.at)))
+      .sort((a, b) => String(a.at).localeCompare(String(b.at)))
   } catch (error) {
     recordError('list-pending', error)
     return []

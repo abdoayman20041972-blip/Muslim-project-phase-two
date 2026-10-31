@@ -20,4 +20,7 @@ export const ExactAlarmsWeb = {
   async check() {
     return { exactAlarm: 'unknown' }
   },
+  async launchNotification() {
+    return { notification: null }
+  },
 }

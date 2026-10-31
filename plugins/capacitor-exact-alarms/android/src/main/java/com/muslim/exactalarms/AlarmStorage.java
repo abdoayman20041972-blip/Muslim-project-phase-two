@@ -76,4 +76,24 @@ public class AlarmStorage {
     public synchronized void clear() {
         prefs.edit().remove(KEY).apply();
     }
+
+    /**
+     * Drops entries that fired long ago. Entries that fired TODAY are kept:
+     * they are harmless (nothing re-arms the past) and keeping them means the
+     * stored list doubles as the recovery plan the boot receiver re-arms from.
+     * Returns how many entries were removed.
+     */
+    public synchronized int pruneBefore(long cutoff) {
+        ArrayList<AlarmEntry> kept = new ArrayList<>();
+        int removed = 0;
+        for (AlarmEntry entry : list()) {
+            if (entry.at < cutoff) {
+                removed++;
+            } else {
+                kept.add(entry);
+            }
+        }
+        if (removed > 0) save(kept);
+        return removed;
+    }
 }

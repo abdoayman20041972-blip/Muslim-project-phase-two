@@ -115,11 +115,14 @@ export function NotificationDiagnostics() {
         <span className="text-[11px] font-bold text-azkar-ink">{PERMISSION_LABELS[diag.permission] ?? diag.permission}</span>
       </Row>
       <Row
-        title="المجدول فعليًا في النظام"
+        title="خطة التنبيهات المحفوظة"
         description={
-          diag.timingsMissingDays > 0
-            ? 'تعذّر حساب مواقيت ' + toArabicNumber(diag.timingsMissingDays) + ' أيام، وستُعاد المحاولة'
-            : undefined
+          (diag.timingsMissingDays > 0
+            ? 'تعذّر حساب مواقيت ' + toArabicNumber(diag.timingsMissingDays) + ' أيام، وستُعاد المحاولة. '
+            : '') +
+          (diag.armed === null || diag.armed < 0
+            ? 'خطة ثلاثين يوماً محفوظة في النظام'
+            : 'خطة ثلاثين يوماً، منها ' + toArabicNumber(diag.armed) + ' منبّهاً مسلّحاً خلال ٤٨ ساعة (الباقي يُسلّح تلقائياً)')
         }
       >
         <span className="text-[11px] font-bold text-azkar-ink">{diag.pending === null ? '—' : toArabicNumber(diag.pending)}</span>

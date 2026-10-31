@@ -12,6 +12,8 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,31 +22,63 @@ import org.json.JSONObject;
  * whatever the device's battery state is. Posts the notification (channel id,
  * icons and sound were configured once by the app through
  * @capacitor/local-notifications, so the adhan channel rings exactly like
- * before) and removes the entry from storage.
+ * before), prunes fired-long-ago entries, and then CHAIN-ADVANCES: re-arms
+ * every stored alarm inside the next 48-hour window, so the plan keeps firing
+ * for weeks even if the app is never opened again.
+ *
+ * v1.2.7 root-cause fixes here:
+ *   - goAsync() + a background thread: a receiver gets ~10s on the main
+ *     thread; doing binder work there could ANR and get the process killed,
+ *     silently killing every future notification.
+ *   - The fired entry is NOT removed from storage anymore: the stored plan is
+ *     the recovery source the boot receiver and the chain re-arm from.
+ *   - Stale notifications clean themselves up (setTimeoutAfter via entry.ttl):
+ *     the "prayer is coming" reminders used to sit in the shade for days.
+ *   - Grouped prayers get a summary notification so the shade stacks them.
  *
  * Tap extras intentionally mimic @capacitor/local-notifications
  * (LocalNotificationId / LocalNotficationObject / LocalNotificationUserAction)
- * so warm-start taps keep flowing through the stock plugin's
- * localNotificationActionPerformed listener the app already registers.
+ * so taps keep flowing through the stock plugin's
+ * localNotificationActionPerformed listener (warm starts) and through
+ * ExactAlarms.launchNotification() (cold starts — the stock plugin only
+ * handles warm ones).
  */
 public class AlarmFireReceiver extends BroadcastReceiver {
 
     private static final int GOLD = 0xFFE6C86E;
+    /** Notification id of the group summary; outside the planned id range. */
+    private static final int GROUP_SUMMARY_ID = 700100002;
+    /** Entries older than this are pruned from storage on each fire. */
+    private static final long PRUNE_AFTER_MS = 24L * 3600_000;
+
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     @Override
     public void onReceive(Context context, Intent intent) {
         int id = intent.getIntExtra("id", Integer.MIN_VALUE);
         if (id == Integer.MIN_VALUE) return;
-        AlarmStorage storage = new AlarmStorage(context);
-        AlarmEntry entry = storage.find(id);
-        if (entry == null) return;
-        try {
-            postNotification(context, entry);
-        } catch (RuntimeException postFailure) {
-            // Never crash the app from a broadcast: the alarm is consumed either way.
-        } finally {
-            storage.remove(id);
-        }
+        final PendingResult result = goAsync();
+        EXECUTOR.execute(() -> {
+            try {
+                AlarmStorage storage = new AlarmStorage(context);
+                AlarmEntry entry = storage.find(id);
+                if (entry != null) {
+                    try {
+                        postNotification(context, entry);
+                    } catch (RuntimeException postFailure) {
+                        // Never crash the app from a broadcast: the alarm is
+                        // consumed either way.
+                    }
+                }
+                // Prune fired-long-ago entries, then chain-advance the armed
+                // window from the stored plan.
+                long now = System.currentTimeMillis();
+                storage.pruneBefore(now - PRUNE_AFTER_MS);
+                AlarmScheduler.armWindow(context, storage.list(), AlarmScheduler.ARM_WINDOW_MS);
+            } finally {
+                result.finish();
+            }
+        });
     }
 
     private void postNotification(Context context, AlarmEntry entry) {
@@ -62,9 +96,16 @@ public class AlarmFireReceiver extends BroadcastReceiver {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(tapIntent(context, entry));
 
+        // Stale notifications remove themselves: the pre-prayer reminder is
+        // meaningless once the adhan fires, and a week of untapped
+        // notifications used to pile up in the shade.
+        if (entry.ttl > 0) builder.setTimeoutAfter(entry.ttl);
+
         Bitmap large = largeIcon(context);
         if (large != null) builder.setLargeIcon(large);
-        if (entry.group.length() > 0) builder.setGroup(entry.group);
+        if (entry.group.length() > 0) {
+            builder.setGroup(entry.group);
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Sound/vibration/importance come from the channel (created via
@@ -79,6 +120,22 @@ public class AlarmFireReceiver extends BroadcastReceiver {
 
         Notification notification = builder.build();
         manager.notify(entry.id, notification);
+
+        if (entry.group.length() > 0) {
+            manager.notify(GROUP_SUMMARY_ID, groupSummary(context, entry));
+        }
+    }
+
+    /** The shade header the grouped prayer notifications stack under. */
+    private Notification groupSummary(Context context, AlarmEntry entry) {
+        return new NotificationCompat.Builder(context, entry.channelId)
+            .setSmallIcon(smallIcon(context))
+            .setContentTitle("مواقيت الصلاة")
+            .setColor(GOLD)
+            .setAutoCancel(true)
+            .setGroup(entry.group)
+            .setGroupSummary(true)
+            .build();
     }
 
     private int smallIcon(Context context) {

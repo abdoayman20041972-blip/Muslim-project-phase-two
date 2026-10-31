@@ -64,9 +64,10 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     await scheduleNativeNotifications({ force: true })
 
     expect(alarms.schedule).toHaveBeenCalledTimes(1)
-    const { alarms: plan, keepIds } = alarms.schedule.mock.calls[0]![0] as {
+    const { alarms: plan, keepIds, armWithinMs } = alarms.schedule.mock.calls[0]![0] as {
       alarms: Array<Record<string, unknown>>
       keepIds: number[]
+      armWithinMs?: number
     }
     // A whole month of prayers + reminders: five prayers, at-time + lead, per day.
     expect(plan.length).toBeGreaterThanOrEqual(DAYS_AHEAD * 10 - 10)
@@ -74,6 +75,16 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     for (const alarm of plan) {
       expect(typeof alarm.at).toBe('number')
       expect(alarm.at).toBeGreaterThan(Date.now())
+    }
+    // v1.2.7: only a 48-hour window is actually ARMED natively (Android's
+    // per-app alarm limit is 500 and ~420 alarm clocks tripped OEM battery
+    // managers); the native fire receiver chain-advances the window.
+    expect(armWithinMs).toBe(48 * 60 * 60_000)
+    // v1.2.7: every entry carries its auto-dismiss TTL so stale notifications
+    // (e.g. the "prayer is coming" reminders) do not pile up in the shade.
+    for (const alarm of plan) {
+      expect(typeof alarm.ttl).toBe('number')
+      expect(alarm.ttl as number).toBeGreaterThanOrEqual(0)
     }
     // The pending diagnostic test survives the re-arm.
     expect(keepIds).toContain(700100001)
@@ -99,6 +110,32 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     const { scheduleNativeNotifications } = await load()
     await scheduleNativeNotifications({ force: true })
     expect(alarms.schedule).not.toHaveBeenCalled()
+  })
+
+  it('keeps the previously armed plan when the location is missing but prayers are on', async () => {
+    // v1.2.7 root-cause fix: a replace run without coords used to cancel the
+    // whole armed prayer plan and store a prayer-less one. Skip instead —
+    // whatever is armed stays correct until coords come back.
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    expect(alarms.schedule).not.toHaveBeenCalled()
+  })
+
+  it('does not delete the adhan channels on every run (shade wipe fix)', async () => {
+    // v1.2.7 root-cause fix: builds ≤ 1.2.6 deleted the adhan channels on
+    // EVERY start, which removed that channel's notifications from the shade
+    // the moment the app was opened. Now the one-time migration sweep runs
+    // once and channels are created idempotently.
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    await scheduleNativeNotifications({ force: true })
+    const deleted = ln.deleteChannel.mock.calls.map((call) => call[0].id as string)
+    // The sweep happened once (first call), never on the second run: only the
+    // two INACTIVE sound-mode channels are retired, plus the legacy v1 ids.
+    const adhanDeletes = deleted.filter((id) => id.startsWith('muslim-adhan-v2-'))
+    expect(adhanDeletes.length).toBe(2) // one-time: only the two inactive modes
+    expect(deleted.filter((id) => id === 'muslim-adhan-v2-adhan')).toHaveLength(0) // the ACTIVE channel is never deleted
   })
 
   it('cancels legacy stock-plugin alarms so old builds cannot double-fire', async () => {

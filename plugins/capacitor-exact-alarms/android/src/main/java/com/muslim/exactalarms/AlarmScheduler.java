@@ -20,6 +20,17 @@ import java.util.List;
  */
 public class AlarmScheduler {
 
+    /**
+     * How far ahead alarms are actually ARMED. The full 30-day plan is stored,
+     * but only this window is armed at a time (~40 alarms instead of ~420):
+     * the per-app alarm limit is 500, and OEM battery managers flag apps that
+     * register hundreds of alarm-clock alarms as abusive. The fire receiver
+     * re-arms the window on every alarm that fires (chain-advance), and the
+     * boot receiver re-arms it after a reboot. Keep in sync with
+     * ARM_WINDOW_MS in nativeNotifications.ts.
+     */
+    public static final long ARM_WINDOW_MS = 48L * 3600_000;
+
     private AlarmScheduler() {}
 
     public static boolean arm(Context context, AlarmEntry entry) {
@@ -67,6 +78,22 @@ public class AlarmScheduler {
         Intent intent = new Intent(context, AlarmFireReceiver.class);
         PendingIntent pending = pendingBroadcast(context, id, intent);
         if (pending != null) alarmManager.cancel(pending);
+    }
+
+    /**
+     * Arms every stored entry inside (now, now + windowMs]. Re-arming an
+     * already-armed alarm is a replace, so this is the chain-advance used by
+     * the fire receiver and the boot receiver. Returns how many were armed.
+     */
+    public static int armWindow(Context context, List<AlarmEntry> entries, long windowMs) {
+        long now = System.currentTimeMillis();
+        int armed = 0;
+        for (AlarmEntry entry : entries) {
+            if (entry.at > now && entry.at <= now + windowMs) {
+                if (arm(context, entry)) armed++;
+            }
+        }
+        return armed;
     }
 
     private static PendingIntent pendingBroadcast(Context context, int id, Intent intent) {

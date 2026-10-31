@@ -23,10 +23,37 @@ export const ID_RANGE = 100_000
  * exactly what users reported as "the test notification never arrived".
  */
 export const TEST_NOTIFICATION_ID = ID_BASE + ID_RANGE + 1
+/**
+ * The group-summary notification (posted natively alongside the grouped prayer
+ * notifications so the shade stacks them under one header) also lives outside
+ * the cancelable window.
+ */
+export const GROUP_SUMMARY_NOTIFICATION_ID = ID_BASE + ID_RANGE + 2
 
 // Deterministic ids: BASE + kind * 1000 + dayIndex * 10 + slot (no hashing, no collisions).
 export const KIND = { at: 0, before: 1, morning: 2, evening: 3, ayah: 4, quran: 5, test: 6 } as const
 export const makeId = (kind: number, dayIndex: number, slot: number) => ID_BASE + kind * 1000 + dayIndex * 10 + slot
+
+/**
+ * How long each notification stays useful once posted; after that Android
+ * removes it from the shade by itself (NotificationCompat.setTimeoutAfter).
+ * Without this a week of untapped notifications piles up in the shade —
+ * especially the "prayer is coming" reminders that are stale within minutes.
+ * 0 (or absent) means never auto-remove.
+ */
+export const TTL = {
+  /** The adhan marks a prayer window; two hours later it is history. */
+  at: 2 * 60 * 60_000,
+  /** The pre-prayer reminder is meaningless once the adhan itself fires. */
+  before: 15 * 60_000,
+  morning: 4 * 60 * 60_000,
+  evening: 4 * 60 * 60_000,
+  /** The daily ayah can still be worth reading late in the day. */
+  ayah: 10 * 60 * 60_000,
+  quran: 4 * 60 * 60_000,
+  /** The 10-second test: the user is watching the shade right now. */
+  test: 0,
+} as const
 
 function midnightOf(date: Date) {
   const d = new Date(date)
@@ -43,6 +70,8 @@ export type PlannedNotification = {
   at: Date
   /** Android notification group so prayers collapse into one stack. */
   group?: string
+  /** Milliseconds after posting before Android auto-removes it (0 = never). */
+  ttl?: number
 }
 
 /** Every prayer/adhan notification joins this group so the shade stays tidy. */
@@ -88,6 +117,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
             channel: channels.adhan,
             target: 'prayer',
             group: PRAYER_GROUP,
+            ttl: TTL.at,
           })
         }
         if (beforeEnabled) {
@@ -99,16 +129,17 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
             channel: channels.prayer,
             target: 'prayer',
             group: PRAYER_GROUP,
+            ttl: TTL.before,
           })
         }
       })
       const sunrise = parsePrayerTime(timings.Sunrise, date)
       const sunset = parsePrayerTime(timings.Sunset ?? timings.Maghrib, date)
       if (morningEnabled && sunrise) {
-        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: channels.reminder, target: 'azkar' })
+        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: channels.reminder, target: 'azkar', ttl: TTL.morning })
       }
       if (eveningEnabled && sunset) {
-        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: channels.reminder, target: 'azkar' })
+        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: channels.reminder, target: 'azkar', ttl: TTL.evening })
       }
     }
     if (ayahEnabled) {
@@ -118,7 +149,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
       const at = new Date(date)
       at.setHours(Number(ayahMatch![1]), Number(ayahMatch![2]), 0, 0)
       const ayah = dailyAyahFor(midnightOf(date))
-      push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: channels.reminder, target: 'ayah' })
+      push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: channels.reminder, target: 'ayah', ttl: TTL.ayah })
     }
     if (quranEnabled) {
       const match = /^(\d{1,2}):(\d{2})$/.exec(quranTime)
@@ -128,7 +159,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
         // open / resume / hourly) keep the horizon fresh anyway.
         const at = new Date(date)
         at.setHours(Number(match[1]), Number(match[2]), 0, 0)
-        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'ayah' })
+        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'ayah', ttl: TTL.quran })
       }
     }
   })
