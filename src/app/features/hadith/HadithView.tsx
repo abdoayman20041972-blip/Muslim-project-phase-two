@@ -76,7 +76,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
   }, [query, apiHadiths])
 
   return (
-    <section dir="rtl" className="hadith-screen animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <section dir="rtl" className="hadith-screen">
       <header className="hadith-header">
         <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable hadith-icon-button">←</button>
         <div className="min-w-0 flex-1">

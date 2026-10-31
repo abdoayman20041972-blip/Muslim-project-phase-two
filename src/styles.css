@@ -1811,3 +1811,34 @@ summary:focus-visible{
   outline:2px solid hsl(var(--azkar-teal-ink))!important;
   outline-offset:2px;
 }
+
+/* ============================================================
+   v1.2.6 navigation performance pass (root fixes for the slow
+   tab switches, especially to the tasbih screen):
+   1. NO backdrop-filter anywhere on the tasbih screen. Every
+      backdrop-filter element forces the GPU to re-blur the two
+      full-screen fixed mosque photos behind it on every paint —
+      Android WebView has no fast path for this, so the screen
+      janked on each visit. The fills are already ~95% opaque:
+      raising the alpha replaces the blur at zero runtime cost.
+   2. The counter glow loses its filter:blur(18px) — a soft
+      radial gradient is what it visually is anyway.
+   3. The bottom-nav indicator's infinite "breathing" animations
+      (breathe 3.2s / liquid 3.1s, both infinite) now run ONLY on
+      the home tab. Off home they used to keep compositing frames
+      forever under the heaviest screens.
+   ============================================================ */
+.tasbih-word-menu{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.tasbih-minimal-header>button:first-child,.tasbih-settings-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(var(--azkar-card)/.96)!important}
+.tasbih-current-word{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(42 44% 98%/.95)!important}
+.dark .tasbih-current-word{background:hsl(165 22% 16%/.95)!important}
+.tasbih-reset-round{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(var(--azkar-card)/.95)!important}
+.dark .tasbih-reset-round{background:hsl(165 22% 16%/.95)!important}
+.tasbih-reset-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(42 36% 98%/.95)!important}
+.dark .tasbih-reset-button{background:hsl(165 22% 15%/.95)!important}
+.tasbih-counter-glow{filter:none!important;inset:14% 10% 20%!important;background:radial-gradient(circle,hsl(var(--azkar-gold)/.13),hsl(var(--azkar-gold)/.05) 42%,transparent 68%)!important}
+
+/* Idle indicator motion is a home-tab delight, not a permanent tax. */
+.dashboard-nav-indicator,.dashboard-nav-indicator::before{animation:none!important}
+.nav-home .dashboard-nav-indicator{animation:dashboard-nav-breathe 3.2s ease-in-out infinite!important}
+.nav-home .dashboard-nav-indicator::before{animation:dashboard-nav-liquid 3.1s cubic-bezier(.45,0,.55,1) infinite!important}

@@ -98,7 +98,10 @@ export function TasbihView({
 
   return (
     <>
-      <div dir="rtl" className="tasbih-redesign tasbih-minimal animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* v1.2.6: no entrance animation — the screen must appear the instant the
+          tab is tapped (the fade+slide used to replay on EVERY visit because
+          keep-alive toggles display:none, which restarts CSS animations). */}
+      <div dir="rtl" className="tasbih-redesign tasbih-minimal">
         {/* Two backgrounds, not one: the bright day mosque for light mode and a
             genuinely dark night mosque for dark mode. The dark mode is a real
             dark IMAGE (not a dark veil over a light photo), toggled purely via
@@ -109,6 +112,7 @@ export function TasbihView({
           alt=""
           aria-hidden="true"
           loading="eager"
+          decoding="async"
         />
         <img
           className="tasbih-background-photo-dark"
@@ -116,6 +120,7 @@ export function TasbihView({
           alt=""
           aria-hidden="true"
           loading="eager"
+          decoding="async"
         />
         <div className="tasbih-background-shade" aria-hidden="true" />
         <header className="tasbih-minimal-header">

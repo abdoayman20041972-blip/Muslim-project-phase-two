@@ -124,7 +124,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
   const resetToday = async () => { if (!(await confirm({ message: 'مسح تقدم أذكار هذا القسم اليوم؟', danger: true }))) return; saveProgress({}) }
   if (mode === 'journey') return <AzkarJourney category={category} progress={progress} counterEnabled={counterEnabled} autoAdvanceEnabled={autoAdvanceEnabled} onProgressChange={saveProgress} onExit={() => setMode('list')} />
 
-  return <div className="azkar-category-redesign animate-in fade-in slide-in-from-bottom-2 duration-300">
+  return <div className="azkar-category-redesign">
     <div className="azkar-category-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">{category.label}</div><div className="text-[11px] text-azkar-ink-faint mt-0.5">{category.subtitle}</div></div></div>
     {totalItems > 0 && <button data-sound="none" onClick={() => setMode('journey')} aria-label="بدء رحلة الأذكار المتسلسلة" className="u-pressable mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-azkar-teal/20 bg-azkar-teal-tint px-4 text-[12px] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><span aria-hidden="true">▶</span><span>ابدأ الرحلة</span></button>}
 

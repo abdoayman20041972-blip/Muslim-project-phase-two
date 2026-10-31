@@ -139,7 +139,11 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
   })
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-azkar-hairline bg-azkar-card/98 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-5px_20px_hsl(var(--azkar-ink)/0.06)] backdrop-blur-lg" aria-label="التنقل الرئيسي">
+    <nav className={`fixed inset-x-0 bottom-0 z-50 border-t border-azkar-hairline bg-azkar-card pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-5px_20px_hsl(var(--azkar-ink)/0.06)] ${view.name === 'home' ? 'nav-home' : ''}`}
+      aria-label="التنقل الرئيسي">
+      {/* v1.2.6: flat opaque nav surface — the old backdrop-blur-lg was a permanent GPU cost on every
+          screen for a blur invisible at 98% alpha, and the infinite indicator animations now run on
+          the home tab only (see the .nav-home rules in styles.css). */}
       <div className="relative mx-auto w-full max-w-md px-1">
         <div className="dashboard-nav-main relative grid w-full grid-cols-5 items-center">
         {activeIndex >= 0 && <span aria-hidden="true" className="dashboard-nav-indicator" style={{ ['--nav-index' as string]: activeIndex }} />}

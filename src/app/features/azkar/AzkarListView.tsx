@@ -112,7 +112,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   }
 
   return (
-    <div className="azkar-home-v2 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-5">
+    <div className="azkar-home-v2 pb-5">
       <section className="azkar-home-v2-hero relative overflow-hidden rounded-b-[2.25rem] px-1 pb-5 pt-1">
         <div className="azkar-home-v2-arch" aria-hidden="true">
           <span className="azkar-home-v2-mosque" />
@@ -136,7 +136,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
         </header>
 
         {searchOpen && (
-          <div className="relative mt-4 px-2 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="relative mt-4 px-2">
             <div className="rounded-2xl border border-azkar-gold-soft bg-azkar-card/95 p-2 shadow-lg backdrop-blur">
               <input
                 autoFocus

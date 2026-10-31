@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { surahList } from "../quran-meta";
 import { PrayerTimesView } from "./features/prayer/PrayerTimesView";
@@ -153,10 +153,19 @@ export function App() {
   // foreground, resumes from recents, or the settings change. The scheduler
   // deduplicates via a fingerprint that includes the day and timezone offset,
   // so a DST switch re-arms every alarm with the new offset.
+  // The FIRST re-arm deliberately waits for the splash to be gone: scheduling
+  // does several native-bridge round-trips that would compete with the launch
+  // paint. Resume/visibility/settings changes still re-arm immediately.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const refresh = () => void scheduleNativeNotifications();
-    refresh();
+    const start = () => {
+      window.removeEventListener("muslim-splash-done", start);
+      window.clearTimeout(safety);
+      refresh();
+    };
+    window.addEventListener("muslim-splash-done", start);
+    const safety = window.setTimeout(start, 3000);
     const id = window.setInterval(refresh, 60 * 60 * 1000); // re-schedule next day
     const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
@@ -180,6 +189,8 @@ export function App() {
       cancelled = true;
       removeResumeListener();
       window.clearInterval(id);
+      window.clearTimeout(safety);
+      window.removeEventListener("muslim-splash-done", start);
       window.removeEventListener("azkar-settings-changed", refresh);
       window.removeEventListener("azkar-prayer-settings-changed", refresh);
       document.removeEventListener("visibilitychange", onVisible);
@@ -233,13 +244,16 @@ export function App() {
   useEffect(() => {
     setMounted(true);
     // Single-stage splash: the designed in-app splash is the only splash. The
-    // Android launch theme (patched in scripts/patch-android.mjs) paints the
-    // same brand green for the system splash and the window background, so the
-    // whole launch reads as one continuous splash on every Android version
-    // and in both light and dark mode.
-    const SPLASH_MIN_MS = 900;
-    const SPLASH_EXIT_MS = 320;
-    const SPLASH_IMAGE_WAIT_MS = 1600;
+    // Android launch theme (patched in scripts/patch-android.mjs) now carries
+    // the FULL designed splash artwork as the window background, so during the
+    // whole WebView boot the user already sees the designed splash natively;
+    // this in-app splash is its animated continuation, not a repeat.
+    // v1.2.6: the artwork already showed during boot, so the minimum web time
+    // is short — the launch reads as: brief system icon → designed splash
+    // (native, most of the time) → designed splash (animated) → app.
+    const SPLASH_MIN_MS = 600;
+    const SPLASH_EXIT_MS = 260;
+    const SPLASH_IMAGE_WAIT_MS = 1200;
     let painted = false;
     let fontsReady = false;
     let cancelled = false;
@@ -250,7 +264,12 @@ export function App() {
       if (cancelled || exiting) return;
       exiting = true;
       setSplashExiting(true);
-      exitTimer = window.setTimeout(() => setBooting(false), SPLASH_EXIT_MS);
+      exitTimer = window.setTimeout(() => {
+        setBooting(false);
+        // Heavy startup work (image/data warm-up, notification re-arm) waits
+        // for this moment instead of competing with the launch paint.
+        window.dispatchEvent(new Event("muslim-splash-done"));
+      }, SPLASH_EXIT_MS);
     };
     const finishSplash = () => {
       const imageAt = splashImageAtRef.current;
@@ -283,7 +302,7 @@ export function App() {
     );
     const hardStop = window.setTimeout(() => {
       beginExit();
-    }, 2800);
+    }, 2000);
     try {
       const savedLastSurah = localStorage.getItem("azkar_last_surah");
       if (savedLastSurah) setLastSurah(parseInt(savedLastSurah, 10) || null);
@@ -337,16 +356,17 @@ export function App() {
       prefetchImages();
       void prefetchData();
     };
-    // Start warming data/artwork on the FIRST paint (rAF right after mount);
-    // idle and the first pointerdown stay as safety nets for busy threads.
-    requestAnimationFrame(() => {
-      if (!cancelled) startPrefetch();
-    });
+    // v1.2.6: warm-up starts when the splash is DONE, not on the first frame —
+    // decoding five large JPEGs and parsing hadith JSON used to fight the
+    // splash paint for the main thread. The first tap and an idle timeout stay
+    // as safety nets for the rare case the splash-done event never fires.
+    const onSplashDone = () => startPrefetch();
+    window.addEventListener("muslim-splash-done", onSplashDone, { once: true });
     const onFirstTouch = () => startPrefetch();
     window.addEventListener("pointerdown", onFirstTouch, { once: true });
     const cancelPrefetch = idle(() => {
       if (!cancelled) startPrefetch();
-    }, 2200);
+    }, 3200);
     return () => {
       cancelled = true;
       window.clearTimeout(hardStop);
@@ -354,10 +374,20 @@ export function App() {
       window.clearTimeout(waitTimer);
       window.clearTimeout(imageGuard);
       window.removeEventListener("pointerdown", onFirstTouch);
+      window.removeEventListener("muslim-splash-done", onSplashDone);
       cancelPrefetch();
     };
   }, [loadTasbih]);
 
+  // v1.2.6 navigation speed: every screen's element is memoized, so merely
+  // switching tabs no longer re-renders ALL mounted (kept-alive) screens.
+  // React bails out of a subtree when the parent returns the same element
+  // reference — a tab switch now reconciles only the two tabs whose className
+  // flips between "hidden" and "contents".
+  const goView = useCallback((v: View) => {
+    setNavOrigin("default");
+    setView(v);
+  }, []);
   const go = (s: Section) => {
     setNavOrigin("default");
     setView(
@@ -376,15 +406,168 @@ export function App() {
   };
   // Quick Tools entries return straight to Home; bottom-nav and dashboard
   // entries keep their normal back destinations.
-  const goView = (v: View) => {
-    setNavOrigin("default");
-    setView(v);
-  };
   const backTo = navOrigin === "quick-tools" ? () => setView({ name: "home" }) : null;
   const quickOrigin = navOrigin === "quick-tools";
   const lastSurahMeta = lastSurah
     ? surahList.find((s) => s.number === lastSurah)
     : undefined;
+
+  const homeScreen = useMemo(
+    () => (
+      <HomeView
+        lastSurahMeta={lastSurahMeta}
+        darkMode={darkMode}
+        onToggleDarkMode={() => setAppearance(darkMode ? "light" : "dark")}
+        onOpenPrayer={() => setView({ name: "prayer-times" })}
+        onOpenMushaf={() => setView({ name: "mushaf-list" })}
+        onOpenAzkar={() => setView({ name: "azkar-list" })}
+        onOpenMorningAzkar={() => {
+          setNavOrigin("quick-tools");
+          setView({ name: "category", id: "morning" });
+        }}
+        onOpenEveningAzkar={() => {
+          setNavOrigin("quick-tools");
+          setView({ name: "category", id: "evening" });
+        }}
+        onOpenTasbih={() => setView({ name: "tasbih" })}
+        onContinueReading={() =>
+          lastSurahMeta
+            ? (setNavOrigin("quick-tools"),
+              setView({
+                name: "mushaf-surah",
+                number: lastSurahMeta.number,
+              }))
+            : (setNavOrigin("quick-tools"),
+              setView({ name: "mushaf-list" }))
+        }
+        onOpenSettings={() => setView({ name: "settings" })}
+        onOpenQibla={() => setView({ name: "qibla" })}
+        onOpenProphets={() => setView({ name: "prophets" })}
+        onOpenHadith={() => setView({ name: "hadith" })}
+        onOpenFavorites={() => {
+          setNavOrigin("quick-tools");
+          setView({ name: "favorites" });
+        }}
+      />
+    ),
+    [lastSurahMeta, darkMode, setAppearance],
+  );
+  const settingsScreen = useMemo(
+    () => (
+      <SettingsView
+        darkMode={darkMode}
+        appearance={appearance}
+        onAppearance={setAppearance}
+        onBack={() => setView({ name: "home" })}
+      />
+    ),
+    [darkMode, appearance, setAppearance],
+  );
+  const azkarListScreen = useMemo(
+    () => (
+      <div className="azkar-no-select">
+        <AzkarListView
+          categories={categories}
+          favoritesCount={favoritesCount}
+          onBack={() => setView({ name: "home" })}
+          setView={setView}
+        />
+      </div>
+    ),
+    [categories, favoritesCount],
+  );
+  const favoritesScreen = useMemo(
+    () => (
+      <div className="azkar-no-select">
+        <FavoritesView
+          favorites={favoriteItems}
+          onToggleFavorite={toggleFavorite}
+          onBack={backTo ?? (() => setView({ name: "azkar-list" }))}
+          setView={setView}
+        />
+      </div>
+    ),
+    [favoriteItems, backTo, toggleFavorite],
+  );
+  const categoryScreen = useMemo(
+    () =>
+      selectedCategory ? (
+        <div className="azkar-no-select">
+          <CategoryView
+            category={selectedCategory}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            onBack={
+              quickOrigin
+                ? () => setView({ name: "home" })
+                : () => setView({ name: "azkar-list" })
+            }
+          />
+        </div>
+      ) : null,
+    [selectedCategory, favorites, toggleFavorite, quickOrigin],
+  );
+  const mushafListScreen = useMemo(
+    () => (
+      <QuranListView
+        lastSurah={lastSurah}
+        surahSearch={surahSearch}
+        setSurahSearch={setSurahSearch}
+        setView={goView}
+      />
+    ),
+    [lastSurah, surahSearch, goView],
+  );
+  const mushafReaderScreen = useMemo(
+    () =>
+      readerView ? (
+        <QuranReaderView
+          view={readerView}
+          setView={
+            quickOrigin
+              ? (v) => {
+                  if (v.name === "mushaf-list" || v.name === "home") {
+                    setView({ name: "home" });
+                    setNavOrigin("default");
+                  } else {
+                    setView(v);
+                  }
+                }
+              : setView
+          }
+        />
+      ) : null,
+    [readerView, quickOrigin],
+  );
+  const prayerScreen = useMemo(
+    () => (
+      <PrayerTimesView
+        onBack={() => setView({ name: "home" })}
+        onOpenQibla={() => setView({ name: "qibla" })}
+      />
+    ),
+    [],
+  );
+  const qiblaScreen = useMemo(() => <QiblaView onBack={() => setView({ name: "home" })} />, []);
+  const prophetsScreen = useMemo(() => <ProphetsView onBack={() => setView({ name: "home" })} />, []);
+  const hadithScreen = useMemo(() => <HadithView onBack={() => setView({ name: "home" })} />, []);
+  const tasbihScreen = useMemo(
+    () => (
+      <TasbihView
+        counts={counts}
+        dayTotal={dayTotal}
+        selectedWord={selectedWord}
+        roundCounts={roundCounts}
+        rounds={rounds}
+        onTap={tap}
+        onResetWord={resetWord}
+        onResetToday={resetToday}
+        onSelectWord={setSelectedWord}
+        setView={setView}
+      />
+    ),
+    [counts, dayTotal, selectedWord, roundCounts, rounds, tap, resetWord, resetToday, setSelectedWord],
+  );
 
   return (
     <QuranAudioProvider setView={setView}>
@@ -399,147 +582,20 @@ export function App() {
         {booting && <Splash exiting={splashExiting} onImageSettled={onSplashImageSettled} />}
         <AppContent
             view={view}
-            home={
-              <HomeView
-                lastSurahMeta={lastSurahMeta}
-                darkMode={darkMode}
-                onToggleDarkMode={() =>
-                  setAppearance(darkMode ? "light" : "dark")
-                }
-                onOpenPrayer={() => setView({ name: "prayer-times" })}
-                onOpenMushaf={() => setView({ name: "mushaf-list" })}
-                onOpenAzkar={() => setView({ name: "azkar-list" })}
-                onOpenMorningAzkar={() => {
-                  setNavOrigin("quick-tools");
-                  setView({ name: "category", id: "morning" });
-                }}
-                onOpenEveningAzkar={() => {
-                  setNavOrigin("quick-tools");
-                  setView({ name: "category", id: "evening" });
-                }}
-                onOpenTasbih={() => setView({ name: "tasbih" })}
-                onContinueReading={() =>
-                  lastSurahMeta
-                    ? (setNavOrigin("quick-tools"),
-                      setView({
-                        name: "mushaf-surah",
-                        number: lastSurahMeta.number,
-                      }))
-                    : (setNavOrigin("quick-tools"),
-                      setView({ name: "mushaf-list" }))
-                }
-                onOpenSettings={() => setView({ name: "settings" })}
-                onOpenQibla={() => setView({ name: "qibla" })}
-                onOpenProphets={() => setView({ name: "prophets" })}
-                onOpenHadith={() => setView({ name: "hadith" })}
-                onOpenFavorites={() => {
-                  setNavOrigin("quick-tools");
-                  setView({ name: "favorites" });
-                }}
-              />
-            }
-            settings={
-              <SettingsView
-                darkMode={darkMode}
-                appearance={appearance}
-                onAppearance={setAppearance}
-                onBack={() => setView({ name: "home" })}
-              />
-            }
-            azkarList={
-              <div className="azkar-no-select">
-              <AzkarListView
-                categories={categories}
-                favoritesCount={favoritesCount}
-                onBack={() => setView({ name: "home" })}
-                setView={setView}
-              />
-              </div>
-            }
-            favorites={
-              <div className="azkar-no-select">
-              <FavoritesView
-                favorites={favoriteItems}
-                onToggleFavorite={toggleFavorite}
-                onBack={backTo ?? (() => setView({ name: "azkar-list" }))}
-                setView={setView}
-              />
-              </div>
-            }
-            category={
-              selectedCategory ? (
-                <div className="azkar-no-select">
-                <CategoryView
-                  category={selectedCategory}
-                  favorites={favorites}
-                  onToggleFavorite={toggleFavorite}
-                  onBack={
-                    quickOrigin
-                      ? () => setView({ name: "home" })
-                      : () => setView({ name: "azkar-list" })
-                  }
-                />
-                </div>
-              ) : null
-            }
-            mushafList={
-              <QuranListView
-                lastSurah={lastSurah}
-                surahSearch={surahSearch}
-                setSurahSearch={setSurahSearch}
-                setView={goView}
-              />
-            }
-            mushafReader={
-              readerView ? (
-                <QuranReaderView
-                  view={readerView}
-                  setView={
-                    quickOrigin
-                      ? (v) => {
-                          if (v.name === "mushaf-list" || v.name === "home") {
-                            setView({ name: "home" });
-                            setNavOrigin("default");
-                          } else {
-                            setView(v);
-                          }
-                        }
-                      : setView
-                  }
-                />
-              ) : null
-            }
+            home={homeScreen}
+            settings={settingsScreen}
+            azkarList={azkarListScreen}
+            favorites={favoritesScreen}
+            category={categoryScreen}
+            mushafList={mushafListScreen}
+            mushafReader={mushafReaderScreen}
             mushafReaderActive={view.name === "mushaf-surah"}
-            prayer={
-              <PrayerTimesView
-                onBack={() => setView({ name: "home" })}
-                onOpenQibla={() => setView({ name: "qibla" })}
-              />
-            }
-            qibla={
-              <QiblaView onBack={() => setView({ name: "home" })} />
-            }
-            prophets={
-              <ProphetsView onBack={() => setView({ name: "home" })} />
-            }
-            hadith={
-              <HadithView onBack={() => setView({ name: "home" })} />
-            }
+            prayer={prayerScreen}
+            qibla={qiblaScreen}
+            prophets={prophetsScreen}
+            hadith={hadithScreen}
             onHome={() => setView({ name: "home" })}
-            tasbih={
-              <TasbihView
-                counts={counts}
-                dayTotal={dayTotal}
-                selectedWord={selectedWord}
-                roundCounts={roundCounts}
-                rounds={rounds}
-                onTap={tap}
-                onResetWord={resetWord}
-                onResetToday={resetToday}
-                onSelectWord={setSelectedWord}
-                setView={setView}
-              />
-            }
+            tasbih={tasbihScreen}
           />
         {view.name !== "mushaf-surah" && <QuranMiniPlayer />}
         {view.name !== "mushaf-surah" && (

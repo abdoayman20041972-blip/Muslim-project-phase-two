@@ -110,11 +110,11 @@ jobs:
       - name: Patch Android project (manifest permissions, splash theme)
         run: node scripts/patch-android.mjs
 
-      - name: Set version name to 1.2.5
+      - name: Set version name to 1.2.6
         run: |
           GRADLE=android/app/build.gradle
-          sed -i 's/versionName "1.0"/versionName "1.2.5"/' "$GRADLE"
-          grep -q 'versionName "1.2.5"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+          sed -i 's/versionName "1.0"/versionName "1.2.6"/' "$GRADLE"
+          grep -q 'versionName "1.2.6"' "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
 
       - name: Bundle adhan sound into raw resources
         run: |

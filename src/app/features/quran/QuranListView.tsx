@@ -76,7 +76,7 @@ export function QuranListView(p: P) {
   }, [p.surahSearch])
   const last = p.lastSurah ? surahList.find((s) => s.number === p.lastSurah) : undefined
   return (
-    <div className="quran-list-redesign animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="quran-list-redesign">
       <div className="quran-list-header flex items-center gap-3 mb-4">
         <BackButton onClick={() => p.setView({ name: 'home' })} />
         <div className="flex-1">

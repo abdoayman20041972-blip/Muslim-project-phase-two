@@ -10,7 +10,7 @@ export function ProphetsView({ onBack }: { onBack: () => void }) {
   const nextStory = storyIndex >= 0 && storyIndex < PROPHET_STORIES.length - 1 ? PROPHET_STORIES[storyIndex + 1] : null
 
   return (
-    <section dir="rtl" className="hadith-screen animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <section dir="rtl" className="hadith-screen">
       {story ? (
         <StoryReader
           story={story}

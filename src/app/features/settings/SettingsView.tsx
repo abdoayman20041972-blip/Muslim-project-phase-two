@@ -267,7 +267,7 @@ export function SettingsView({ appearance, onAppearance, onBack }: Props) {
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
   if (category === 'main')
     return (
-      <div className="animate-in fade-in duration-300" dir="rtl">
+      <div dir="rtl">
         <div className="mb-5 flex items-center gap-3">
           <button onClick={onBack} className="h-10 w-10 rounded-full border bg-azkar-card" aria-label="رجوع">
             ‹

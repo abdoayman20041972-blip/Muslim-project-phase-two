@@ -222,7 +222,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
     return () => window.removeEventListener('azkar-prayer-settings-changed', f)
   }, [])
   return (
-    <div className="prayer-screen animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="prayer-screen">
       <div className="flex items-center gap-3 mb-5">
         <button
           onClick={onBack}

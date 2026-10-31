@@ -403,7 +403,7 @@ export function QuranReaderView({ view, setView }: Props) {
   }
   if (!activeSurah) return null
   return (
-    <div className={`quran-reader-redesign animate-in fade-in slide-in-from-bottom-2 duration-300 ${readingMode ? "quran-reading-active" : ""}`}>
+    <div className={`quran-reader-redesign ${readingMode ? "quran-reading-active" : ""}`}>
       {readingMode ? (
         <>
           <div className="fixed top-0 left-0 right-0 z-40 border-b border-azkar-gold-soft bg-azkar-card/95 backdrop-blur px-3 py-3 shadow-[0_4px_18px_rgba(31,61,52,.08)] overflow-hidden">

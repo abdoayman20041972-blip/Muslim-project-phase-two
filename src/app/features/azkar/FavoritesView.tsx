@@ -42,7 +42,7 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
   }), [favorites, normalizedSearch, categoryFilter])
 
 
-  return <div className="azkar-favorites-redesign animate-in fade-in slide-in-from-bottom-2 duration-300">
+  return <div className="azkar-favorites-redesign">
     <div className="azkar-favorites-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">المفضلة</div><div className="text-[11px] text-azkar-ink-faint mt-0.5">{favorites.length ? `${toArabicNumber(favorites.length)} ${favorites.length === 1 ? 'ذكر محفوظ' : 'أذكار محفوظة'}` : 'أذكارك المحفوظة'}</div></div></div>
 
     {favorites.length === 0
