@@ -14,6 +14,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,7 +73,7 @@ public class ExactAlarmsPlugin extends Plugin {
         // incoming plan plus the kept ids; every previously stored id NOT in
         // that set is cancelled (the user turned something off, or the plan
         // horizon rolled past it).
-        ArrayList<AlarmEntry> previous = storage.list();
+        List<AlarmEntry> previous = storage.list();
         ArrayList<AlarmEntry> stored = new ArrayList<>();
         HashSet<Integer> storedIds = new HashSet<>();
         for (AlarmEntry kept : previous) {
@@ -220,7 +221,7 @@ public class ExactAlarmsPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("notification", JSONObject.NULL);
         try {
-            Activity activity = bridge != null ? bridge.getActivity() : null;
+            Activity activity = getBridge() != null ? getBridge().getActivity() : null;
             Intent intent = activity != null ? activity.getIntent() : null;
             boolean fromHistory = intent != null
                 && (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;

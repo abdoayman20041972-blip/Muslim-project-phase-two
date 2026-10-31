@@ -37,4 +37,6 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation project(':capacitor-android')
     implementation "androidx.core:core:1.13.1"
+    // getBridge().getActivity() resolves AppCompatActivity at compile time.
+    implementation "androidx.appcompat:appcompat:1.7.0"
 }
