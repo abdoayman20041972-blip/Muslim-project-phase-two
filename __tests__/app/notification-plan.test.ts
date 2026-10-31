@@ -77,11 +77,13 @@ describe('planNotifications', () => {
     expect(plan[0].at!.getMinutes()).toBe(0)
   })
 
-  it('makes the Quran reminder a single repeating entry without a date', () => {
+  it('makes the Quran reminder one dated entry per coming date', () => {
     const plan = planNotifications({ ...base, quranEnabled: true, quranTime: '21:15' })
-    expect(plan).toHaveLength(1)
-    expect(plan[0].daily).toEqual({ hour: 21, minute: 15 })
-    expect(plan[0].at).toBeUndefined()
+    // 21:15 is later than the 12:00 clock even on day 0, so every date counts.
+    expect(plan).toHaveLength(7)
+    expect(plan.every((n) => n.at!.getHours() === 21 && n.at!.getMinutes() === 15 && kindOf(n.id) === KIND.quran)).toBe(true)
+    const ids = plan.map((n) => n.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('skips a day whose timings are missing but keeps the other days', () => {

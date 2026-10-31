@@ -42,8 +42,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        {/* First paint is the splash green, not black; the stylesheet's own html/body background replaces it once loaded. */}
-        <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#0d2b23}' }} />
+        {/* APK first paint: transparent so the native launch window (mosque
+            splash drawable behind the booting WebView) stays visible until the
+            stylesheet paints the designed in-app splash — the "empty green"
+            frame between them is gone. The stylesheet is render-blocking and
+            sets the real html/body background, so web previews are unaffected. */}
+        <style dangerouslySetInnerHTML={{ __html: 'html,body{background:transparent}' }} />
         <HeadContent />
       </head>
       <body>

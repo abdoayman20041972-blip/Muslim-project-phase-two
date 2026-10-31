@@ -40,8 +40,7 @@ export type PlannedNotification = {
   body: string
   channel: string
   target: string
-  at?: Date
-  daily?: { hour: number; minute: number }
+  at: Date
   /** Android notification group so prayers collapse into one stack. */
   group?: string
 }
@@ -77,8 +76,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
 
   days.forEach((date, dayIndex) => {
     const timings = timingsByDay[dayIndex]
-    if (timings) {
-      PRAYERS.forEach((prayer, slot) => {
+    if (timings) {      PRAYERS.forEach((prayer, slot) => {
         const time = parsePrayerTime(timings[prayer], date)
         if (!time) return
         if (atTimeEnabled) {
@@ -122,21 +120,17 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
       const ayah = dailyAyahFor(midnightOf(date))
       push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: channels.reminder, target: 'ayah' })
     }
-  })
-
-  if (quranEnabled) {
-    const match = /^(\d{1,2}):(\d{2})$/.exec(quranTime)
-    if (match) {
-      // Fixed text, so it repeats daily on its own without the app being opened.
-      entries.push({
-        id: makeId(KIND.quran, 0, 0),
-        title: 'حان وقت قراءة القرآن',
-        body: 'خصص وقتك اليوم لتلاوة القرآن.',
-        channel: channels.reminder,
-        target: 'ayah',
-        daily: { hour: Number(match[1]), minute: Number(match[2]) },
-      })
+    if (quranEnabled) {
+      const match = /^(\d{1,2}):(\d{2})$/.exec(quranTime)
+      if (match) {
+        // One dated entry per day: the exact-alarm scheduler (setAlarmClock)
+        // arms absolute instants only, and the daily re-arm triggers (app
+        // open / resume / hourly) keep the horizon fresh anyway.
+        const at = new Date(date)
+        at.setHours(Number(match[1]), Number(match[2]), 0, 0)
+        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'ayah' })
+      }
     }
-  }
+  })
   return entries
 }

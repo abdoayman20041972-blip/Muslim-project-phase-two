@@ -1,77 +1,32 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { surahList } from "../quran-meta";
-const PrayerTimesView = lazy(() =>
-  import("./features/prayer/PrayerTimesView").then((m) => ({
-    default: m.PrayerTimesView,
-  })),
-);
-const QiblaView = lazy(() =>
-  import("./features/qibla/QiblaView").then((m) => ({
-    default: m.QiblaView,
-  })),
-);
-const ProphetsView = lazy(() =>
-  import("./features/prophets/ProphetsView").then((m) => ({
-    default: m.ProphetsView,
-  })),
-);
-const HadithView = lazy(() =>
-  import("./features/hadith/HadithView").then((m) => ({
-    default: m.HadithView,
-  })),
-);
+import { PrayerTimesView } from "./features/prayer/PrayerTimesView";
+import { QiblaView } from "./features/qibla/QiblaView";
+import { ProphetsView } from "./features/prophets/ProphetsView";
+import { HadithView } from "./features/hadith/HadithView";
 import { type View, type Section } from "./constants";
 import { Splash } from "./components/app-chrome";
 import { AppContent, BottomNav } from "./components/app-shell";
 import { HomeView } from "./features/home/HomeView";
-const AzkarListView = lazy(() =>
-  import("./features/azkar/AzkarListView").then((m) => ({
-    default: m.AzkarListView,
-  })),
-);
-const CategoryView = lazy(() =>
-  import("./features/azkar/CategoryView").then((m) => ({
-    default: m.CategoryView,
-  })),
-);
-const FavoritesView = lazy(() =>
-  import("./features/azkar/FavoritesView").then((m) => ({
-    default: m.FavoritesView,
-  })),
-);
-const QuranReaderView = lazy(() =>
-  import("./features/quran/QuranReaderView").then((m) => ({
-    default: m.QuranReaderView,
-  })),
-);
+import { AzkarListView } from "./features/azkar/AzkarListView";
+import { CategoryView } from "./features/azkar/CategoryView";
+import { FavoritesView } from "./features/azkar/FavoritesView";
+import { QuranReaderView } from "./features/quran/QuranReaderView";
 import { QuranAudioProvider } from "./features/quran/QuranAudioProvider";
 import { QuranMiniPlayer } from "./features/quran/QuranMiniPlayer";
-const QuranListView = lazy(() =>
-  import("./features/quran/QuranListView").then((m) => ({
-    default: m.QuranListView,
-  })),
-);
+import { QuranListView } from "./features/quran/QuranListView";
 import { useViewPersistence } from "./features/quran/useViewPersistence";
-const TasbihView = lazy(() =>
-  import("./features/tasbih/TasbihView").then((m) => ({
-    default: m.TasbihView,
-  })),
-);
+import { TasbihView } from "./features/tasbih/TasbihView";
 import { useTasbih } from "./features/tasbih/useTasbih";
 import { useAzkarCatalog } from "./features/azkar/useAzkarCatalog";
 import { useAzkarFeature } from "./features/azkar/useAzkarFeature";
-const SettingsView = lazy(() =>
-  import("./features/settings/SettingsView").then((m) => ({
-    default: m.SettingsView,
-  })),
-);
+import { SettingsView } from "./features/settings/SettingsView";
 import { useWakeLockSetting } from "./features/settings/useWakeLockSetting";
 import { useAppearanceMode } from "./features/settings/useAppearanceMode";
 import { useUiScaleSync } from "./features/settings/useUiScaleSync";
 import { startPreferencesMirror } from "./features/storage/preferencesMirror";
 import { scheduleNativeNotifications } from "./features/notifications/nativeNotifications";
-import { NativeOnboarding } from "./features/permissions/NativeOnboarding";
 import { useAppSounds } from "./features/sound/useAppSounds";
 import { useTapSoundFeedback } from "./features/sound/useTapSoundFeedback";
 import { APP_SETTINGS_KEYS, readSetting } from "./settings";
@@ -349,20 +304,10 @@ export function App() {
       const id = globalThis.setTimeout(callback, Math.min(timeout, 1200));
       return () => window.clearTimeout(id);
     };
-    const prefetchScreens = () =>
-      Promise.allSettled([
-        import("./features/settings/SettingsView"),
-        import("./features/azkar/AzkarListView"),
-        import("./features/azkar/CategoryView"),
-        import("./features/azkar/FavoritesView"),
-        import("./features/quran/QuranReaderView"),
-        import("./features/quran/QuranListView"),
-        import("./features/prayer/PrayerTimesView"),
-        import("./features/qibla/QiblaView"),
-        import("./features/prophets/ProphetsView"),
-        import("./features/hadith/HadithView"),
-        import("./features/tasbih/TasbihView"),
-      ])
+    // Screen chunks are no longer lazy: every screen module ships inside the
+    // main bundle (local file inside the APK — no chunk fetch can ever sit
+    // between a tab tap and its screen). What still benefits from warming is
+    // the DATA and the heavy background artwork.
     const prefetchData = () =>
       // Warm the hadith editions too: their JSON is bundled inside the APK, so
       // opening «الأحاديث» switches from a fetch-then-skeleton to instant.
@@ -389,22 +334,17 @@ export function App() {
     const startPrefetch = () => {
       if (prefetchStarted) return;
       prefetchStarted = true;
-      void prefetchScreens();
       prefetchImages();
       void prefetchData();
     };
-    // Navigation preload: start warming every screen chunk on the FIRST paint
-    // (rAF right after mount), not on idle — a user who taps a tab within the
-    // first second otherwise still meets the Suspense fallback. Idle and the
-    // first pointerdown stay as safety nets for busy main threads.
+    // Start warming data/artwork on the FIRST paint (rAF right after mount);
+    // idle and the first pointerdown stay as safety nets for busy threads.
     requestAnimationFrame(() => {
       if (!cancelled) startPrefetch();
     });
     const onFirstTouch = () => startPrefetch();
     window.addEventListener("pointerdown", onFirstTouch, { once: true });
     const cancelPrefetch = idle(() => {
-      // In the native shell the chunks are local files, so prefetching is
-      // always safe and makes first navigation instant.
       if (!cancelled) startPrefetch();
     }, 2200);
     return () => {
@@ -457,9 +397,7 @@ export function App() {
         }}
       >
         {booting && <Splash exiting={splashExiting} onImageSettled={onSplashImageSettled} />}
-        {!booting && <NativeOnboarding />}
-        <Suspense fallback={<AppLoadingFallback />}>
-          <AppContent
+        <AppContent
             view={view}
             home={
               <HomeView
@@ -603,7 +541,6 @@ export function App() {
               />
             }
           />
-        </Suspense>
         {view.name !== "mushaf-surah" && <QuranMiniPlayer />}
         {view.name !== "mushaf-surah" && (
           <BottomNav view={view} onNavigate={go} />

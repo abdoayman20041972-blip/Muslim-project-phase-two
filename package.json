@@ -20,6 +20,7 @@
     "@capacitor/preferences": "^7.0.0",
     "@capacitor/share": "^7.0.4",
     "@muslim/background-audio": "file:plugins/capacitor-background-audio",
+    "@muslim/exact-alarms": "file:plugins/capacitor-exact-alarms",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-devtools": "^0.10.0",
     "@tanstack/react-router": "^1.170.41",

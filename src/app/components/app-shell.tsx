@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react'
+import { Component, useEffect, useState, type ReactNode } from 'react'
 import type { Section, View } from '../constants'
 import { ConfirmDialogProvider } from './confirm-dialog'
 
@@ -73,25 +73,40 @@ function wrapScreen(content: ReactNode, resetKey: string, onHome: () => void, sh
 }
 
 export function AppContent({ view, home, settings, azkarList, favorites, category, mushafList, mushafReader, mushafReaderActive, prayer, qibla, prophets, hadith, tasbih, onHome }: AppContentProps) {
+  // Keep-alive: a screen that has been visited once stays MOUNTED (hidden)
+  // afterwards, so going back to a tab is instant — no remount, no data
+  // reload, no loading indicator, and the scroll position survives too.
+  // The qibla screen is deliberately excluded: its compass sensors must stop
+  // when the user leaves it.
+  const [visited, setVisited] = useState<Set<string>>(() => new Set(['home', view.name]))
+  useEffect(() => {
+    setVisited((previous) => (previous.has(view.name) ? previous : new Set(previous).add(view.name)))
+  }, [view.name])
+  const keep = (name: View['name']) => view.name === name || (name !== 'qibla' && visited.has(name))
+  const shell = (name: View['name'], content: ReactNode) => (
+    <div className={view.name === name ? 'contents' : 'hidden'} aria-hidden={view.name !== name}>
+      {content}
+    </div>
+  )
   return (
     <ConfirmDialogProvider>
       <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : 'pt-5 pb-24'}`}>
-      {view.name === 'home' && wrapScreen(home, 'home', onHome, false)}
-      {view.name === 'settings' && wrapScreen(settings, 'settings', onHome)}
-      {view.name === 'azkar-list' && wrapScreen(azkarList, 'azkar-list', onHome)}
-      {view.name === 'favorites' && wrapScreen(favorites, 'favorites', onHome)}
-      {view.name === 'category' && wrapScreen(category, 'category', onHome)}
-      {view.name === 'mushaf-list' && wrapScreen(mushafList, 'mushaf-list', onHome)}
+      {keep('home') && shell('home', wrapScreen(home, 'home', onHome, false))}
+      {keep('settings') && shell('settings', wrapScreen(settings, 'settings', onHome))}
+      {keep('azkar-list') && shell('azkar-list', wrapScreen(azkarList, 'azkar-list', onHome))}
+      {keep('favorites') && shell('favorites', wrapScreen(favorites, 'favorites', onHome))}
+      {keep('category') && category != null && shell('category', wrapScreen(category, 'category', onHome))}
+      {keep('mushaf-list') && shell('mushaf-list', wrapScreen(mushafList, 'mushaf-list', onHome))}
       {mushafReader && (
         <div className={mushafReaderActive ? 'contents' : 'hidden'} aria-hidden={!mushafReaderActive}>
           {wrapScreen(mushafReader, view.name, onHome)}
         </div>
       )}
-      {view.name === 'prayer-times' && wrapScreen(prayer, 'prayer-times', onHome)}
+      {keep('prayer-times') && shell('prayer-times', wrapScreen(prayer, 'prayer-times', onHome))}
       {view.name === 'qibla' && wrapScreen(qibla, 'qibla', onHome)}
-      {view.name === 'prophets' && wrapScreen(prophets, 'prophets', onHome)}
-      {view.name === 'hadith' && wrapScreen(hadith, 'hadith', onHome)}
-      {view.name === 'tasbih' && wrapScreen(tasbih, 'tasbih', onHome)}
+      {keep('prophets') && shell('prophets', wrapScreen(prophets, 'prophets', onHome))}
+      {keep('hadith') && shell('hadith', wrapScreen(hadith, 'hadith', onHome))}
+      {keep('tasbih') && shell('tasbih', wrapScreen(tasbih, 'tasbih', onHome))}
     </main>
       </ConfirmDialogProvider>
   )

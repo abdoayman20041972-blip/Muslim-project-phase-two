@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
+import { ExactAlarms, type ExactAlarm } from '@muslim/exact-alarms'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits } from '../../constants'
 import { ID_BASE, ID_RANGE, planNotifications, PRAYER_GROUP, TEST_NOTIFICATION_ID, type PlannedNotification } from './notificationPlan'
@@ -26,9 +27,14 @@ import {
 //      whenever the app is opened, brought back to the foreground, resumed,
 //      or the day/timezone changes — so a DST shift or a missed day cannot
 //      silently empty the alarm queue.
-//   3. Exact alarms (SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM) are checked and
-//      promoted from onboarding + settings; without them Android defers
-//      alarms in Doze and "Fajr at 7 AM" happens.
+//   3. TIMING goes through the custom @muslim/exact-alarms plugin:
+//      AlarmManager.setAlarmClock(), the one alarm API Android never defers
+//      ("the system identifies these alarms as the most critical ones and
+//      leaves low-power modes if necessary to deliver the alarms"). The stock
+//      plugin's setExactAndAllowWhileIdle was still postponed by Battery
+//      Saver / OEM battery managers — the root cause of "notifications arrive
+//      but never on time". Channels, permission and tap actions stay with
+//      @capacitor/local-notifications.
 //   4. The intended prayer time is written into the notification body, so
 //      even a deferred notification is self-explanatory.
 
@@ -53,8 +59,6 @@ const adhanChannelId = (mode: AdhanSoundMode) => `muslim-adhan-v2-${mode}`
 const GOLD_LED = '#e6c86e'
 /** How many days of alarms are armed in one scheduling run. */
 export const DAYS_AHEAD = 30
-/** Scheduling is split into chunks this size to stay well inside bridge limits. */
-const SCHEDULE_CHUNK = 60
 const RETRY_AFTER_FAILURE_MS = 15 * 60 * 1000
 
 let scheduledFingerprint = ''
@@ -124,11 +128,18 @@ async function requestPermission(): Promise<boolean> {
 export async function checkExactAlarm(): Promise<string> {
   if (!Capacitor.isNativePlatform()) return 'unknown'
   try {
-    const result = await LocalNotifications.checkExactNotificationSetting()
-    return result.exact_alarm
-  } catch (error) {
-    console.debug('[notifications] exact alarm check unavailable', error)
-    return 'unknown'
+    // Prefer the exact-alarms plugin's own view of the special access; the
+    // stock plugin stays as a fallback for unexpected bridge failures.
+    const result = await ExactAlarms.check()
+    return result.exactAlarm
+  } catch {
+    try {
+      const result = await LocalNotifications.checkExactNotificationSetting()
+      return result.exact_alarm
+    } catch (error) {
+      console.debug('[notifications] exact alarm check unavailable', error)
+      return 'unknown'
+    }
   }
 }
 
@@ -148,16 +159,19 @@ export function isPlannedId(id: number): boolean {
   return id >= ID_BASE && id < ID_BASE + ID_RANGE
 }
 
-async function ourPending(options: { includeTest?: boolean } = {}) {
-  const pending = await LocalNotifications.getPending()
-  return pending.notifications.filter(
-    (n) => isPlannedId(n.id) || (Boolean(options.includeTest) && n.id === TEST_NOTIFICATION_ID),
-  )
-}
-
-async function cancelOurs() {
-  const ours = await ourPending()
-  if (ours.length) await LocalNotifications.cancel({ notifications: ours.map((n) => ({ id: n.id })) })
+async function cancelLegacyStockAlarms() {
+  // Migration sweep: builds before the exact-alarms plugin scheduled through
+  // @capacitor/local-notifications; any of its alarms still pending in the OS
+  // would double-fire, so they are cancelled once and forgotten.
+  try {
+    const pending = await LocalNotifications.getPending()
+    const stale = pending.notifications.filter((n) => isPlannedId(n.id) || n.id === TEST_NOTIFICATION_ID)
+    if (stale.length) {
+      await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) })
+    }
+  } catch (error) {
+    recordError('legacy-cancel', error)
+  }
 }
 
 /** "٤:٥٢" or "٤:٥٢ ص" following the app's clock format and digit style. */
@@ -171,38 +185,26 @@ export function timeLabel(date: Date): string {
   return toArabicDigits(`${String(hh).padStart(2, '0')}:${m}`) + suffix
 }
 
-/** The schedule call that actually arms alarms; chunked and fault tolerant. */
+/** The schedule call that actually arms alarms; fault tolerant. */
 async function scheduleEntries(entries: PlannedNotification[]): Promise<number> {
-  let armed = 0
-  for (let offset = 0; offset < entries.length; offset += SCHEDULE_CHUNK) {
-    const chunk = entries.slice(offset, offset + SCHEDULE_CHUNK)
-    try {
-      await LocalNotifications.schedule({
-        notifications: chunk.map((entry) => ({
-          id: entry.id,
-          title: entry.title,
-          body: entry.body,
-          schedule: entry.daily
-            ? { on: { hour: entry.daily.hour, minute: entry.daily.minute }, allowWhileIdle: true }
-            : { at: entry.at, allowWhileIdle: true },
-          channelId: entry.channel,
-          actionTypeId: '',
-          // Notification-shade design: a proper white status-bar silhouette and
-          // the gold emblem as the large icon, with the brand gold accent —
-          // instead of the squished full-colour launcher icon Android shows by default.
-          smallIcon: 'muslim_stat_icon',
-          largeIcon: 'muslim_large_icon',
-          iconColor: GOLD_LED,
-          extra: { target: entry.target, prayerAt: entry.at ? entry.at.toISOString() : null },
-          ...(entry.group ? { group: entry.group, summaryText: 'مواقيت الصلاة القادمة' } : {}),
-        })),
-      })
-      armed += chunk.length
-    } catch (error) {
-      recordError(`schedule-chunk-${offset}`, error)
-    }
+  try {
+    const alarms: ExactAlarm[] = entries.map((entry) => ({
+      id: entry.id,
+      at: entry.at.getTime(),
+      title: entry.title,
+      body: entry.body,
+      channel: entry.channel,
+      target: entry.target,
+      group: entry.group ?? null,
+    }))
+    // The pending diagnostic test survives this replace run: a resume or
+    // settings change during its 10 seconds must not cancel it.
+    const result = await ExactAlarms.schedule({ alarms, keepIds: [TEST_NOTIFICATION_ID] })
+    return result.armed
+  } catch (error) {
+    recordError('schedule-exact', error)
+    return 0
   }
-  return armed
 }
 
 /**
@@ -212,7 +214,6 @@ async function scheduleEntries(entries: PlannedNotification[]): Promise<number> 
  */
 export function withTimeInBody(entries: PlannedNotification[]): PlannedNotification[] {
   return entries.map((entry) => {
-    if (!entry.at) return entry
     if (entry.target !== 'prayer') {
       const label = timeLabel(entry.at)
       return entry.body.includes(label) ? entry : { ...entry, body: `${entry.body} (${label})` }
@@ -306,13 +307,15 @@ async function run(force: boolean) {
     }),
   )
 
-  await cancelOurs()
-  const armed = entries.length ? await scheduleEntries(entries) : 0
+  await cancelLegacyStockAlarms()
+  // Always a replace run — even with an empty plan it must cancel whatever was
+  // armed before (the user just turned every notification off).
+  const armed = await scheduleEntries(entries)
 
   // Only now is the run considered successful; a failure above leaves the
   // fingerprint untouched so the next trigger retries.
-  const pending = await ourPending().catch((error) => {
-    recordError('getPending', error)
+  const pending = await ExactAlarms.pending().catch((error) => {
+    recordError('pending', error)
     return null
   })
   if (missingDays > 0 || armed < entries.length) lastFailureAt = Date.now()
@@ -324,7 +327,7 @@ async function run(force: boolean) {
     ranAt: new Date().toISOString(),
     scheduled: entries.length,
     armed,
-    pending: pending ? pending.length : null,
+    pending: pending ? pending.items.length : null,
     timingsMissingDays: missingDays,
   })
 }
@@ -353,31 +356,13 @@ export function scheduleNativeNotifications(options: { force?: boolean } = {}): 
 /** Fires one test notification roughly 10 seconds from now. */
 let testFallbackTimer = 0
 
-function testNotification(at: Date, title = 'إشعار تجريبي', body = 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.') {
-  return {
-    // Deliberately OUTSIDE the [ID_BASE, ID_BASE + ID_RANGE) window that
-    // every re-scheduling run cancels: a resume, a settings change or
-    // «جدولة الآن» during the 10 seconds must NOT kill the pending test.
-    id: TEST_NOTIFICATION_ID,
-    title,
-    body,
-    schedule: { at, allowWhileIdle: true },
-    channelId: TEST_CHANNEL,
-    actionTypeId: '',
-    smallIcon: 'muslim_stat_icon',
-    largeIcon: 'muslim_large_icon',
-    iconColor: GOLD_LED,
-    extra: { target: 'azkar' },
-  }
-}
-
 /**
- * Foreground safety net: if the native alarm has not DELIVERED the test
- * notification 12 seconds after scheduling (checked against the real shade
- * state via getDeliveredNotifications), post it right away with the same id
- * (posting the same id replaces, so it can never double-stack). Covers OEM
- * alarm deferral and broken alarm paths while the user is still watching the
- * app; the background case keeps being handled by the native alarm itself.
+ * Foreground safety net: if the native setAlarmClock alarm has not DELIVERED
+ * the test notification 12 seconds after scheduling (checked against the real
+ * shade state), post it right away through @capacitor/local-notifications
+ * with the same id (posting the same id replaces, so it can never
+ * double-stack). setAlarmClock is never deferred, so this should stay dormant —
+ * it only covers a broken vendor alarm path while the user is watching.
  */
 function armTestFallback() {
   if (testFallbackTimer) window.clearTimeout(testFallbackTimer)
@@ -388,12 +373,27 @@ function armTestFallback() {
       try {
         const delivered = await LocalNotifications.getDeliveredNotifications()
         if (delivered.notifications.some((n) => n.id === TEST_NOTIFICATION_ID)) return
-        await LocalNotifications.cancel({ notifications: [{ id: TEST_NOTIFICATION_ID }] }).catch(() => {})
-        await LocalNotifications.schedule({ notifications: [testNotification(new Date(Date.now() + 800))] })
+        await ExactAlarms.cancelOne({ id: TEST_NOTIFICATION_ID }).catch(() => {})
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: TEST_NOTIFICATION_ID,
+              title: 'إشعار تجريبي',
+              body: 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.',
+              schedule: { at: new Date(Date.now() + 800), allowWhileIdle: true },
+              channelId: TEST_CHANNEL,
+              actionTypeId: '',
+              smallIcon: 'muslim_stat_icon',
+              largeIcon: 'muslim_large_icon',
+              iconColor: GOLD_LED,
+              extra: { target: 'azkar' },
+            },
+          ],
+        })
         patchDiagnostics({ testFallbackUsed: true })
         recordError(
           'test-notification-fallback',
-          new Error('لم يسلّم المنبّه الأصلي خلال ١٢ ثانية وتمّت التسليم عبر المسار الاحتياطي'),
+          new Error('لم يسلّم منبّه setAlarmClock خلال ١٢ ثانية وتمّت التسليم عبر المسار الاحتياطي'),
         )
       } catch (error) {
         recordError('test-notification-fallback', error)
@@ -407,19 +407,27 @@ export async function scheduleTestNotification(): Promise<boolean> {
     if (!(await requestPermission())) return false
     await ensureChannels()
     // A previous test may still be pending (double tap): replace it cleanly
-    // instead of stacking a second one.
+    // instead of stacking a second one — without touching the 30-day plan.
+    await ExactAlarms.cancelOne({ id: TEST_NOTIFICATION_ID }).catch(() => {})
     await LocalNotifications.cancel({ notifications: [{ id: TEST_NOTIFICATION_ID }] }).catch(() => {})
-    await LocalNotifications.schedule({
-      notifications: [testNotification(new Date(Date.now() + 10_000))],
+    const scheduledAt = new Date(Date.now() + 10_000)
+    const result = await ExactAlarms.add({
+      alarm: {
+        id: TEST_NOTIFICATION_ID,
+        at: scheduledAt.getTime(),
+        title: 'إشعار تجريبي',
+        body: 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.',
+        channel: TEST_CHANNEL,
+        target: 'azkar',
+        group: null,
+      },
     })
-    const pendingNow = await ourPending({ includeTest: true }).catch(() => null)
-    const confirmed = pendingNow ? pendingNow.some((n) => n.id === TEST_NOTIFICATION_ID) : null
+    const confirmed = result.armed > 0
     armTestFallback()
     patchDiagnostics({ testScheduledAt: new Date().toISOString(), testFallbackUsed: false })
-    // A failed confirmation (null) is unknown, not false: the schedule call
-    // itself succeeded, so the button reports success while diagnostics show
-    // whether the OS really lists the notification as pending.
-    return confirmed !== false
+    // A failed confirmation is reported honestly: with setAlarmClock the
+    // arm call either worked or the diagnostics show exactly why not.
+    return confirmed
   } catch (error) {
     recordError('test-notification', error)
     return false
@@ -431,12 +439,12 @@ export type ScheduledItem = { id: number; title: string; at: string | null }
 /** What is actually pending in the OS right now (ours, incl. the test), soonest first. */
 export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
   try {
-    const items = await ourPending({ includeTest: true })
-    return items
-      .map((n) => ({
-        id: n.id,
-        title: n.title ?? '',
-        at: n.schedule?.at ? new Date(n.schedule.at).toISOString() : n.schedule?.on ? 'daily' : null,
+    const pending = await ExactAlarms.pending()
+    return pending.items
+      .map((item) => ({
+        id: item.id,
+        title: item.title ?? '',
+        at: item.at ? new Date(item.at).toISOString() : null,
       }))
       .sort((a, b) => String(a.at).localeCompare(String(a.at)))
   } catch (error) {

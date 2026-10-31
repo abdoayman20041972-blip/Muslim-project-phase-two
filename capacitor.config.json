@@ -2,12 +2,12 @@
   "appId": "com.muslim.zikrapp",
   "appName": "مسلم",
   "webDir": ".output/public",
-  "backgroundColor": "#0d2b23",
+  "backgroundColor": "#0d2b2300",
   "server": {
     "androidScheme": "https"
   },
   "android": {
-    "backgroundColor": "#0d2b23",
+    "backgroundColor": "#0d2b2300",
     "allowMixedContent": false
   }
 }

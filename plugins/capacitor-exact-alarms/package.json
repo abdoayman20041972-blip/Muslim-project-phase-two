@@ -1,0 +1,13 @@
+{
+  "name": "@muslim/exact-alarms",
+  "version": "1.0.0",
+  "description": "AlarmManager.setAlarmClock scheduling for prayer-time notifications — the only Android alarm API the system never defers (Doze and Battery Saver included)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  }
+}

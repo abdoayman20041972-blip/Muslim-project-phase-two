@@ -20,7 +20,9 @@ describe('App user journeys', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'أذكار الصباح' }))
     await waitFor(() => expect(screen.getByText(/أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ/)).toBeTruthy())
-    fireEvent.click(screen.getByLabelText('رجوع'))
+    // Role queries respect aria-hidden, so this finds the ACTIVE screen's back
+    // button even though keep-alive keeps other screens mounted (hidden).
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
   })
 
@@ -34,6 +36,30 @@ describe('App user journeys', () => {
     fireEvent.click(countButton!)
     await waitFor(() => expect(screen.getByText(/إجمالي اليوم:/)).toHaveTextContent('١'))
     await waitFor(() => expect(localStorage.getItem('azkar_day_total')).toBe('1'), { timeout: 1000 })
+  })
+
+  it('keeps a visited screen mounted (hidden) so returning to it is instant', async () => {
+    const { container } = render(<App />)
+    expect(container).toBeTruthy()
+    await finishBoot()
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الأذكار' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الرئيسية' }))
+    // After returning home the azkar screen stays mounted, wrapped in a
+    // display:none shell: no remount, no reload, scroll position kept.
+    await waitFor(() => {
+      const hidden = document.querySelector('main > div.hidden')
+      expect(hidden).toBeTruthy()
+      expect(hidden!.textContent).toContain('أذكار الصباح')
+    })
+  })
+
+  it('shows no first-run onboarding dialog — the system permission prompt covers first launch', async () => {
+    render(<App />)
+    await finishBoot()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByText('ابدأ الاستخدام')).toBeNull()
+    expect(screen.queryByText('أهلًا بك في مسلم')).toBeNull()
   })
 
   it('navigates home → mushaf → surah list and can filter by number', async () => {

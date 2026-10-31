@@ -56,13 +56,13 @@ describe('withTimeInBody', () => {
     target: 'azkar',
     at: new Date(2026, 9, 26, 6, 10),
   }
-  const daily: PlannedNotification = {
+  const quran: PlannedNotification = {
     id: 4,
     title: 'حان وقت قراءة القرآن',
     body: 'خصص وقتك اليوم لتلاوة القرآن.',
     channel: 'muslim-reminders-v2',
     target: 'ayah',
-    daily: { hour: 20, minute: 0 },
+    at: new Date(2026, 9, 26, 20, 0),
   }
 
   it('appends the adhan time to prayer notifications', () => {
@@ -80,9 +80,9 @@ describe('withTimeInBody', () => {
     expect(out.body).toBe('حان وقت أذكار الصباح مع الشروق. (٠٦:١٠)')
   })
 
-  it('leaves repeating notifications without a date untouched', () => {
-    const [out] = withTimeInBody([daily])
-    expect(out.body).toBe('خصص وقتك اليوم لتلاوة القرآن.')
+  it('adds the time in parentheses to the dated Quran reminder too', () => {
+    const [out] = withTimeInBody([quran])
+    expect(out.body).toBe('خصص وقتك اليوم لتلاوة القرآن. (٢٠:٠٠)')
   })
 
   it('does not duplicate the label when the body already contains it', () => {
