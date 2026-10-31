@@ -49,10 +49,29 @@ describe('patch-android.mjs', () => {
     // Android 12+ system splash itself with the framework attributes.
     expect(block).toContain('parent="AppTheme.NoActionBar"')
     expect(block).not.toContain('Theme.SplashScreen')
+    // The window background is the layer-list: mosque icon on brand green
+    // while the WebView boots, so no flat "empty green" stage can appear
+    // between the system splash and the prerendered in-app splash.
+    expect(block).toContain('<item name="android:windowBackground">@drawable/muslim_splash_window</item>')
     expect(block).toContain('<item name="android:background">@color/muslim_splash_background</item>')
     expect(block).toContain('<item name="android:windowSplashScreenBackground">@color/muslim_splash_background</item>')
     expect(block).toContain('<item name="android:windowSplashScreenIconBackgroundColor">@color/muslim_splash_background</item>')
-    expect(block).not.toContain('@drawable/splash')
+    expect(block).not.toMatch(/android:windowBackground[^<]*@drawable\/splash\b/)
+  })
+
+  it('writes the splash window layer-list (green + centered icon, never stretched)', () => {
+    const { root, main } = fixture()
+    run(root)
+    const drawable = readFileSync(join(main, 'res', 'drawable', 'muslim_splash_window.xml'), 'utf8')
+    expect(drawable).toContain('<layer-list')
+    // Color layer first, bitmap second — the color guarantees full coverage
+    // even if the bitmap is clipped.
+    expect(drawable.indexOf('@color/muslim_splash_background')).toBeLessThan(drawable.indexOf('@drawable/splash'))
+    // gravity=center WITHOUT width/height → intrinsic density-scaled size,
+    // so the mosque icon never stretches to the window bounds.
+    expect(drawable).toContain('android:gravity="center"')
+    expect(drawable).not.toContain('android:width')
+    expect(drawable).not.toContain('android:height')
   })
 
   it('is idempotent', () => {
@@ -62,4 +81,25 @@ describe('patch-android.mjs', () => {
     expect(run(root)).toContain('already up to date')
     expect(readFileSync(join(main, 'AndroidManifest.xml'), 'utf8')).toBe(first)
   })
+
+  it('keeps the notification icons next to the splash window drawable', () => {
+    const { root, main } = fixture()
+    // The binary icons are committed with the repo; copy them so the patch
+    // script can install them in the fixture project too.
+    mkdirSync(join(root, 'native'), { recursive: true })
+    writeFileSync(join(root, 'native', 'stat-icon.png'), readFileSync(resolve(__dirname, '../../native/stat-icon.png')))
+    writeFileSync(join(root, 'native', 'large-icon.png'), readFileSync(resolve(__dirname, '../../native/large-icon.png')))
+    run(root)
+    expect(existsSyncFn(join(main, 'res', 'drawable', 'muslim_stat_icon.png'))).toBe(true)
+    expect(existsSyncFn(join(main, 'res', 'drawable', 'muslim_large_icon.png'))).toBe(true)
+  })
 })
+
+const existsSyncFn = (path: string) => {
+  try {
+    readFileSync(path)
+    return true
+  } catch {
+    return false
+  }
+}

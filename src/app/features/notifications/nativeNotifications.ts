@@ -42,6 +42,11 @@ export function readAdhanSoundMode(): AdhanSoundMode {
 const LEGACY_CHANNELS = ['muslim-adhan', 'muslim-prayer', 'muslim-reminders']
 const PRAYER_CHANNEL = 'muslim-prayer-v2'
 const REMINDER_CHANNEL = 'muslim-reminders-v2'
+// The 10-second test notification gets its own HIGH-importance channel so it
+// arrives as a heads-up banner WITH sound even while the app is open — a
+// default-importance notification only lands silently in the shade, which is
+// indistinguishable from "it never arrived" for a user watching the screen.
+const TEST_CHANNEL = 'muslim-test-v1'
 // Android keeps a deleted channel's old settings when the same id is created
 // again, so each adhan sound mode gets its own channel id.
 const adhanChannelId = (mode: AdhanSoundMode) => `muslim-adhan-v2-${mode}`
@@ -96,6 +101,16 @@ async function ensureChannels() {
     lights: true,
     lightColor: GOLD_LED,
   })
+  await LocalNotifications.createChannel({
+    id: TEST_CHANNEL,
+    name: 'الإشعار التجريبي',
+    description: 'اختبار أن التنبيهات تصل إلى جهازك',
+    importance: 4,
+    visibility: 1,
+    vibration: true,
+    lights: true,
+    lightColor: GOLD_LED,
+  })
 }
 
 async function requestPermission(): Promise<boolean> {
@@ -128,9 +143,16 @@ export async function openExactAlarmSettings(): Promise<string> {
   }
 }
 
-async function ourPending() {
+/** Every notification id this app owns EXCEPT the test one. */
+export function isPlannedId(id: number): boolean {
+  return id >= ID_BASE && id < ID_BASE + ID_RANGE
+}
+
+async function ourPending(options: { includeTest?: boolean } = {}) {
   const pending = await LocalNotifications.getPending()
-  return pending.notifications.filter((n) => n.id >= ID_BASE && n.id < ID_BASE + ID_RANGE)
+  return pending.notifications.filter(
+    (n) => isPlannedId(n.id) || (Boolean(options.includeTest) && n.id === TEST_NOTIFICATION_ID),
+  )
 }
 
 async function cancelOurs() {
@@ -329,6 +351,57 @@ export function scheduleNativeNotifications(options: { force?: boolean } = {}): 
 }
 
 /** Fires one test notification roughly 10 seconds from now. */
+let testFallbackTimer = 0
+
+function testNotification(at: Date, title = 'إشعار تجريبي', body = 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.') {
+  return {
+    // Deliberately OUTSIDE the [ID_BASE, ID_BASE + ID_RANGE) window that
+    // every re-scheduling run cancels: a resume, a settings change or
+    // «جدولة الآن» during the 10 seconds must NOT kill the pending test.
+    id: TEST_NOTIFICATION_ID,
+    title,
+    body,
+    schedule: { at, allowWhileIdle: true },
+    channelId: TEST_CHANNEL,
+    actionTypeId: '',
+    smallIcon: 'muslim_stat_icon',
+    largeIcon: 'muslim_large_icon',
+    iconColor: GOLD_LED,
+    extra: { target: 'azkar' },
+  }
+}
+
+/**
+ * Foreground safety net: if the native alarm has not DELIVERED the test
+ * notification 12 seconds after scheduling (checked against the real shade
+ * state via getDeliveredNotifications), post it right away with the same id
+ * (posting the same id replaces, so it can never double-stack). Covers OEM
+ * alarm deferral and broken alarm paths while the user is still watching the
+ * app; the background case keeps being handled by the native alarm itself.
+ */
+function armTestFallback() {
+  if (testFallbackTimer) window.clearTimeout(testFallbackTimer)
+  testFallbackTimer = window.setTimeout(() => {
+    testFallbackTimer = 0
+    if (document.visibilityState !== 'visible') return
+    void (async () => {
+      try {
+        const delivered = await LocalNotifications.getDeliveredNotifications()
+        if (delivered.notifications.some((n) => n.id === TEST_NOTIFICATION_ID)) return
+        await LocalNotifications.cancel({ notifications: [{ id: TEST_NOTIFICATION_ID }] }).catch(() => {})
+        await LocalNotifications.schedule({ notifications: [testNotification(new Date(Date.now() + 800))] })
+        patchDiagnostics({ testFallbackUsed: true })
+        recordError(
+          'test-notification-fallback',
+          new Error('لم يسلّم المنبّه الأصلي خلال ١٢ ثانية وتمّت التسليم عبر المسار الاحتياطي'),
+        )
+      } catch (error) {
+        recordError('test-notification-fallback', error)
+      }
+    })()
+  }, 12_000)
+}
+
 export async function scheduleTestNotification(): Promise<boolean> {
   try {
     if (!(await requestPermission())) return false
@@ -337,25 +410,16 @@ export async function scheduleTestNotification(): Promise<boolean> {
     // instead of stacking a second one.
     await LocalNotifications.cancel({ notifications: [{ id: TEST_NOTIFICATION_ID }] }).catch(() => {})
     await LocalNotifications.schedule({
-      notifications: [
-        {
-          // Deliberately OUTSIDE the [ID_BASE, ID_BASE + ID_RANGE) window that
-          // every re-scheduling run cancels: a resume, a settings change or
-          // «جدولة الآن» during the 10 seconds must NOT kill the pending test.
-          id: TEST_NOTIFICATION_ID,
-          title: 'إشعار تجريبي',
-          body: 'إذا ظهر هذا الإشعار فالتنبيهات تعمل على جهازك.',
-          schedule: { at: new Date(Date.now() + 10_000), allowWhileIdle: true },
-          channelId: REMINDER_CHANNEL,
-          actionTypeId: '',
-          smallIcon: 'muslim_stat_icon',
-          largeIcon: 'muslim_large_icon',
-          iconColor: GOLD_LED,
-          extra: { target: 'azkar' },
-        },
-      ],
+      notifications: [testNotification(new Date(Date.now() + 10_000))],
     })
-    return true
+    const pendingNow = await ourPending({ includeTest: true }).catch(() => null)
+    const confirmed = pendingNow ? pendingNow.some((n) => n.id === TEST_NOTIFICATION_ID) : null
+    armTestFallback()
+    patchDiagnostics({ testScheduledAt: new Date().toISOString(), testFallbackUsed: false })
+    // A failed confirmation (null) is unknown, not false: the schedule call
+    // itself succeeded, so the button reports success while diagnostics show
+    // whether the OS really lists the notification as pending.
+    return confirmed !== false
   } catch (error) {
     recordError('test-notification', error)
     return false
@@ -364,10 +428,10 @@ export async function scheduleTestNotification(): Promise<boolean> {
 
 export type ScheduledItem = { id: number; title: string; at: string | null }
 
-/** What is actually pending in the OS right now (ours only), soonest first. */
+/** What is actually pending in the OS right now (ours, incl. the test), soonest first. */
 export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
   try {
-    const items = await ourPending()
+    const items = await ourPending({ includeTest: true })
     return items
       .map((n) => ({
         id: n.id,

@@ -15,6 +15,10 @@ export type NotificationDiagnostics = {
   timingsMissingDays: number
   /** Prayer-based notifications are enabled but no location is saved. */
   locationMissing: boolean
+  /** When the 10-second test notification was last scheduled. */
+  testScheduledAt: string | null
+  /** True when the native alarm had not delivered it and the JS fallback posted it. */
+  testFallbackUsed: boolean
   lastError: string | null
   lastErrorAt: string | null
 }
@@ -28,6 +32,8 @@ const EMPTY: NotificationDiagnostics = {
   pending: null,
   timingsMissingDays: 0,
   locationMissing: false,
+  testScheduledAt: null,
+  testFallbackUsed: false,
   lastError: null,
   lastErrorAt: null,
 }

@@ -16,6 +16,11 @@
 //         grant is accepted: it is accurate enough for prayer times).
 //   - colors.xml: splash background colour
 //   - styles.xml: the single-stage launch theme (best effort, warns instead of failing)
+//   - res/drawable/muslim_splash_window.xml: layer-list window background — brand
+//     green + the mosque splash bitmap centered WITHOUT stretching. While the
+//     WebView boots, the window behind it shows the same mosque icon on the same
+//     green as the Android 12+ system splash, so there is no "empty green" stage
+//     between the system splash and the prerendered in-app splash.
 //   - res/drawable: the white status-bar icon and gold notification icon used by
 //     every scheduled notification (instead of the squished launcher icon)
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
@@ -29,6 +34,7 @@ const STYLES = join(MAIN, 'res', 'values', 'styles.xml')
 const DRAWABLES = join(MAIN, 'res', 'drawable')
 const SPLASH_COLOR_NAME = 'muslim_splash_background'
 const SPLASH_COLOR = '#0d2b23'
+const SPLASH_WINDOW_DRAWABLE = 'muslim_splash_window'
 
 // Binary notification icons committed with the repo (native/ folder).
 const NOTIFICATION_ICONS = [
@@ -99,7 +105,7 @@ function patchStyles() {
     return
   }
   const block = match[0]
-  if (block.includes('android:windowSplashScreenBackground')) return
+  if (block.includes('muslim_splash_window')) return
   if (!/<style\s+name="AppTheme\.NoActionBar"/.test(xml)) {
     warnings.push('AppTheme.NoActionBar not found; splash theme not patched')
     return
@@ -108,20 +114,49 @@ function patchStyles() {
   //   * parent is AppTheme.NoActionBar — NOT androidx Theme.SplashScreen,
   //     which (without installSplashScreen()) silently falls back to a black
   //     Material background in dark mode and drags in the splash-screen plugin.
-  //   * android:background is the flat brand green (never @drawable/splash:
-  //     window backgrounds stretch bitmaps, and @capacitor/assets generates
-  //     *-night splash drawables on a default BLACK background), so the window
-  //     behind the booting WebView is the same green as everything else.
+  //   * android:windowBackground is a LAYER-LIST (muslim_splash_window.xml):
+  //     brand green + the generated @drawable/splash (mosque icon on the same
+  //     green, both day and night variants) centered via gravity so the bitmap
+  //     never stretches. The window behind the booting WebView therefore keeps
+  //     showing the mosque icon on green — the hand-off from the Android 12+
+  //     system splash is seamless and users never see an "empty green" stage.
+  //     (Referencing @drawable/splash directly as a window background stretches
+  //     it; the layer-list with gravity is what makes it safe.)
+  //   * android:background stays the flat brand green as a fallback for paths
+  //     that read it instead of windowBackground.
   //   * android:windowSplashScreen* (Android 12+ framework attributes) colors
   //     the OS splash screen itself: mosque icon on the same brand green.
   const replacement = [
     '    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">',
+    `        <item name="android:windowBackground">@drawable/${SPLASH_WINDOW_DRAWABLE}</item>`,
     `        <item name="android:background">@color/${SPLASH_COLOR_NAME}</item>`,
     `        <item name="android:windowSplashScreenBackground">@color/${SPLASH_COLOR_NAME}</item>`,
     `        <item name="android:windowSplashScreenIconBackgroundColor">@color/${SPLASH_COLOR_NAME}</item>`,
     '    </style>',
   ].join('\n')
   write(STYLES, xml.replace(block, replacement), 'styles.xml (single-stage launch theme)')
+}
+
+function patchSplashWindowDrawable() {
+  // Layer-list: color layer + the generated splash bitmap centered at its
+  // density-scaled intrinsic size (gravity only, no width/height → no stretch,
+  // and works on every API level). The -night splash drawables are generated on
+  // the same brand green, so light and dark look identical here.
+  const target = join(DRAWABLES, `${SPLASH_WINDOW_DRAWABLE}.xml`)
+  if (existsSync(target)) return
+  mkdirSync(DRAWABLES, { recursive: true })
+  write(
+    target,
+    [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">',
+      `    <item android:drawable="@color/${SPLASH_COLOR_NAME}" />`,
+      '    <item android:drawable="@drawable/splash" android:gravity="center" />',
+      '</layer-list>',
+      '',
+    ].join('\n'),
+    `drawable/${SPLASH_WINDOW_DRAWABLE}.xml (window background: icon on green, no stretch)`,
+  )
 }
 
 function patchNotificationIcons() {
@@ -141,6 +176,7 @@ function patchNotificationIcons() {
 patchManifest()
 patchColors()
 patchStyles()
+patchSplashWindowDrawable()
 patchNotificationIcons()
 
 console.log(changed.length ? `patch-android: ${changed.join(', ')}` : 'patch-android: already up to date')

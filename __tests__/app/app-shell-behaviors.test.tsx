@@ -41,7 +41,11 @@ describe("Suspense screen fallback", () => {
     render(<AppLoadingFallback />);
     const main = screen.getByRole("main", { name: "جاري تحميل الشاشة" });
     expect(main).toBeTruthy();
-    expect(main).toHaveTextContent("جاري التحميل");
+    // Quiet by design: a bare indicator and no big loading card — a full card
+    // flashing for the ~100ms a chunk needs reads as a "loading problem".
+    expect(main.querySelector(".startup-loading-indicator")).toBeTruthy();
+    expect(main.querySelector(".startup-loading-card")).toBeNull();
+    expect(main.textContent?.trim()).toBe("");
   });
 });
 

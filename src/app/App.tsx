@@ -92,17 +92,18 @@ function consumeNotificationOpen(): View | null {
 }
 
 export function AppLoadingFallback() {
+  // Deliberately quiet: no card, no big text — after the immediate prefetch
+  // this only flashes for a few frames in the rare case the user navigates
+  // faster than the chunks load, and a loud full card there reads as a
+  // "loading problem" even when it lasts 100ms.
   return (
     <main
       className="app-content startup-loading w-full min-w-0 max-w-md px-5"
       aria-live="polite"
       aria-label="جاري تحميل الشاشة"
     >
-      <div className="startup-loading-card">
-        <div className="startup-loading-indicator" aria-hidden="true">
-          <span />
-        </div>
-        <span>جاري التحميل…</span>
+      <div className="startup-loading-indicator" aria-hidden="true">
+        <span />
       </div>
     </main>
   );
@@ -361,7 +362,13 @@ export function App() {
         import("./features/prophets/ProphetsView"),
         import("./features/hadith/HadithView"),
         import("./features/tasbih/TasbihView"),
-      ]);
+      ])
+    const prefetchData = () =>
+      // Warm the hadith editions too: their JSON is bundled inside the APK, so
+      // opening «الأحاديث» switches from a fetch-then-skeleton to instant.
+      import("./features/hadith/hadithData")
+        .then((m) => Promise.allSettled(m.API_EDITIONS.map((edition) => m.loadApiEdition(edition.edition))))
+        .catch(() => {});
     const prefetchImages = () => {
       // Warm the biggest background images too, so the first navigation to
       // each screen shows its artwork instantly. All local files inside the
@@ -384,10 +391,15 @@ export function App() {
       prefetchStarted = true;
       void prefetchScreens();
       prefetchImages();
+      void prefetchData();
     };
-    // Runs on idle after boot… and also on the very first touch, in case the
-    // device is busy and the idle callback would arrive only after the user
-    // has already started navigating.
+    // Navigation preload: start warming every screen chunk on the FIRST paint
+    // (rAF right after mount), not on idle — a user who taps a tab within the
+    // first second otherwise still meets the Suspense fallback. Idle and the
+    // first pointerdown stay as safety nets for busy main threads.
+    requestAnimationFrame(() => {
+      if (!cancelled) startPrefetch();
+    });
     const onFirstTouch = () => startPrefetch();
     window.addEventListener("pointerdown", onFirstTouch, { once: true });
     const cancelPrefetch = idle(() => {

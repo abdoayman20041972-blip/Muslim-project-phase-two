@@ -99,6 +99,18 @@ export function NotificationDiagnostics() {
       <Row title="آخر جدولة" description={formatTime(diag.ranAt)}>
         <span className="text-[11px] font-bold text-azkar-ink">{toArabicNumber(diag.scheduled)}</span>
       </Row>
+      {diag.testScheduledAt && (
+        <Row
+          title="آخر إشعار تجريبي"
+          description={
+            diag.testFallbackUsed
+              ? 'سلّمه المسار الاحتياطي وليس المنبّه الأصلي — راجع توفير البطارية والمنبّهات الدقيقة'
+              : 'مجدول عبر المنبّه الأصلي للنظام'
+          }
+        >
+          <span className="text-[11px] font-bold text-azkar-ink">{formatTime(diag.testScheduledAt)}</span>
+        </Row>
+      )}
       <Row title="إذن الإشعارات" description={'المنبّه الدقيق: ' + (PERMISSION_LABELS[diag.exactAlarm] ?? diag.exactAlarm)}>
         <span className="text-[11px] font-bold text-azkar-ink">{PERMISSION_LABELS[diag.permission] ?? diag.permission}</span>
       </Row>
@@ -131,8 +143,8 @@ export function NotificationDiagnostics() {
               const ok = await scheduleTestNotification()
               setMessage(
                 ok
-                  ? 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ — لا تفتح التطبيق حتى يصل. لو كان وضع «عدم الإزعاج» مفعّلًا فسيظهر الإشعار بصمت داخل القائمة.'
-                  : 'تعذّر جدولة الإشعار التجريبي.',
+                  ? 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ كإشعار عائم مع صوت حتى وأنت داخل التطبيق. إن لم يظهر فافحص وضع «عدم الإزعاج» وسماحية الإشعارات من إعدادات النظام.'
+                  : 'تعذّر جدولة الإشعار التجريبي — تأكد من السماح للإشعارات من إعدادات النظام ثم أعد المحاولة.',
               )
             })
           }
