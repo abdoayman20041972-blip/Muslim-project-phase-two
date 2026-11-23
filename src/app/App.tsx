@@ -616,7 +616,7 @@ export function App() {
             onHome={() => setView({ name: "home" })}
             tasbih={tasbihScreen}
           />
-        {view.name !== "mushaf-surah" && <QuranMiniPlayer />}
+        <QuranMiniPlayer />
         {view.name !== "mushaf-surah" && (
           <BottomNav view={view} onNavigate={go} />
         )}
