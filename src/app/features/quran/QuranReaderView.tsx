@@ -17,11 +17,9 @@ import { useQuranAudio } from './QuranAudioProvider'
 import { QuranOfflinePlayer } from './QuranOfflinePlayer'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { fetchWithTimeout } from '../../net'
+import { assertQuranPageMap, groupSurahPages, type QuranPageMap } from './quranPageIntegrity'
 
 type Props = { view: Extract<View, { name: 'mushaf-surah' }>; setView: (v: View) => void }
-type QuranPageEntry = { surahNumber: number; numberInSurah: number; number: number }
-type QuranPageMap = Record<string, QuranPageEntry[]>
-type PageGroup = { startIndex: number; endIndex: number; realPageNumber: number }
 
 function CopyIcon() {
   return (
@@ -123,7 +121,7 @@ export function QuranReaderView({ view, setView }: Props) {
     setFontSize,
     reciter,
     setReciter,
-    layout,
+    layout: requestedLayout,
     setLayout,
     fontConfig: fs,
   } = useQuranPreferences()
@@ -205,47 +203,30 @@ export function QuranReaderView({ view, setView }: Props) {
   }, [panel])
 
   const [quranPageMap, setQuranPageMap] = useState<QuranPageMap | null>(null)
+  const [pageMapFailed, setPageMapFailed] = useState(false)
 
   useEffect(() => {
-    if (layout !== 'pages' || quranPageMap) return
+    if (requestedLayout !== 'pages' || quranPageMap) return
     let cancelled = false
+    setPageMapFailed(false)
     import('./data/quran-pages.json')
       .then((module) => {
-        if (!cancelled) setQuranPageMap(module.default as QuranPageMap)
+        assertQuranPageMap(module.default, surahList)
+        if (!cancelled) setQuranPageMap(module.default)
       })
       .catch(() => {
-        if (!cancelled) setQuranPageMap({})
+        if (!cancelled) setPageMapFailed(true)
       })
-    return () => {
-      cancelled = true
-    }
-  }, [layout, quranPageMap])
+    return () => { cancelled = true }
+  }, [requestedLayout, quranPageMap])
 
-  const pageGroups = useMemo<PageGroup[]>(() => {
-    if (!ayahs?.length || !quranPageMap) return []
-    const ayahToRealPage = new Map<number, number>()
-    for (const [page, entries] of Object.entries(quranPageMap)) {
-      const realPageNumber = Number(page)
-      for (const entry of entries) ayahToRealPage.set(entry.number, realPageNumber)
-    }
-
-    const groups: PageGroup[] = []
-    let startIndex = 0
-    let currentPage = ayahToRealPage.get(ayahs[0].number)
-    if (currentPage == null) return []
-
-    for (let index = 1; index < ayahs.length; index += 1) {
-      const realPageNumber = ayahToRealPage.get(ayahs[index].number)
-      if (realPageNumber == null) return []
-      if (realPageNumber !== currentPage) {
-        groups.push({ startIndex, endIndex: index - 1, realPageNumber: currentPage })
-        startIndex = index
-        currentPage = realPageNumber
-      }
-    }
-    groups.push({ startIndex, endIndex: ayahs.length - 1, realPageNumber: currentPage })
-    return groups
-  }, [ayahs, quranPageMap])
+  const pageGroups = useMemo(() => (
+    ayahs && quranPageMap ? groupSurahPages(ayahs, view.number, quranPageMap) : []
+  ), [ayahs, view.number, quranPageMap])
+  const pageMapUnavailable = pageMapFailed || Boolean(quranPageMap && ayahs?.length && !pageGroups.length)
+  // Never render an empty page frame while the map loads or if validation fails.
+  // Keep the saved preference intact; this fallback applies only to this session.
+  const layout = requestedLayout === 'pages' && pageGroups.length ? 'pages' : 'scroll'
 
   const totalPages = Math.max(1, pageGroups.length)
   const safePage = Math.min(pageIndex, totalPages - 1)
@@ -571,14 +552,14 @@ export function QuranReaderView({ view, setView }: Props) {
               <div className="rounded-[1.3rem] border border-azkar-gold-soft bg-azkar-card p-1.5 grid grid-cols-2 gap-1">
                 <button
                   onClick={() => setLayout('scroll')}
-                  aria-pressed={layout === 'scroll'}
+                  aria-pressed={requestedLayout === 'scroll'}
                   className={`rounded-[1rem] py-2 text-[11px] ${layout === 'scroll' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
                 >
                   آيات
                 </button>
                 <button
                   onClick={() => setLayout('pages')}
-                  aria-pressed={layout === 'pages'}
+                  aria-pressed={requestedLayout === 'pages'}
                   className={`rounded-[1rem] py-2 text-[11px] ${layout === 'pages' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
                 >
                   صفحات
@@ -609,6 +590,16 @@ export function QuranReaderView({ view, setView }: Props) {
         <div role="alert" className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12 px-4">
           {error}
         </div>
+      )}
+      {requestedLayout === 'pages' && pageMapUnavailable && (
+        <div role="alert" className="mb-3 rounded-xl border border-azkar-gold-soft bg-azkar-card p-4 text-sm text-azkar-ink">
+          <p>تعذّر التحقق من خريطة الصفحات. نعرض الآيات بالتمرير حتى تتمكن من متابعة القراءة بأمان.</p>
+          <button className="u-pressable mt-2 rounded-xl border px-3 py-2" onClick={() => window.location.reload()}>إعادة تحميل الصفحة</button>
+          <button className="u-pressable m-2 rounded-xl border px-3 py-2" onClick={() => setLayout('scroll')}>متابعة بوضع الآيات</button>
+        </div>
+      )}
+      {requestedLayout === 'pages' && !quranPageMap && !pageMapFailed && (
+        <p role="status" className="mb-3 text-sm text-azkar-ink-soft">جاري التحقق من الصفحات، يمكنك القراءة بالتمرير الآن.</p>
       )}
       {layout === 'pages' && (
         <div
@@ -887,4 +878,4 @@ export function QuranReaderView({ view, setView }: Props) {
         )}
     </div>
   )
-}
+              }
