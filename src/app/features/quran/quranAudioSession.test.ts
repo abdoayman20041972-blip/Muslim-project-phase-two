@@ -77,7 +77,7 @@ describe('QuranAudioSession', () => {
     const session = new QuranAudioSession(); await session.start(connected)
     session.switchReciter('ar.husary'); session.switchReciter('ar.alafasy')
     await Promise.resolve(); await Promise.resolve()
-    expect(session.state.request?.reciter).toBe('ar.alafasy'); expect(instances).toHaveLength(2)
+    expect(session.state.request?.reciter).toBe('ar.alafasy'); await vi.waitFor(() => expect(instances).toHaveLength(2))
   })
   it('remembers pause while offline lookup is still pending', async () => {
     let resolve!: (blob: Blob) => void
@@ -121,5 +121,44 @@ describe('QuranAudioSession', () => {
     expect(readSavedSession()).toBeNull()
     localStorage.setItem(QURAN_SESSION_KEY, JSON.stringify({ ...single, version: 1, seconds: 1, ayah: null }))
     expect(readSavedSession()).toBeNull()
+  })
+})
+
+describe('session deadlines and continuation cancellation', () => {
+  it('uses online playback if an IndexedDB lookup stalls', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(getDownloadedSurahBlob).mockReturnValue(new Promise(() => {}))
+      const session = new QuranAudioSession(); const start = session.start(connected)
+      await vi.advanceTimersByTimeAsync(10000); await start
+      expect(session.state.source).toBe('online'); session.stop()
+    } finally { vi.useRealTimers() }
+  })
+  it('does not report a metadata-ready paused recording as timed out', async () => {
+    vi.useFakeTimers()
+    try {
+      const session = new QuranAudioSession(); await session.start(single, false)
+      instances[0].dispatchEvent(new Event('loadedmetadata'))
+      await vi.advanceTimersByTimeAsync(30000)
+      expect(session.state.status).toBe('paused'); session.stop()
+    } finally { vi.useRealTimers() }
+  })
+  it('cancels next-surah work when the user stops before the lookup returns', async () => {
+    const session = new QuranAudioSession()
+    vi.mocked(getDownloadedSurahBlob).mockResolvedValueOnce(playable())
+    await session.start({ ...connected, surah: 1 })
+    let resolve!: (blob: Blob) => void
+    vi.mocked(getDownloadedSurahBlob).mockReturnValueOnce(new Promise((r) => { resolve = r }))
+    instances[0].dispatchEvent(new Event('ended')); session.stop()
+    resolve(playable()); await Promise.resolve(); await Promise.resolve()
+    expect(session.state.request).toBeNull(); expect(instances).toHaveLength(1)
+  })
+  it('does not let a cancelled play promise turn a user pause into an error', async () => {
+    const session = new QuranAudioSession(); await session.start(single)
+    let reject!: () => void
+    instances[0].play.mockImplementationOnce(() => new Promise((_r, no) => { reject = () => no(new Error('AbortError')) }) as Promise<boolean>)
+    session.toggle(); session.toggle(); session.toggle(); reject(); await Promise.resolve()
+    expect(session.state.status).toBe('paused'); expect(session.state.error).toBeNull()
+    session.stop()
   })
 })
