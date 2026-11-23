@@ -64,4 +64,4 @@ export function groupSurahPages(
     else groups.push({ startIndex: index, endIndex: index, realPageNumber: match.page })
   }
   return groups
-    }
+}
