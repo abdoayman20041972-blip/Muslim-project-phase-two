@@ -1,7 +1,13 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { surahList } from '../../../quran-meta'
 import { toArabicNumber, type View } from '../../constants'
 import { BackButton } from '../../components/app-chrome'
+import {
+  READING_POSITION_EVENT,
+  loadReadingPosition,
+  readingPositionLabel,
+  type ReadingPosition,
+} from './readingPosition'
 
 type P = {
   lastSurah: number | null
@@ -75,6 +81,19 @@ export function QuranListView(p: P) {
     )
   }, [p.surahSearch])
   const last = p.lastSurah ? surahList.find((s) => s.number === p.lastSurah) : undefined
+  const [position, setPosition] = useState<ReadingPosition | null>(() => loadReadingPosition())
+  useEffect(() => {
+    const refresh = () => setPosition(loadReadingPosition())
+    window.addEventListener(READING_POSITION_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.removeEventListener(READING_POSITION_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [])
+  const positionText = last && position?.surah === last.number ? readingPositionLabel(position, toArabicNumber) : null
   return (
     <div className="quran-list-redesign">
       <div className="quran-list-header flex items-center gap-3 mb-4">
@@ -100,6 +119,7 @@ export function QuranListView(p: P) {
             <span className="block font-amiri font-bold text-xl mt-0.5 truncate">سورة {last.shortName}</span>
             <span className="block text-[10px] opacity-70 mt-0.5">
               {last.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · {toArabicNumber(last.numberOfAyahs)} آية
+              {positionText ? ` · توقفت عند ${positionText}` : ''}
             </span>
           </span>
           <span className="quran-continue-arrow" aria-hidden="true">
