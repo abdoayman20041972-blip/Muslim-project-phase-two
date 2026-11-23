@@ -16,7 +16,7 @@ import { juzForPage } from './juz'
 import { useQuranAudio } from './QuranAudioProvider'
 import { QuranOfflinePlayer } from './QuranOfflinePlayer'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
-import { fetchWithTimeout } from '../../net'
+import { useQuranTafsir } from './useQuranTafsir'
 import { assertQuranPageMap, groupSurahPages, type QuranPageMap } from './quranPageIntegrity'
 
 type Props = { view: Extract<View, { name: 'mushaf-surah' }>; setView: (v: View) => void }
@@ -133,34 +133,21 @@ export function QuranReaderView({ view, setView }: Props) {
   const [panel, setPanel] = useState<Ayah | null>(null)
   const panelAnchorRef = useRef<HTMLElement | null>(null)
   const panelToolbarRef = useRef<HTMLDivElement | null>(null)
-  const [tafsirFor, setTafsirFor] = useState<Ayah | null>(null)
-  const [tafsirText, setTafsirText] = useState<string | null>(null)
-  const [tafsirLoading, setTafsirLoading] = useState(false)
-  const [tafsirError, setTafsirError] = useState(false)
+  const { tafsirFor, tafsirText, tafsirLoading, tafsirError, tafsirLabel, openTafsir: loadTafsir, closeTafsir } = useQuranTafsir(view.number)
   const [shareFor, setShareFor] = useState<Ayah | null>(null)
   const [offlineAutoStartSurah, setOfflineAutoStartSurah] = useState<number | null>(null)
   const shareCardRef = useRef<HTMLDivElement | null>(null)
-  const tafsirSource = readSetting(APP_SETTINGS_KEYS.tafsirSource, 'muyassar')
-  const tafsirLabel =
-    (
-      {
-        muyassar: 'التفسير الميسر',
-        saddi: 'تفسير السعدي',
-        ibnKathir: 'تفسير ابن كثير',
-        tabari: 'تفسير الطبري',
-      } as Record<string, string>
-    )[tafsirSource] || 'التفسير الميسر'
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setPanel(null)
         setShareFor(null)
-        setTafsirFor(null)
+        closeTafsir()
       }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [])
+  }, [closeTafsir])
 
   useLayoutEffect(() => {
     if (!panel) return
@@ -321,66 +308,9 @@ export function QuranReaderView({ view, setView }: Props) {
       URL.revokeObjectURL(url)
     } catch (error) { console.debug('[QuranReaderView]', error) }
   }
-  async function openTafsir(a: Ayah) {
+  function openTafsir(a: Ayah) {
     setPanel(null)
-    setTafsirFor(a)
-    setTafsirText(null)
-    setTafsirError(false)
-    const source = readSetting(APP_SETTINGS_KEYS.tafsirSource, 'muyassar')
-    const sourceId =
-      source === 'saddi'
-        ? 'al-saddi'
-        : source === 'ibnKathir'
-          ? 'ibn-kathir'
-          : source === 'tabari'
-            ? 'al-tabari'
-            : 'muyassar'
-    const key = `azkar_tafsir_${sourceId}_${view.number}:${a.numberInSurah}`
-    const cached = localStorage.getItem(key)
-    if (cached) {
-      setTafsirText(cached)
-      return
-    }
-    setTafsirLoading(true)
-    // The default Muyassar tafsir is bundled per surah in the app package, so
-    // it opens instantly and works with no network. Other sources stay online.
-    if (source === 'muyassar') {
-      try {
-        const response = await fetch(`/data/tafsir/muyassar/${view.number}.json`)
-        if (response.ok) {
-          const surahTafsir = (await response.json()) as Record<string, string>
-          const text = surahTafsir[String(a.numberInSurah)]
-          if (typeof text === 'string' && text.trim()) {
-            writeSetting(key, text)
-            setTafsirText(text)
-            // Reset the loading flag on this early-return path, otherwise the
-            // dialog stays stuck on «جارٍ تحميل التفسير...» on first open.
-            setTafsirLoading(false)
-            return
-          }
-        }
-      } catch {
-        // fall through to the online source below
-      }
-    }
-    try {
-      const url = `https://alfurqan.online/api/v1/tafseer/${sourceId}/surah/${view.number}/ayah/${a.numberInSurah}`
-      const res = await fetchWithTimeout(url, 10_000)
-      if (!res.ok) throw new Error('tafsir')
-      const json = await res.json()
-      const text = json?.ayah?.text
-      if (typeof text !== 'string' || !text.trim()) throw new Error('tafsir')
-      try {
-        const entries = Object.keys(localStorage).filter((k) => k.startsWith('azkar_tafsir_'))
-        while (entries.length >= 80) localStorage.removeItem(entries.shift()!)
-        localStorage.setItem(key, text)
-      } catch (error) { console.debug('[QuranReaderView]', error) }
-      setTafsirText(text)
-    } catch {
-      setTafsirError(true)
-    } finally {
-      setTafsirLoading(false)
-    }
+    loadTafsir(a)
   }
   if (!activeSurah) return null
   return (
@@ -824,7 +754,7 @@ export function QuranReaderView({ view, setView }: Props) {
         createPortal(
           <div
             className="fixed inset-0 z-[60] bg-black/40"
-            onClick={() => setTafsirFor(null)}
+            onClick={() => closeTafsir()}
             role="presentation"
           >
             <div
@@ -845,7 +775,7 @@ export function QuranReaderView({ view, setView }: Props) {
                     <div className="text-[11px] text-azkar-ink-soft mt-1">{tafsirLabel}</div>
                   </div>
                   <button
-                    onClick={() => setTafsirFor(null)}
+                    onClick={() => closeTafsir()}
                     aria-label="إغلاق التفسير"
                     autoFocus
                     className="w-9 h-9 rounded-full bg-azkar-bg-alt flex items-center justify-center"
@@ -878,4 +808,4 @@ export function QuranReaderView({ view, setView }: Props) {
         )}
     </div>
   )
-}
+                }
