@@ -77,15 +77,16 @@ describe('QuranReaderView', () => {
     expect(Array.from(document.querySelectorAll('[data-ayah]')).map(node => Number(node.getAttribute('data-ayah')))).toEqual(Array.from({ length: 14 }, (_, index) => index + 1))
   })
 
-  it('uses the selected page as the initial audio position', async () => {
+  it('labels full-surah playback truthfully even when another page is selected', async () => {
     localStorage.setItem('azkar_reading_layout', 'pages')
-    const AudioMock = vi.fn().mockImplementation(function(){return {src:'',play:vi.fn().mockResolvedValue(undefined),pause:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn()}})
+    const AudioMock = vi.fn().mockImplementation(function(){return {src:'',play:vi.fn().mockResolvedValue(undefined),pause:vi.fn(),load:vi.fn(),removeAttribute:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn()}})
     vi.stubGlobal('Audio', AudioMock)
     renderReader(view)
     await waitFor(() => screen.getAllByText(/صفحة ٥٩٥/)[0])
     fireEvent.click(screen.getByRole('button',{name:'التالي'}))
-    fireEvent.click(screen.getByRole('button',{name:'تشغيل التلاوة'}))
-    expect(AudioMock).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button',{name:'تشغيل السورة من بدايتها'}))
+    await waitFor(() => expect(AudioMock).toHaveBeenCalled())
+    expect(screen.getByText(/تشغيل السورة يبدأ من أولها/)).toBeTruthy()
   })
 
   it('positions the ayah toolbar near the pressed ayah and keeps it inside the viewport', async () => {
