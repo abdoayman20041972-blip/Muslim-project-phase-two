@@ -73,7 +73,7 @@ export class QuranAudioSession {
   save = () => {
     const { request, audio } = this.state
     if (!request) return
-    const seconds = audio && Number.isFinite(audio.currentTime) ? audio.currentTime : this.state.seconds
+    const seconds = this.resumeAt > 0 ? this.resumeAt : audio && Number.isFinite(audio.currentTime) ? audio.currentTime : this.state.seconds
     const saved: SavedSession = { ...request, seconds, version: 1 }
     try { localStorage.setItem(QURAN_SESSION_KEY, JSON.stringify(saved)) } catch { /* Playback works when storage is full/disabled. */ }
     this.update({ saved })
@@ -87,6 +87,7 @@ export class QuranAudioSession {
     if (forget) {
       try { localStorage.removeItem(QURAN_SESSION_KEY) } catch { /* optional */ }
     }
+    this.resumeAt = 0
     this.update({ ...EMPTY, saved: forget ? null : this.state.saved })
   }
   start = async (request: SessionRequest, autoplay = true, seconds = 0) => {
@@ -131,20 +132,21 @@ export class QuranAudioSession {
     const clearLoadTimer = () => { if (loadTimer) clearTimeout(loadTimer) }
     const failed = () => {
       clearLoadTimer()
-      if (!valid()) return
+      if (!valid() || this.state.status === 'paused' || this.state.status === 'error') return
       if (source === 'offline') {
         // A plausible header is not proof the decoder accepts the whole file.
         this.resumeAt = Number.isFinite(audio.currentTime) ? audio.currentTime : this.state.seconds
         this.disposeAudio()
         this.attach(request, this.onlineUrl(request), 'online', epoch)
       } else {
+        audio.pause()
         this.save()
         this.update({ status: 'error', error: 'تعذر تشغيل التلاوة. تحقق من الاتصال أو الملف المنزّل ثم أعد المحاولة.' })
       }
     }
     const metadata = () => {
       if (!valid()) return
-      clearLoadTimer()
+      if (!this.autoplay) clearLoadTimer()
       const duration = Number.isFinite(audio.duration) ? audio.duration : 0
       if (this.resumeAt > 0) {
         try { audio.currentTime = duration > 0 ? Math.min(this.resumeAt, Math.max(0, duration - 0.1)) : this.resumeAt } catch { /* Retry is available on failure. */ }
