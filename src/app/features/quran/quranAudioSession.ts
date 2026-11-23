@@ -52,6 +52,7 @@ export class QuranAudioSession {
   state: SessionState = { ...EMPTY, saved: readSavedSession() }
   repeat: 'off' | 'ayah' | 'surah' = 'off'
   private epoch = 0
+  private continuation = 0
   private release: (() => void) | null = null
   private url: string | null = null
   private lastSave = 0
@@ -81,6 +82,7 @@ export class QuranAudioSession {
   stop = (forget = true) => {
     if (!forget) this.save()
     ++this.epoch
+    ++this.continuation
     this.disposeAudio()
     if (forget) {
       try { localStorage.removeItem(QURAN_SESSION_KEY) } catch { /* optional */ }
@@ -90,13 +92,14 @@ export class QuranAudioSession {
   start = async (request: SessionRequest, autoplay = true, seconds = 0) => {
     this.save()
     const epoch = ++this.epoch
+    ++this.continuation
     this.disposeAudio()
     this.autoplay = autoplay
     this.resumeAt = seconds
     this.update({ ...EMPTY, request, status: 'loading', seconds })
     if (request.kind === 'connected') {
       try {
-        const blob = await getDownloadedSurahBlob(request.reciter, request.surah)
+        const blob = await this.localBlob(request)
         if (epoch !== this.epoch) return
         if (blob && await isPlayableDownload(blob)) {
           if (epoch !== this.epoch) return
@@ -107,6 +110,15 @@ export class QuranAudioSession {
       } catch { /* Missing/unsupported storage must not prevent online playback. */ }
     }
     if (epoch === this.epoch) this.attach(request, this.onlineUrl(request), 'online', epoch)
+  }
+  private async localBlob(request: SessionRequest): Promise<Blob | undefined> {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      return await Promise.race([
+        getDownloadedSurahBlob(request.reciter, request.surah),
+        new Promise<undefined>((resolve) => { timer = setTimeout(() => resolve(undefined), 10000) }),
+      ])
+    } finally { if (timer) clearTimeout(timer) }
   }
   private onlineUrl(request: SessionRequest) {
     return request.kind === 'connected' ? quranSurahAudioUrl(request.reciter, request.surah) : quranAudioUrl(request.reciter, request.ayah!.number)
@@ -132,6 +144,7 @@ export class QuranAudioSession {
     }
     const metadata = () => {
       if (!valid()) return
+      clearLoadTimer()
       const duration = Number.isFinite(audio.duration) ? audio.duration : 0
       if (this.resumeAt > 0) {
         try { audio.currentTime = duration > 0 ? Math.min(this.resumeAt, Math.max(0, duration - 0.1)) : this.resumeAt } catch { /* Retry is available on failure. */ }
@@ -155,14 +168,15 @@ export class QuranAudioSession {
         this.update({ status: 'paused', seconds: 0 })
         this.save()
         if (request.kind === 'connected' && request.surah < 114 && readSetting(APP_SETTINGS_KEYS.dataSaver, '0') !== '1') {
+          const continuation = ++this.continuation
           void (async () => {
             try {
               const next = request.surah + 1
               if (source === 'offline') {
-                const blob = await getDownloadedSurahBlob(request.reciter, next)
+                const blob = await this.localBlob({ ...request, surah: next })
                 if (!blob || !await isPlayableDownload(blob)) return
               }
-              if (!valid()) return
+              if (!valid() || continuation !== this.continuation) return
               await this.start({ ...request, surah: next })
             } catch { /* End quietly if a subsequent recording is unavailable. */ }
           })()
@@ -172,7 +186,7 @@ export class QuranAudioSession {
     const handlers = {
       playing: () => { clearLoadTimer(); if (valid()) { this.update({ status: 'playing', error: null }); this.save() } },
       pause: () => { clearLoadTimer(); if (valid() && this.state.status !== 'error') { this.update({ status: 'paused' }); this.save() } },
-      waiting: () => { if (valid()) this.update({ status: 'loading' }) },
+      waiting: () => { if (valid() && this.autoplay) { clearLoadTimer(); loadTimer = setTimeout(failed, 30000); this.update({ status: 'loading' }) } },
       loadedmetadata: metadata, durationchange: metadata, timeupdate: time, ended, error: failed,
     }
     Object.entries(handlers).forEach(([name, handler]) => audio.addEventListener(name, handler))
@@ -197,6 +211,7 @@ export class QuranAudioSession {
     })
   }
   toggle = () => {
+    ++this.continuation
     const { audio, status, request } = this.state
     if (!request) return
     if (status === 'playing' || status === 'loading') {
