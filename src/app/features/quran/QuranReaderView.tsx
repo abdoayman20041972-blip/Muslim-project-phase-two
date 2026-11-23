@@ -886,4 +886,4 @@ export function QuranReaderView({ view, setView }: Props) {
       )}
     </div>
   )
-                      }
+}
