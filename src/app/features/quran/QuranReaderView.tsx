@@ -316,10 +316,10 @@ export function QuranReaderView({ view, setView }: Props) {
                   <button
                     type="button"
                     onClick={handleToggle}
-                    aria-label={playing && currentSurah === view.number ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
+                    aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
                     className="u-pressable inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
                   >
-                    {playing && currentSurah === view.number ? <PauseIcon /> : <PlayIcon />}
+                    {playing && currentSurah === view.number && playback?.kind === 'connected' ? <PauseIcon /> : <PlayIcon />}
                   </button>
                 </div>
               </div>
@@ -366,11 +366,11 @@ export function QuranReaderView({ view, setView }: Props) {
           <button
             type="button"
             onClick={handleToggle}
-            aria-label={playing && currentSurah === view.number ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
+            aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
             aria-busy={buffering}
             className="u-pressable inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
           >
-            {playing && currentSurah === view.number ? <PauseIcon /> : <PlayIcon />}
+            {playing && currentSurah === view.number && playback?.kind === 'connected' ? <PauseIcon /> : <PlayIcon />}
           </button>
         </div>
       )}
