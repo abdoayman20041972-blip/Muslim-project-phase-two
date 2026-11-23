@@ -162,3 +162,12 @@ describe('session deadlines and continuation cancellation', () => {
     session.stop()
   })
 })
+
+it('does not overwrite a pending restored position with the pre-metadata zero', async () => {
+  const session = new QuranAudioSession(); await session.start(single, true, 27)
+  session.save()
+  expect(readSavedSession()?.seconds).toBe(27)
+  instances[0].dispatchEvent(new Event('loadedmetadata')); session.toggle()
+  expect(readSavedSession()?.seconds).toBe(27)
+  session.stop()
+})
