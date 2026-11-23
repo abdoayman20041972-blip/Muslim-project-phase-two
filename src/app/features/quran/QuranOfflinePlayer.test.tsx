@@ -1,34 +1,31 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { QuranOfflinePlayer } from './QuranOfflinePlayer'
-
-const mocks = vi.hoisted(() => ({ isSurahDownloaded: vi.fn(), getDownloadedSurahBlob: vi.fn() }))
-vi.mock('./offlineDownload', () => mocks)
-
-describe('QuranOfflinePlayer', () => {
-  beforeEach(() => {
-    vi.clearAllMocks(); mocks.isSurahDownloaded.mockResolvedValue(true); mocks.getDownloadedSurahBlob.mockResolvedValue(new Blob(['audio'], { type: 'audio/mpeg' }))
-    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:offline-1'), revokeObjectURL: vi.fn() })
-    Object.defineProperty(HTMLMediaElement.prototype, 'play', { configurable: true, value: vi.fn().mockResolvedValue(undefined) })
-    Object.defineProperty(HTMLMediaElement.prototype, 'load', { configurable: true, value: vi.fn() })
+import { isSurahDownloaded } from './offlineDownload'
+vi.mock('./offlineDownload', () => ({ isSurahDownloaded: vi.fn() }))
+const props = { reciter: 'ar.minshawi' as const, surahNumber: 1, autoStart: false, onAutoStartConsumed: vi.fn(), onNavigateToSurah: vi.fn() }
+beforeEach(() => vi.clearAllMocks())
+describe('QuranOfflinePlayer availability hint', () => {
+  it('does not create a second audio element or own playback', async () => {
+    vi.mocked(isSurahDownloaded).mockResolvedValue(true)
+    const { container } = render(<QuranOfflinePlayer {...props} />)
+    await waitFor(() => expect(screen.getByTestId('quran-offline-player')).toBeTruthy())
+    expect(container.querySelector('audio')).toBeNull()
+    expect(screen.getByText(/تلقائيًا/)).toBeTruthy()
   })
-  const props = { reciter: 'ar.minshawi' as const, surahNumber: 1, autoStart: false, onAutoStartConsumed: vi.fn(), onNavigateToSurah: vi.fn() }
-  it('plays a stored complete-surah blob through the independent audio element', async () => {
-    render(<QuranOfflinePlayer {...props} />); await waitFor(() => screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.click(screen.getByRole('button', { name: 'استماع أوفلاين' }))
-    await waitFor(() => expect(mocks.getDownloadedSurahBlob).toHaveBeenCalledWith('ar.minshawi', 1)); expect(URL.createObjectURL).toHaveBeenCalled(); expect(screen.getByTestId('quran-offline-player').querySelector('audio')).toBeTruthy()
+  it('hides when storage is unavailable', async () => {
+    vi.mocked(isSurahDownloaded).mockRejectedValue(new Error('no storage'))
+    render(<QuranOfflinePlayer {...props} />)
+    await waitFor(() => expect(isSurahDownloaded).toHaveBeenCalled())
+    expect(screen.queryByTestId('quran-offline-player')).toBeNull()
   })
-  it('moves only to a next surah that is actually downloaded', async () => {
-    const onNavigate = vi.fn(); mocks.isSurahDownloaded.mockImplementation(async (_r: string, n: number) => n === 1 || n === 2)
-    render(<QuranOfflinePlayer {...props} onNavigateToSurah={onNavigate} />); await waitFor(() => screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.click(screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.ended(screen.getByTestId('quran-offline-player').querySelector('audio')!)
-    await waitFor(() => expect(onNavigate).toHaveBeenCalledWith(2))
-  })
-  it('stops quietly when the next surah is not available offline', async () => {
-    const onNavigate = vi.fn(); mocks.isSurahDownloaded.mockImplementation(async (_r: string, n: number) => n === 1)
-    render(<QuranOfflinePlayer {...props} onNavigateToSurah={onNavigate} />); await waitFor(() => screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.click(screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.ended(screen.getByTestId('quran-offline-player').querySelector('audio')!)
-    await waitFor(() => expect(onNavigate).not.toHaveBeenCalled())
-  })
-  it('revokes the object URL when stopped and when leaving the screen', async () => {
-    const { unmount } = render(<QuranOfflinePlayer {...props} />); await waitFor(() => screen.getByRole('button', { name: 'استماع أوفلاين' })); fireEvent.click(screen.getByRole('button', { name: 'استماع أوفلاين' })); await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled()); fireEvent.click(screen.getByRole('button', { name: 'إيقاف أوفلاين' })); unmount()
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:offline-1')
+  it('ignores late availability after changing surah', async () => {
+    let resolve!: (value: boolean) => void
+    vi.mocked(isSurahDownloaded).mockReturnValueOnce(new Promise((r) => { resolve = r })).mockResolvedValue(false)
+    const { rerender } = render(<QuranOfflinePlayer {...props} />)
+    rerender(<QuranOfflinePlayer {...props} surahNumber={2} />)
+    resolve(true)
+    await waitFor(() => expect(isSurahDownloaded).toHaveBeenCalledWith('ar.minshawi', 2))
+    expect(screen.queryByTestId('quran-offline-player')).toBeNull()
   })
 })
