@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { QuranMiniPlayer } from './QuranMiniPlayer'
-import { toArabicNumber } from '../../constants'
 import { useQuranAudio } from './QuranAudioProvider'
 vi.mock('./QuranAudioProvider', () => ({ useQuranAudio: vi.fn() }))
 const mockedUseQuranAudio = vi.mocked(useQuranAudio)
@@ -10,6 +9,7 @@ const value = (overrides: Partial<ReturnType<typeof useQuranAudio>>) => ({
   reciter: 'ar.minshawi' as const, current: 3, currentSurah: 1, playing: true, buffering: false,
   audioProgress: 0, audioDuration: 10, playback: null, audio: mockAudio(),
   playSingleAyah: vi.fn(), playConnected: vi.fn(), toggleCurrent: vi.fn(), toggle: vi.fn(), stop: vi.fn(),
+  source: null, error: null, backgroundWarning: null, saved: null, restore: vi.fn(), retry: vi.fn(),
   repeat: 'off' as const, setRepeat: vi.fn(), selectAyah: vi.fn(), setReciter: vi.fn(), ...overrides,
 })
 describe('QuranMiniPlayer', () => {
@@ -35,7 +35,7 @@ describe('QuranMiniPlayer', () => {
   })
 
   it('labels connected playback as continuous recitation', () => {
-    mockedUseQuranAudio.mockReturnValue(value({ current: null, playback: { kind: 'connected', reciter: 'ar.minshawi', surahNumber: 1, source: 'https://server10.mp3quran.net/minsh/001.mp3' } }))
+    mockedUseQuranAudio.mockReturnValue(value({ current: null, playback: { kind: 'connected', reciter: 'ar.minshawi',  } }))
     render(<QuranMiniPlayer />)
     expect(screen.getByText(/تلاوة متصلة/)).toBeTruthy()
   })
@@ -47,11 +47,11 @@ describe('QuranMiniPlayer', () => {
     expect(setReciter).toHaveBeenCalledWith('ar.alafasy')
   })
 
-  it('starts at the top and can be dragged', () => {
+  it('starts above the bottom navigation and can be dragged', () => {
     mockedUseQuranAudio.mockReturnValue(value({}))
     render(<QuranMiniPlayer />)
     const player = screen.getByTestId('quran-mini-player')
-    expect(player).toHaveStyle({ top: '16px', left: '50%' })
+    expect(player).toHaveStyle({ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)', left: '50%' })
     fireEvent.pointerDown(player, { pointerId: 1, clientX: 100, clientY: 30 })
     fireEvent.pointerMove(player, { pointerId: 1, clientX: 180, clientY: 120 })
     fireEvent.pointerUp(player, { pointerId: 1, clientX: 180, clientY: 120 })
