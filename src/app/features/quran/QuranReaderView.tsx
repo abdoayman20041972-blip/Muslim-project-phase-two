@@ -119,15 +119,12 @@ export function QuranReaderView({ view, setView }: Props) {
   const {
     fontSize,
     setFontSize,
-    reciter,
-    setReciter,
     layout: requestedLayout,
     setLayout,
     fontConfig: fs,
   } = useQuranPreferences()
-  const { current, currentSurah, playing, buffering, playback, repeat, setRepeat, playSingleAyah, playConnected, toggle, toggleCurrent, setReciter: setAudioReciter, selectAyah } = useQuranAudio()
+  const { current, currentSurah, playing, buffering, playback, repeat, setRepeat, playSingleAyah, playConnected, toggleCurrent, reciter, setReciter } = useQuranAudio()
   const [pageIndex, setPageIndex] = useState(0)
-  const visibleCurrent = currentSurah === view.number ? current : null
   const [readingMode, setReadingMode] = useState(false)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [panel, setPanel] = useState<Ayah | null>(null)
@@ -135,7 +132,8 @@ export function QuranReaderView({ view, setView }: Props) {
   const panelToolbarRef = useRef<HTMLDivElement | null>(null)
   const { tafsirFor, tafsirText, tafsirLoading, tafsirError, tafsirLabel, openTafsir: loadTafsir, closeTafsir } = useQuranTafsir(view.number)
   const [shareFor, setShareFor] = useState<Ayah | null>(null)
-  const [offlineAutoStartSurah, setOfflineAutoStartSurah] = useState<number | null>(null)
+  const [selectedAyah, setSelectedAyah] = useState<{ surah: number; ayah: number } | null>(null)
+  const visibleCurrent = selectedAyah?.surah === view.number ? selectedAyah.ayah : currentSurah === view.number ? current : null
   const shareCardRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -241,30 +239,11 @@ export function QuranReaderView({ view, setView }: Props) {
   }, [layout, currentSurah, current, view.number, ayahs, pageGroups, pageIndex])
 
   function handleToggle() {
-    if (playing) {
-      toggleCurrent()
-      return
-    }
-    const start =
-      layout === 'pages'
-        ? pageGroups[safePage]?.startIndex ?? 0
-        : Math.max(0, (ayahs || []).findIndex((a) => a.numberInSurah === visibleCurrent))
-    const safeStart = start < 0 ? 0 : start
-    if (layout === 'pages' && pageGroups.length) setPageIndex(safePage)
-    const isSameSurah = currentSurah === view.number
-    const pageContainsCurrent = layout !== 'pages' || (current != null && visibleAyahs.some((item) => item.numberInSurah === current))
-    if (!isSameSurah) {
-      playConnected(safeStart, ayahs || [], reciter as QuranAudioReciter, view.number, view.number !== 1 && view.number !== 9 && safeStart === 0)
-      return
-    }
-    if (playing && playback?.kind !== 'connected' && !pageContainsCurrent) {
-      playConnected(safeStart, ayahs || [], reciter as QuranAudioReciter, view.number, view.number !== 1 && view.number !== 9 && safeStart === 0)
-      return
-    }
-    toggle(ayahs || [], reciter as QuranAudioReciter, view.number, safeStart, view.number !== 1 && view.number !== 9 && safeStart === 0)
+    if (currentSurah === view.number && playback?.kind === 'connected') toggleCurrent()
+    else playConnected(0, ayahs || [], reciter, view.number)
   }
   function save(a: Ayah) {
-    selectAyah(a.numberInSurah, view.number)
+    setSelectedAyah({ surah: view.number, ayah: a.numberInSurah })
   }
   async function copy(text: string) {
     try {
@@ -337,10 +316,10 @@ export function QuranReaderView({ view, setView }: Props) {
                   <button
                     type="button"
                     onClick={handleToggle}
-                    aria-label={playing ? 'إيقاف التلاوة' : 'تشغيل التلاوة'}
+                    aria-label={playing && currentSurah === view.number ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
                     className="u-pressable inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
                   >
-                    {playing ? <PauseIcon /> : <PlayIcon />}
+                    {playing && currentSurah === view.number ? <PauseIcon /> : <PlayIcon />}
                   </button>
                 </div>
               </div>
@@ -349,16 +328,7 @@ export function QuranReaderView({ view, setView }: Props) {
                 value={reciter}
                 onChange={(e) => {
                   const next = e.target.value
-                  const wasPlaying = playing
-                  setReciter(next)
-                  if (wasPlaying && ayahs && current != null) {
-                    const i = ayahs.findIndex((x) => x.numberInSurah === current)
-                    if (i >= 0)
-                      window.setTimeout(
-                        () => playConnected(i, ayahs, next as QuranAudioReciter, view.number, false),
-                        0,
-                      )
-                  }
+                  setReciter(next as QuranAudioReciter)
                 }}
                 className="order-1 h-10 w-[6rem] shrink-0 truncate rounded-full border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-[10px] font-bold text-azkar-teal-ink"
               >
@@ -396,11 +366,11 @@ export function QuranReaderView({ view, setView }: Props) {
           <button
             type="button"
             onClick={handleToggle}
-            aria-label={playing ? 'إيقاف التلاوة' : 'تشغيل التلاوة'}
+            aria-label={playing && currentSurah === view.number ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
             aria-busy={buffering}
             className="u-pressable inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
           >
-            {playing ? <PauseIcon /> : <PlayIcon />}
+            {playing && currentSurah === view.number ? <PauseIcon /> : <PlayIcon />}
           </button>
         </div>
       )}
@@ -415,7 +385,6 @@ export function QuranReaderView({ view, setView }: Props) {
                   onChange={(e) => {
                     const next = e.target.value as QuranAudioReciter
                     setReciter(next)
-                    void setAudioReciter(next)
                   }}
                   className="h-11 rounded-[1.1rem] bg-azkar-card border border-azkar-gold-soft px-3 text-xs"
                 >
@@ -436,8 +405,8 @@ export function QuranReaderView({ view, setView }: Props) {
                   className="h-11 rounded-[1.1rem] bg-azkar-card border border-azkar-gold-soft px-3 text-xs"
                 >
                   <option value="off">بدون تكرار</option>
-                  <option value="ayah">تكرار الآية</option>
-                  <option value="surah">تكرار السورة</option>
+                  <option value="ayah" disabled={playback?.kind !== 'single-ayah'}>تكرار الآية (تشغيل آية منفردة فقط)</option>
+                  <option value="surah" disabled={playback?.kind === 'single-ayah'}>تكرار السورة</option>
                 </select>
               </div>
               <div className="rounded-[1.3rem] border border-azkar-gold-soft bg-azkar-card p-3 flex items-center justify-between">
@@ -503,14 +472,9 @@ export function QuranReaderView({ view, setView }: Props) {
         <QuranOfflinePlayer
           reciter={reciter as QuranAudioReciter}
           surahNumber={view.number}
-          autoStart={offlineAutoStartSurah === view.number}
-          onAutoStartConsumed={() => setOfflineAutoStartSurah(null)}
-          onNavigateToSurah={(next) => {
-            setOfflineAutoStartSurah(next)
-            setView({ name: 'mushaf-surah', number: next })
-          }}
         />
       )}
+      <p className="mb-3 text-xs text-azkar-ink-soft">تشغيل السورة يبدأ من أولها. للاستماع لآية محددة استخدم زر الصوت في قائمة الآية. تغيير القارئ يبدأ التسجيل الجديد من أوله ويحافظ على الإيقاف المؤقت.</p>
       {loading && (
         <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12">
           جاري تحميل السورة...
