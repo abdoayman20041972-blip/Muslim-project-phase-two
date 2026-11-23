@@ -1,4 +1,6 @@
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile, rename } from 'node:fs/promises'
+import { assertQuranPageMap } from '../src/app/features/quran/quranPageIntegrity.ts'
+import { surahList } from '../src/quran-meta.ts'
 
 const SOURCE_URL = 'https://api.alquran.cloud/v1/quran/quran-uthmani'
 const OUTPUT_PATH = 'src/app/features/quran/data/quran-pages.json'
@@ -74,23 +76,20 @@ for (const page of pageNumbers) {
   }
 }
 
-await writeFile(OUTPUT_PATH, JSON.stringify(pages), 'utf8')
-
-const written = JSON.parse(await (await import('node:fs/promises')).readFile(OUTPUT_PATH, 'utf8'))
-const writtenPages = Object.keys(written).map(Number)
-const writtenAyahs = writtenPages.reduce((total, page) => total + written[String(page)].length, 0)
-const writtenNumbers = writtenPages.flatMap((page) => written[String(page)].map((ayah) => ayah.number))
-const writtenUnique = new Set(writtenNumbers)
-
-if (
-  writtenPages.length !== EXPECTED_PAGES ||
-  writtenPages.some((page) => written[String(page)].length === 0) ||
-  writtenAyahs !== EXPECTED_AYAHS ||
-  writtenUnique.size !== EXPECTED_AYAHS ||
-  writtenNumbers.some((number) => number < 1 || number > EXPECTED_AYAHS)
-) {
-  throw new Error('Output self-verification failed')
+// Validate before replacing the bundled map. A failed fetch must not corrupt it.
+assertQuranPageMap(pages, surahList)
+const text = JSON.parse(await readFile('src/app/features/quran/data/quran-uthmani.json', 'utf8'))
+for (const surah of payload.data.surahs) {
+  const local = text[String(surah.number)]
+  if (!local || local.length !== surah.ayahs.length || surah.ayahs.some((ayah, index) =>
+    ayah.number !== local[index].number || ayah.numberInSurah !== local[index].numberInSurah || ayah.text !== local[index].text
+  )) throw new Error(`Source does not match bundled Quran text for surah ${surah.number}`)
 }
+const temporaryPath = `${OUTPUT_PATH}.tmp`
+await writeFile(temporaryPath, JSON.stringify(pages) + '\n', 'utf8')
+assertQuranPageMap(JSON.parse(await readFile(temporaryPath, 'utf8')), surahList)
+await rename(temporaryPath, OUTPUT_PATH)
+const writtenUnique = seenNumbers
 
 console.log(JSON.stringify({
   outputVerification: 'PASS',
