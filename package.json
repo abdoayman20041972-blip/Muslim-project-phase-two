@@ -9,7 +9,9 @@
     "test": "vitest run",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit --strict --skipLibCheck"
+    "typecheck": "tsc --noEmit --strict --skipLibCheck",
+    "validate:quran-pages": "node scripts/validate-quran-pages.mjs",
+    "prebuild": "npm run validate:quran-pages"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",
