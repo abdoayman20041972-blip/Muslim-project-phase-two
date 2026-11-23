@@ -6,11 +6,15 @@ import { QURAN_AUDIO_RECITER_LABELS, QURAN_AUDIO_RECITERS, type QuranAudioRecite
 type Position = { x: number | null; y: number }
 
 export function QuranMiniPlayer() {
-  const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter } = useQuranAudio()
+  const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter, buffering, source, error, retry, saved, restore, backgroundWarning, audioProgress } = useQuranAudio()
   const [position, setPosition] = useState<Position>({ x: null, y: 16 })
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
 
-  if (currentSurah === null) return null
+  if (currentSurah === null) return saved ? <div dir="rtl" className="fixed bottom-24 left-3 right-3 z-[55] rounded-2xl border border-azkar-hairline bg-azkar-card p-3 text-sm text-azkar-teal-ink shadow-lg" data-testid="quran-resume-player">
+    <button type="button" onClick={restore} className="u-pressable rounded-xl bg-azkar-teal px-3 py-2 text-azkar-card">استئناف الاستماع</button>
+    <span className="mx-2">{surahList.find((item) => item.number === saved.surah)?.shortName} · {QURAN_AUDIO_RECITER_LABELS[saved.reciter]} · {Math.floor(saved.seconds / 60)}:{String(Math.floor(saved.seconds % 60)).padStart(2, '0')}</span>
+    <button type="button" onClick={() => stop()} aria-label="مسح موضع الاستماع المحفوظ">مسح</button>
+  </div> : null
 
   const reciterLabel = QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter
   const surah = surahList.find((item) => item.number === currentSurah)
@@ -46,7 +50,7 @@ export function QuranMiniPlayer() {
   }
 
   const style = position.x === null
-    ? { top: position.y + 'px', left: '50%', transform: 'translateX(-50%)' }
+    ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)', left: '50%', transform: 'translateX(-50%)' }
     : { top: position.y + 'px', left: position.x + 'px' }
 
   return (
@@ -59,9 +63,13 @@ export function QuranMiniPlayer() {
       <div className="min-w-0 flex-1 cursor-grab select-none touch-none" title="اسحب لتحريك المشغل">
         <div className="truncate text-sm font-bold text-azkar-teal-ink">{surah?.shortName ?? 'القرآن الكريم'}</div>
         <div className="mt-0.5 truncate text-xs text-azkar-ink-soft">
-          {reciterLabel} · {playback?.kind === 'connected' ? 'تلاوة متصلة' : current !== null ? 'الآية ' + current : 'تلاوة القرآن'}
+          {source === 'offline' ? 'أوفلاين · ' : ''}{reciterLabel} · {playback?.kind === 'connected' ? 'تلاوة متصلة' : current !== null ? 'الآية ' + current : 'تلاوة القرآن'}
         </div>
       </div>
+      {(error || backgroundWarning) && <div role="alert" className="absolute left-0 right-0 top-full mt-1 rounded-xl border border-azkar-hairline bg-azkar-card p-3 text-xs text-azkar-ink shadow-lg">
+        {error || backgroundWarning} {error && <button type="button" onClick={retry} className="mr-2 underline">إعادة المحاولة</button>}
+      </div>}
+      <span className="sr-only" aria-live="polite">{buffering ? 'جاري تحميل الصوت' : playing ? 'قيد التشغيل' : 'متوقف مؤقتًا'} {Math.floor((audioProgress || 0) / 60)} دقيقة</span>
       <select aria-label="القارئ في المشغل المصغر" value={reciter}
         onChange={(event) => { void setReciter(event.target.value as QuranAudioReciter) }}
         onPointerDown={(event) => event.stopPropagation()}
@@ -70,7 +78,7 @@ export function QuranMiniPlayer() {
       </select>
       <button type="button" onClick={togglePlayback}
         className="u-pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal text-azkar-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold"
-        aria-label={playing ? 'إيقاف مؤقت' : 'تشغيل'}>
+        aria-busy={buffering} aria-label={playing ? 'إيقاف مؤقت' : 'تشغيل'}>
         {playing ? <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> : <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z" /></svg>}
       </button>
       <button type="button" onClick={stop}
