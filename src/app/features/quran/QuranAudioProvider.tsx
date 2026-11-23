@@ -6,6 +6,10 @@ import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudio
 import { QuranAudioSession } from './quranAudioSession'
 import { useQuranPreferences } from './useQuranPreferences'
 
+// One shared dynamic import, so concurrent callers never race on first load.
+let audioPlugin: Promise<typeof import('@muslim/background-audio')> | undefined
+const loadAudioPlugin = () => (audioPlugin ??= import('@muslim/background-audio').catch((error) => { audioPlugin = undefined; throw error }))
+
 function useSession() {
   const [session] = useState(() => new QuranAudioSession())
   const [state, setState] = useState(session.state)
@@ -57,30 +61,68 @@ function useAudioValue() {
 
   const title = request ? surahList.find((item) => item.number === request.surah)?.name || 'تلاوة القرآن' : 'تلاوة القرآن'
   const artist = request ? QURAN_AUDIO_RECITER_LABELS[request.reciter] : ''
+  // The native service lives as long as a session exists (loading, playing or paused), so the
+  // notification and lock screen keep their controls while paused. Idle or error stops it.
+  const serviceNeeded = !!request && ['loading', 'playing', 'paused'].includes(state.status)
+  const secondsRef = useRef(state.seconds)
+  secondsRef.current = state.seconds
+  const notificationAsked = useRef(false)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     let current = true
-    // Serialize native start/stop, including unmount, so an old async start cannot
-    // arrive after a stop or replace a newer session's metadata.
+    // Serialize native start/update/stop, including unmount, so an old async call cannot
+    // arrive after a stop or replace a newer session's state.
     nativeQueue.current = nativeQueue.current.catch(() => {}).then(async () => {
       if (!current) return
       try {
-        const { BackgroundAudio } = await import('@muslim/background-audio')
+        const { BackgroundAudio } = await loadAudioPlugin()
         if (!current) return
-        if (active) await BackgroundAudio.start({ title, artist })
-        else await BackgroundAudio.stop()
+        if (serviceNeeded) {
+          await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration })
+          if (!notificationAsked.current) {
+            notificationAsked.current = true
+            const permission = await BackgroundAudio.requestNotificationPermission()
+            if (!permission.granted) setNotificationWarning('الإشعارات مغلقة، فلن تظهر أزرار التحكم في الإشعار وشاشة القفل. فعّلها من إعدادات التطبيق.')
+          }
+        } else await BackgroundAudio.stop()
       } catch {
-        if (current && active) setBackgroundWarning('تعذر تفعيل خدمة الخلفية. استمرار الصوت عند قفل الشاشة غير مضمون.')
+        if (current && serviceNeeded) setBackgroundWarning('تعذر تفعيل خدمة الخلفية. استمرار الصوت عند قفل الشاشة غير مضمون.')
       }
     })
     return () => { current = false }
-  }, [active, title, artist])
+  }, [serviceNeeded, active, title, artist, state.duration])
   const [backgroundWarning, setBackgroundWarning] = useState<string | null>(null)
+  const [notificationWarning, setNotificationWarning] = useState<string | null>(null)
   useEffect(() => { setBackgroundWarning(null) }, [request])
+  // Buttons, media keys and audio-focus changes arrive from the native service. The audio
+  // element stays the source of truth: apply the request, then the service is updated by state.
+  const pausedByFocus = useRef(false)
+  useEffect(() => { if (state.status === 'playing') pausedByFocus.current = false }, [state.status])
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    let remove: (() => Promise<void>) | undefined
+    let disposed = false
+    void loadAudioPlugin().then(async ({ BackgroundAudio }) => {
+      const handle = await BackgroundAudio.addListener('mediaAction', ({ action }) => {
+        const status = session.state.status
+        const running = status === 'playing' || status === 'loading'
+        switch (action) {
+          case 'play': pausedByFocus.current = false; if (status === 'paused' || status === 'error') session.toggle(); break
+          case 'pause': pausedByFocus.current = false; if (running) session.toggle(); break
+          case 'stop': pausedByFocus.current = false; session.stop(); break
+          case 'focusLossTransient': if (running) { pausedByFocus.current = true; session.toggle() } break
+          case 'focusLoss': case 'noisy': pausedByFocus.current = false; if (running) session.toggle(); break
+          case 'focusGain': if (pausedByFocus.current && status === 'paused') { pausedByFocus.current = false; session.toggle() } break
+        }
+      })
+      if (disposed) void handle.remove(); else remove = handle.remove
+    }).catch(() => { /* Background service unavailable; the warning is shown on playback. */ })
+    return () => { disposed = true; void remove?.() }
+  }, [session])
   useEffect(() => () => {
     if (!Capacitor.isNativePlatform()) return
     nativeQueue.current = nativeQueue.current.catch(() => {}).then(async () => {
-      try { const { BackgroundAudio } = await import('@muslim/background-audio'); await BackgroundAudio.stop() } catch { /* App is closing. */ }
+      try { const { BackgroundAudio } = await loadAudioPlugin(); await BackgroundAudio.stop() } catch { /* App is closing. */ }
     })
   }, [])
 
@@ -116,7 +158,7 @@ function useAudioValue() {
     currentSurah: request?.surah ?? null,
     playback: request ? { kind: request.kind, reciter: request.reciter } : null,
     audioProgress: state.seconds, audioDuration: state.duration, audio: state.audio,
-    source: state.source, error: state.error, backgroundWarning,
+    source: state.source, error: state.error, backgroundWarning: backgroundWarning ?? notificationWarning,
     saved: state.saved, restore: () => { if (session.state.saved) preferences.setReciter(session.state.saved.reciter); session.restore() }, retry: session.retry,
     stop: () => session.stop(), toggleCurrent: session.toggle, playSingleAyah, playConnected, toggle, repeat, setRepeat,
   }
