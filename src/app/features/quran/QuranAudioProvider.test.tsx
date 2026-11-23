@@ -5,6 +5,7 @@ import { APP_SETTINGS_KEYS } from '../../settings'
 import { loadSurah } from './loadSurah'
 
 vi.mock('./loadSurah', () => ({ loadSurah: vi.fn() }))
+vi.mock('./offlineDownload', () => ({ getDownloadedSurahBlob: vi.fn(async () => undefined) }))
 
 const audioInstances: MockAudio[] = []
 
@@ -16,6 +17,8 @@ class MockAudio extends EventTarget {
   preload = ''
   play = vi.fn(async () => { this.dispatchEvent(new Event('playing')) })
   pause = vi.fn()
+  load = vi.fn()
+  removeAttribute = vi.fn(() => { this.src = '' })
   constructor(url = '') { super(); this.src = url; audioInstances.push(this) }
 }
 
@@ -69,7 +72,7 @@ describe('QuranAudioProvider', () => {
     expect(view).not.toHaveBeenCalled()
   })
 
-  it.each([['off', 1], ['ayah', 1], ['surah', 2]] as const)('handles repeat mode %s for complete-surah playback', async (repeat, expectedInstances) => {
+  it.each([['off', 1], ['ayah', 1], ['surah', 1]] as const)('handles repeat mode %s for complete-surah playback', async (repeat, expectedInstances) => {
     const view = vi.fn()
     function Harness() {
       const audio = useQuranAudio()
@@ -84,7 +87,7 @@ describe('QuranAudioProvider', () => {
     expect(view).not.toHaveBeenCalled()
   })
 
-  it('switches an active single-ayah session at the same ayah after preloading the new reciter', async () => {
+  it('switches an active single-ayah session at the same ayah without conflating it with reading selection', async () => {
     const view = vi.fn()
     function Harness() {
       const audio = useQuranAudio()
@@ -112,7 +115,7 @@ describe('QuranAudioProvider', () => {
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'start' })))
     const oldAudio = audioInstances[0]
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'switch' })))
-    expect(oldAudio.pause).not.toHaveBeenCalled()
+    expect(oldAudio.pause).toHaveBeenCalled()
     const switchedPreload = audioInstances[audioInstances.length - 1]
     await act(async () => switchedPreload.dispatchEvent(new Event('canplaythrough')))
     expect(audioInstances.some((item) => item.src.includes('server13.mp3quran.net/husr/114.mp3'))).toBe(true)
