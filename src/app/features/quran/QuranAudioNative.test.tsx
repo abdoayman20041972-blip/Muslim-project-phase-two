@@ -2,7 +2,16 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDownloadedSurahBlob } from './offlineDownload'
 import { QuranAudioProvider, useQuranAudio } from './QuranAudioProvider'
-const native = vi.hoisted(() => ({ start: vi.fn(async () => {}), stop: vi.fn(async () => {}) }))
+const native = vi.hoisted(() => {
+  const state = { handler: null as null | ((event: { action: string }) => void), remove: vi.fn(async () => {}) }
+  return {
+    state,
+    start: vi.fn(async (_options?: unknown) => {}), stop: vi.fn(async () => {}),
+    requestNotificationPermission: vi.fn(async () => ({ granted: true })),
+    addListener: vi.fn(async (_name: string, handler: (event: { action: string }) => void) => { state.handler = handler; return { remove: state.remove } }),
+  }
+})
+const emit = (action: string) => act(async () => { native.state.handler?.({ action }) })
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => true } }))
 vi.mock('@muslim/background-audio', () => ({ BackgroundAudio: native }))
 vi.mock('./offlineDownload', () => ({ getDownloadedSurahBlob: vi.fn(async () => undefined) }))
@@ -16,7 +25,7 @@ function Controls() {
   const audio = useQuranAudio()
   return <><button onClick={() => audio.playSingleAyah({ number: 1, numberInSurah: 1, text: '' }, 'ar.minshawi', 1)}>play</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 1)}>offline</button><button onClick={audio.toggleCurrent}>pause</button><button onClick={audio.stop}>stop</button></>
 }
-beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); vi.stubGlobal('Audio', AudioMock) })
+beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); native.state.handler = null; native.requestNotificationPermission.mockResolvedValue({ granted: true }); vi.stubGlobal('Audio', AudioMock) })
 describe('native background integration (mock bridge, not a device)', () => {
   it('uses the same native service for a decoded local recording', async () => {
     vi.mocked(getDownloadedSurahBlob).mockResolvedValueOnce({ size: 20, slice: () => ({ arrayBuffer: async () => new TextEncoder().encode('ID3abcdefghi').buffer }) } as Blob)
@@ -26,12 +35,15 @@ describe('native background integration (mock bridge, not a device)', () => {
     await waitFor(() => expect(native.start).toHaveBeenCalled())
     expect(URL.createObjectURL).toHaveBeenCalled()
   })
-  it('starts the existing service for playback and stops on pause/unmount', async () => {
+  it('keeps the service while paused with the paused state, stops on stop and unmount', async () => {
     const { unmount } = render(<QuranAudioProvider setView={vi.fn()}><Controls /></QuranAudioProvider>)
     await act(async () => fireEvent.click(screen.getByText('play')))
-    await waitFor(() => expect(native.start).toHaveBeenCalledWith(expect.objectContaining({ artist: 'محمد صديق المنشاوي' })))
+    await waitFor(() => expect(native.start).toHaveBeenCalledWith(expect.objectContaining({ artist: 'محمد صديق المنشاوي', playing: true })))
     await act(async () => fireEvent.click(screen.getByText('pause')))
-    await waitFor(() => expect(native.stop).toHaveBeenCalled())
+    await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+    expect(native.stop).not.toHaveBeenCalled()
+    await act(async () => fireEvent.click(screen.getByText('stop')))
+    await waitFor(() => expect(native.stop).toHaveBeenCalledTimes(1))
     const stops = native.stop.mock.calls.length; unmount()
     await waitFor(() => expect(native.stop.mock.calls.length).toBeGreaterThan(stops))
   })
@@ -46,5 +58,67 @@ describe('native background integration (mock bridge, not a device)', () => {
     expect(native.stop).not.toHaveBeenCalled()
     finish()
     await waitFor(() => expect(native.stop).toHaveBeenCalledTimes(1))
+  })
+  describe('media actions from the notification, lock screen and audio focus', () => {
+    const setup = async () => {
+      render(<QuranAudioProvider setView={vi.fn()}><Controls /></QuranAudioProvider>)
+      await waitFor(() => expect(native.addListener).toHaveBeenCalledWith('mediaAction', expect.any(Function)))
+      await act(async () => fireEvent.click(screen.getByText('play')))
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: true })))
+    }
+    it('pauses and resumes from notification buttons and reflects the state back', async () => {
+      await setup()
+      await emit('pause')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+      await emit('play')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: true })))
+    })
+    it('stop button ends the session and the service', async () => {
+      await setup()
+      await emit('stop')
+      await waitFor(() => expect(native.stop).toHaveBeenCalled())
+    })
+    it('pauses on a transient focus loss (call) and resumes only after focus gain', async () => {
+      await setup()
+      await emit('focusLossTransient')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+      await emit('focusGain')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: true })))
+    })
+    it('does not resume after permanent focus loss, headphone unplug or a manual pause', async () => {
+      await setup()
+      await emit('focusLoss')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+      await emit('focusGain')
+      expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }))
+      await emit('play')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: true })))
+      await emit('noisy')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+      await emit('focusGain')
+      expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }))
+    })
+    it('manual pause during a call is not undone by focus gain', async () => {
+      await setup()
+      await emit('focusLossTransient')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false })))
+      await emit('pause')
+      await emit('focusGain')
+      expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }))
+    })
+    it('requests notification permission once and warns when it is denied', async () => {
+      native.requestNotificationPermission.mockResolvedValue({ granted: false })
+      await setup()
+      await waitFor(() => expect(native.requestNotificationPermission).toHaveBeenCalledTimes(1))
+      await act(async () => fireEvent.click(screen.getByText('pause')))
+      await act(async () => fireEvent.click(screen.getByText('pause')))
+      expect(native.requestNotificationPermission).toHaveBeenCalledTimes(1)
+    })
+    it('removes the native listener on unmount', async () => {
+      const { unmount } = render(<QuranAudioProvider setView={vi.fn()}><Controls /></QuranAudioProvider>)
+      await waitFor(() => expect(native.addListener).toHaveBeenCalled())
+      unmount()
+      await waitFor(() => expect(native.state.remove).toHaveBeenCalled())
+    })
   })
 })
