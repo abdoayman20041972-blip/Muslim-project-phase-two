@@ -18,6 +18,7 @@ import { QuranOfflinePlayer } from './QuranOfflinePlayer'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { useQuranTafsir } from './useQuranTafsir'
 import { assertQuranPageMap, groupSurahPages, type QuranPageMap } from './quranPageIntegrity'
+import { loadReadingPosition, saveReadingPosition } from './readingPosition'
 
 type Props = { view: Extract<View, { name: 'mushaf-surah' }>; setView: (v: View) => void }
 
@@ -128,6 +129,16 @@ export function QuranReaderView({ view, setView }: Props) {
   const [readingMode, setReadingMode] = useState(false)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [panel, setPanel] = useState<Ayah | null>(null)
+  const [copyNotice, setCopyNotice] = useState<string | null>(null)
+  const copyNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mushafRef = useRef<HTMLDivElement | null>(null)
+  // س07: the audio follow effect may only move the page when the PLAYING AYAH
+  // changes, never when the user turned the page manually.
+  const lastFollowedAyahRef = useRef<number | null>(null)
+  // س16: the saved reading position is applied once per surah view; saving
+  // starts only after the restore decision so an old position is not
+  // overwritten with page 0 / ayah 1 on entry.
+  const restoreDoneRef = useRef(false)
   const panelAnchorRef = useRef<HTMLElement | null>(null)
   const panelToolbarRef = useRef<HTMLDivElement | null>(null)
   const { tafsirFor, tafsirText, tafsirLoading, tafsirError, tafsirLabel, openTafsir: loadTafsir, closeTafsir } = useQuranTafsir(view.number)
@@ -232,11 +243,91 @@ export function QuranReaderView({ view, setView }: Props) {
 
   useEffect(() => {
     if (layout !== 'pages' || currentSurah !== view.number || current == null || !pageGroups.length) return
+    // Follow only a NEW playing ayah. Manual page turns leave the page alone
+    // (س07: the buttons used to snap back to the previously playing ayah).
+    if (lastFollowedAyahRef.current === current) return
+    lastFollowedAyahRef.current = current
     const ayahIndex = ayahs?.findIndex((item) => item.numberInSurah === current) ?? -1
     if (ayahIndex < 0) return
     const nextPageIndex = pageGroups.findIndex((group) => ayahIndex >= group.startIndex && ayahIndex <= group.endIndex)
-    if (nextPageIndex >= 0 && nextPageIndex !== pageIndex) setPageIndex(nextPageIndex)
-  }, [layout, currentSurah, current, view.number, ayahs, pageGroups, pageIndex])
+    if (nextPageIndex >= 0) setPageIndex((previous) => (nextPageIndex !== previous ? nextPageIndex : previous))
+  }, [layout, currentSurah, current, view.number, ayahs, pageGroups])
+
+  // A stopped or connected session must not pin the last-followed ayah: the
+  // next single-ayah play, even of the same ayah, follows again.
+  useEffect(() => { lastFollowedAyahRef.current = null }, [view.number])
+  useEffect(() => { if (current == null) lastFollowedAyahRef.current = null }, [current])
+
+  // س16: restore the saved reading position once, after the data (and the page
+  // map in page mode) is ready, then keep saving it as reading continues.
+  const savedPositionRef = useRef<ReturnType<typeof loadReadingPosition> | null>(null)
+  if (savedPositionRef.current === null) savedPositionRef.current = loadReadingPosition()
+  useEffect(() => {
+    if (restoreDoneRef.current || !ayahs?.length) return
+    if (layout === 'pages' && !pageGroups.length) return
+    restoreDoneRef.current = true
+    const saved = savedPositionRef.current
+    if (!saved || saved.surah !== view.number) return
+    if (saved.layout === 'pages' && layout === 'pages' && saved.pageIndex !== undefined) {
+      setPageIndex(Math.min(saved.pageIndex, Math.max(0, pageGroups.length - 1)))
+    } else if (saved.layout === 'scroll' && layout === 'scroll' && saved.ayah !== undefined) {
+      const target = mushafRef.current?.querySelector(`[data-ayah="${saved.ayah}"]`)
+      if (target instanceof HTMLElement) {
+        try {
+          target.scrollIntoView({ block: 'start' })
+        } catch {
+          // jsdom and older WebViews lack scrollIntoView; the position is still saved.
+        }
+      }
+    }
+  }, [ayahs, layout, pageGroups, view.number])
+
+  // Page mode: every settled page is the reading position.
+  useEffect(() => {
+    if (!restoreDoneRef.current || layout !== 'pages' || !pageGroups.length) return
+    saveReadingPosition({
+      surah: view.number,
+      layout: 'pages',
+      pageIndex: safePage,
+      realPage: pageGroups[safePage]?.realPageNumber,
+    })
+  }, [layout, safePage, pageGroups, view.number])
+
+  // Scroll mode: the first visible ayah is the reading position, sampled while
+  // scrolling (throttled) and once when leaving the surah.
+  useEffect(() => {
+    if (layout !== 'scroll' || !ayahs?.length) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const capture = () => {
+      if (!restoreDoneRef.current) return
+      const surface = mushafRef.current
+      if (!surface) return
+      const marks = surface.querySelectorAll('[data-ayah]')
+      for (const mark of marks) {
+        const rect = mark.getBoundingClientRect()
+        if (rect.bottom > 96 && rect.top < window.innerHeight) {
+          const ayah = Number(mark.getAttribute('data-ayah'))
+          if (Number.isInteger(ayah) && ayah >= 1) {
+            saveReadingPosition({ surah: view.number, layout: 'scroll', ayah })
+          }
+          return
+        }
+      }
+    }
+    const onScroll = () => {
+      if (timer) return
+      timer = setTimeout(() => {
+        timer = null
+        capture()
+      }, 400)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (timer) clearTimeout(timer)
+      capture()
+    }
+  }, [layout, ayahs, view.number])
 
   function handleToggle() {
     if (currentSurah === view.number && playback?.kind === 'connected') toggleCurrent()
@@ -245,10 +336,22 @@ export function QuranReaderView({ view, setView }: Props) {
   function save(a: Ayah) {
     setSelectedAyah({ surah: view.number, ayah: a.numberInSurah })
   }
+  function showCopyNotice(message: string) {
+    setCopyNotice(message)
+    if (copyNoticeTimer.current) clearTimeout(copyNoticeTimer.current)
+    copyNoticeTimer.current = setTimeout(() => setCopyNotice(null), 2200)
+  }
+  useEffect(() => () => {
+    if (copyNoticeTimer.current) clearTimeout(copyNoticeTimer.current)
+  }, [])
   async function copy(text: string) {
     try {
       await navigator.clipboard?.writeText(text)
-    } catch (error) { console.debug('[QuranReaderView]', error) }
+      showCopyNotice('تم نسخ الآية')
+    } catch (error) {
+      console.debug('[QuranReaderView]', error)
+      showCopyNotice('تعذّر النسخ، جرّب مرة أخرى')
+    }
   }
   async function openShare(a: Ayah) {
     setPanel(null)
@@ -296,7 +399,7 @@ export function QuranReaderView({ view, setView }: Props) {
     <div className={`quran-reader-redesign ${readingMode ? "quran-reading-active" : ""}`}>
       {readingMode ? (
         <>
-          <div className="fixed top-0 left-0 right-0 z-40 border-b border-azkar-gold-soft bg-azkar-card/95 backdrop-blur px-3 py-3 shadow-[0_4px_18px_rgba(31,61,52,.08)] overflow-hidden">
+          <div className="fixed top-0 left-0 right-0 z-40 border-b border-azkar-gold-soft bg-azkar-card/95 backdrop-blur px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] shadow-[0_4px_18px_rgba(31,61,52,.08)] overflow-hidden">
             <div className="mx-auto flex h-11 max-w-3xl items-center gap-1.5 overflow-hidden" dir="rtl">
               <button
                 onClick={() => setReadingMode(false)}
@@ -330,7 +433,7 @@ export function QuranReaderView({ view, setView }: Props) {
                   const next = e.target.value
                   setReciter(next as QuranAudioReciter)
                 }}
-                className="order-1 h-10 w-[6rem] shrink-0 truncate rounded-full border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-[10px] font-bold text-azkar-teal-ink"
+                className="order-1 h-10 w-[7rem] shrink-0 truncate rounded-full border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-xs font-bold text-azkar-teal-ink"
               >
                 {QURAN_AUDIO_RECITERS.map((id) => (
                   <option key={id} value={id}>
@@ -348,9 +451,10 @@ export function QuranReaderView({ view, setView }: Props) {
             <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">
               {activeSurah!.shortName}
             </div>
-            <div className="text-[10px] text-azkar-ink-faint mt-0.5">
+            <div className="text-[10px] text-azkar-ink-faint mt-0.5 truncate">
               {activeSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} ·{' '}
-              {toArabicNumber(activeSurah.numberOfAyahs)} آية
+              {toArabicNumber(activeSurah.numberOfAyahs)} آية ·{' '}
+              {QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter}
             </div>
           </div>
           <button
@@ -428,7 +532,7 @@ export function QuranReaderView({ view, setView }: Props) {
                       )
                     }
                     disabled={fontSize === 'sm'}
-                    className="w-8 h-8 rounded-full bg-azkar-bg-alt disabled:opacity-40"
+                    className="h-10 w-10 rounded-full bg-azkar-bg-alt text-lg leading-none disabled:opacity-40"
                   >
                     −
                   </button>
@@ -442,7 +546,7 @@ export function QuranReaderView({ view, setView }: Props) {
                       )
                     }
                     disabled={fontSize === 'xl'}
-                    className="w-8 h-8 rounded-full bg-azkar-bg-alt disabled:opacity-40"
+                    className="h-10 w-10 rounded-full bg-azkar-bg-alt text-lg leading-none disabled:opacity-40"
                   >
                     +
                   </button>
@@ -503,7 +607,7 @@ export function QuranReaderView({ view, setView }: Props) {
           <button
             onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
             disabled={safePage === 0}
-            className="u-pressable rounded-xl border px-3 py-2 text-[10px] font-bold disabled:opacity-40"
+            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
           >
             السابق
           </button>
@@ -514,7 +618,7 @@ export function QuranReaderView({ view, setView }: Props) {
           <button
             onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
             disabled={safePage === totalPages - 1}
-            className="u-pressable rounded-xl border px-3 py-2 text-[10px] font-bold disabled:opacity-40"
+            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
           >
             التالي
           </button>
@@ -522,6 +626,7 @@ export function QuranReaderView({ view, setView }: Props) {
       )}
       {ayahs && (
         <div
+          ref={mushafRef}
           key={layout === 'pages' ? safePage : 'flow'}
           className={`quran-mushaf-surface relative mx-auto overflow-hidden border border-azkar-gold-soft bg-azkar-card shadow-sm ${layout === 'pages' ? 'quran-real-page max-w-2xl min-h-[78vh] rounded-[.35rem] p-7 md:p-10' : readingMode ? 'max-w-xl min-h-[62vh] rounded-[1.6rem] p-7 md:p-10' : 'rounded-[var(--r-lg)] p-5'} ${readingMode ? 'pt-24 pb-32' : ''}`}
         >
@@ -770,6 +875,15 @@ export function QuranReaderView({ view, setView }: Props) {
           </div>,
           document.body,
         )}
+      {copyNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-24 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-azkar-teal-deep px-4 py-2 text-xs font-bold text-azkar-card shadow-lg"
+        >
+          {copyNotice}
+        </div>
+      )}
     </div>
   )
-}
+                      }
