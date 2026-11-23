@@ -117,7 +117,7 @@ function useAudioValue() {
     playback: request ? { kind: request.kind, reciter: request.reciter } : null,
     audioProgress: state.seconds, audioDuration: state.duration, audio: state.audio,
     source: state.source, error: state.error, backgroundWarning,
-    saved: state.saved, restore: session.restore, retry: session.retry,
+    saved: state.saved, restore: () => { if (session.state.saved) preferences.setReciter(session.state.saved.reciter); session.restore() }, retry: session.retry,
     stop: () => session.stop(), toggleCurrent: session.toggle, playSingleAyah, playConnected, toggle, repeat, setRepeat,
   }
 }
