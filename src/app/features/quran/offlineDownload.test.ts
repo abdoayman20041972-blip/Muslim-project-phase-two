@@ -1,12 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  cancelDownload,
   deleteReciterAll,
   deleteSurah,
   downloadReciterAll,
   downloadSurah,
+  getDownloadJobs,
   getDownloadStatus,
   getDownloadedSurahBlob,
+  getReciterStorageBytes,
   isSurahDownloaded,
+  pauseDownload,
+  resumeDownload,
+  retryFailedDownloads,
+  subscribeToDownloadJobs,
+  type DownloadJobSnapshot,
 } from './offlineDownload'
 
 type RecordValue = Record<string, unknown>
@@ -89,7 +97,7 @@ class FakeDb {
     return new FakeStore(records)
   }
 
-  transaction(names: string | string[]) {
+  transaction(_names: string | string[]) {
     return new FakeTransaction(this.stores)
   }
 
@@ -124,6 +132,67 @@ class FakeIndexedDb {
 
 const indexedDb = new FakeIndexedDb()
 
+const ID3 = [0x49, 0x44, 0x33]
+
+function audioChunk(size: number): Uint8Array {
+  const bytes = new Uint8Array(size)
+  bytes[0] = ID3[0]
+  bytes[1] = ID3[1]
+  bytes[2] = ID3[2]
+  return bytes
+}
+
+type StreamOptions = {
+  contentType?: string
+  declaredLength?: number
+}
+
+function streamResponse(chunks: Uint8Array[], options?: StreamOptions) {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
+  return {
+    ok: true,
+    status: 200,
+    headers: {
+      get: (name: string) => {
+        if (name === 'content-type') return options?.contentType ?? 'audio/mpeg'
+        if (name === 'content-length') return String(options?.declaredLength ?? total)
+        return null
+      },
+    },
+    body: {
+      getReader: () => {
+        let index = 0
+        return {
+          read: async () =>
+            index < chunks.length
+              ? { done: false, value: chunks[index++] }
+              : { done: true, value: undefined },
+        }
+      },
+    },
+  } as unknown as Response
+}
+
+let hangingInit: RequestInit | undefined
+
+/** A response whose body never delivers bytes and rejects on abort. */
+function hangingResponse() {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => null },
+    body: {
+      getReader: () => ({
+        read: () =>
+          new Promise((_, reject) => {
+            const signal = (hangingInit?.signal ?? null) as AbortSignal | null
+            signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+          }),
+      }),
+    },
+  } as unknown as Response
+}
+
 beforeEach(() => {
   vi.stubGlobal('indexedDB', indexedDb)
   vi.stubGlobal('navigator', {
@@ -134,24 +203,25 @@ beforeEach(() => {
   })
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      { ok: true, status: 200, blob: async () => new Blob(['audio'], { type: 'audio/mpeg' }) } as unknown as Response,
-    ),
+    vi.fn().mockResolvedValue(streamResponse([audioChunk(64 * 1024)])),
   )
 })
 
 afterEach(() => {
+  for (const job of getDownloadJobs()) cancelDownload(job.reciter)
   vi.restoreAllMocks()
   indexedDb.deleteDatabase()
 })
 
-describe('Quran offline download engine', () => {
-  it('downloads one surah and records it as completed', async () => {
-    await downloadSurah('ar.minshawi', 1)
+describe('Quran offline download manager', () => {
+  it('downloads one surah, validates it, and records size and status', async () => {
+    const result = await downloadSurah('ar.minshawi', 1)
 
+    expect(result.status).toBe('completed')
     expect(await isSurahDownloaded('ar.minshawi', 1)).toBe(true)
     expect(await getDownloadedSurahBlob('ar.minshawi', 1)).toBeInstanceOf(Blob)
-    expect(await getDownloadStatus('ar.minshawi')).toEqual({ completed: [1], total: 114 })
+    expect(await getDownloadStatus('ar.minshawi')).toEqual({ completed: [1], failed: [], total: 114 })
+    expect(await getReciterStorageBytes('ar.minshawi')).toBe(64 * 1024)
     expect(navigator.storage.persist).toHaveBeenCalledTimes(1)
   })
 
@@ -170,20 +240,185 @@ describe('Quran offline download engine', () => {
     expect((await getDownloadStatus('ar.minshawi')).completed).toHaveLength(114)
   })
 
-  it('isolates a repeated network failure to one surah and continues the reciter queue', async () => {
+  it('isolates a repeated network failure to one surah and summarizes it by name', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockImplementation(async (input) => {
       if (String(input).endsWith('/002.mp3')) throw new TypeError('offline')
-      return { ok: true, status: 200, blob: async () => new Blob(['audio'], { type: 'audio/mpeg' }) } as unknown as Response
+      return streamResponse([audioChunk(64 * 1024)])
     })
 
-    await downloadReciterAll('ar.minshawi')
+    const result = await downloadReciterAll('ar.minshawi')
 
+    expect(result.status).toBe('completed')
+    expect(result.failed).toEqual([{ surahNumber: 2, reason: 'network' }])
     const status = await getDownloadStatus('ar.minshawi')
     expect(status.completed).toHaveLength(113)
-    expect(status.completed).not.toContain(2)
-    expect(await isSurahDownloaded('ar.minshawi', 1)).toBe(true)
+    expect(status.failed).toEqual([{ surahNumber: 2, reason: 'network' }])
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith('/002.mp3'))).toHaveLength(3)
+  })
+
+  it('rejects an HTML error page even with HTTP 200', async () => {
+    const html = new TextEncoder().encode('<html><body>Not Found</body></html>')
+    vi.mocked(fetch).mockResolvedValue(
+      streamResponse([html], { contentType: 'text/html', declaredLength: html.byteLength }),
+    )
+
+    const result = await downloadSurah('ar.minshawi', 5)
+
+    expect(result.status).toBe('completed')
+    expect(result.failed).toEqual([{ surahNumber: 5, reason: 'invalid-content' }])
+    expect(await isSurahDownloaded('ar.minshawi', 5)).toBe(false)
+    expect(await getDownloadedSurahBlob('ar.minshawi', 5)).toBeUndefined()
+  })
+
+  it('rejects audio-looking bytes that are not MP3 and truncated bodies', async () => {
+    const notMp3 = new Uint8Array(64 * 1024) // zeros: no ID3, no frame sync
+    vi.mocked(fetch).mockResolvedValueOnce(streamResponse([notMp3]))
+    let result = await downloadSurah('ar.minshawi', 7)
+    expect(result.failed).toEqual([{ surahNumber: 7, reason: 'invalid-content' }])
+
+    vi.mocked(fetch).mockImplementation(async () =>
+      streamResponse([audioChunk(64 * 1024)], { declaredLength: 128 * 1024 }),
+    )
+    result = await downloadSurah('ar.minshawi', 8)
+    expect(result.failed).toEqual([{ surahNumber: 8, reason: 'truncated' }])
+    expect(await isSurahDownloaded('ar.minshawi', 8)).toBe(false)
+  })
+
+  it('pauses mid-surah, clears the transient status, and resumes from that surah', async () => {
+    await downloadSurah('ar.minshawi', 1)
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async (_input, init) => {
+      hangingInit = init
+      return hangingResponse()
+    })
+
+    const promise = downloadReciterAll('ar.minshawi')
+    await vi.waitFor(() => expect(getDownloadJobs()[0]?.state).toBe('running'))
+    await vi.waitFor(() => expect(getDownloadJobs()[0]?.current?.surahNumber).toBe(2))
+
+    pauseDownload('ar.minshawi')
+    const result = await promise
+
+    expect(result.status).toBe('paused')
+    expect(await isSurahDownloaded('ar.minshawi', 2)).toBe(false)
+    expect((await getDownloadStatus('ar.minshawi')).failed).toEqual([])
+    expect(getDownloadJobs()[0]?.state).toBe('paused')
+
+    fetchMock.mockImplementation(async () => streamResponse([audioChunk(64 * 1024)]))
+    const resumed = resumeDownload('ar.minshawi')
+    expect(resumed).toBeDefined()
+    await resumed!
+
+    expect((await getDownloadStatus('ar.minshawi')).completed).toHaveLength(114)
+    expect(getDownloadJobs()).toEqual([])
+  })
+
+  it('cancels a running job and leaves no half-downloaded surah behind', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async (_input, init) => {
+      hangingInit = init
+      return hangingResponse()
+    })
+
+    const promise = downloadReciterAll('ar.alafasy')
+    await vi.waitFor(() => expect(getDownloadJobs()[0]?.current?.surahNumber).toBe(1))
+
+    cancelDownload('ar.alafasy')
+    const result = await promise
+
+    expect(result.status).toBe('cancelled')
+    expect(getDownloadJobs()).toEqual([])
+    const status = await getDownloadStatus('ar.alafasy')
+    expect(status.completed).toEqual([])
+    expect(status.failed).toEqual([])
+    expect(fetchMock).toHaveBeenCalled()
+  })
+
+  it('retries only the failed surahs', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async (input) => {
+      if (String(input).endsWith('/003.mp3') || String(input).endsWith('/005.mp3')) throw new TypeError('offline')
+      return streamResponse([audioChunk(64 * 1024)])
+    })
+    await downloadReciterAll('ar.minshawi')
+
+    fetchMock.mockClear()
+    fetchMock.mockImplementation(async () => streamResponse([audioChunk(64 * 1024)]))
+    const result = await retryFailedDownloads('ar.minshawi')
+
+    expect(result?.status).toBe('completed')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect((await getDownloadStatus('ar.minshawi')).failed).toEqual([])
+    expect((await getDownloadStatus('ar.minshawi')).completed).toHaveLength(114)
+  })
+
+  it('limits global concurrency to two fetches across reciters', async () => {
+    let current = 0
+    let maxConcurrent = 0
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async () => {
+      current += 1
+      maxConcurrent = Math.max(maxConcurrent, current)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      current -= 1
+      return streamResponse([audioChunk(64 * 1024)])
+    })
+
+    await Promise.all([downloadReciterAll('ar.minshawi'), downloadReciterAll('ar.alafasy')])
+
+    expect(maxConcurrent).toBeLessThanOrEqual(2)
+    expect(maxConcurrent).toBeGreaterThan(0)
+  })
+
+  it('emits job snapshots with byte progress to subscribers', async () => {
+    const snapshots: DownloadJobSnapshot[][] = []
+    const unsubscribe = subscribeToDownloadJobs((next) => snapshots.push(next))
+    const chunks = [audioChunk(32 * 1024), audioChunk(32 * 1024)]
+    const total = 64 * 1024
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) =>
+          name === 'content-type' ? 'audio/mpeg' : name === 'content-length' ? String(total) : null,
+      },
+      body: {
+        getReader: () => {
+          let index = 0
+          return {
+            read: async () => {
+              // Leave a real gap between chunks so throttled progress emits land.
+              await new Promise((resolve) => setTimeout(resolve, 250))
+              return index < chunks.length
+                ? { done: false, value: chunks[index++] }
+                : { done: true, value: undefined }
+            },
+          }
+        },
+      },
+    } as unknown as Response)
+
+    await downloadSurah('ar.minshawi', 1)
+    unsubscribe()
+
+    const running = snapshots.flat().filter((snap) => snap.current)
+    expect(running.length).toBeGreaterThan(0)
+    expect(Math.max(...running.map((snap) => snap.current!.receivedBytes))).toBe(64 * 1024)
+    expect(snapshots.at(-1)).toEqual([])
+  })
+
+  it('pauses instead of downloading when Wi-Fi-only is set and the connection is not Wi-Fi', async () => {
+    vi.stubGlobal('navigator', {
+      storage: { persist: vi.fn().mockResolvedValue(true), estimate: vi.fn().mockResolvedValue({}) },
+      connection: { type: 'cellular' },
+    })
+
+    const result = await downloadReciterAll('ar.minshawi', { wifiOnly: true })
+
+    expect(result.status).toBe('paused')
+    expect(getDownloadJobs()[0]?.pauseReason).toBe('wifi')
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
   })
 
   it('deletes a surah and then an entire reciter cleanly', async () => {
