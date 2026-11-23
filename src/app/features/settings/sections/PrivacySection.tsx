@@ -34,7 +34,7 @@ export function PrivacySection({
         </Row>
       </Section>
       <Section title="البيانات">
-        <Row title="نسخة احتياطية" stacked>
+        <Row title="نسخة احتياطية" description="تشمل الإعدادات والتقدم والمفضلة وموضع القراءة، ولا تشمل الملفات الصوتية المنزلة" stacked>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={exportData}
