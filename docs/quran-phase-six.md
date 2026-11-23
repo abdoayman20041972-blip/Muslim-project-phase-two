@@ -1,0 +1,24 @@
+# Quran reading, settings and experience, phase six
+
+Implemented over phases one to five on `main-2` only. Scope: reading, settings and experience (issues س07, س08, س16, س17, س18 plus design and accessibility improvements).
+
+## Behavior
+
+- **Manual page navigation never snaps back (س07).** In page mode the audio-follow effect used to re-run on every page-index change and force the view back to the page of the playing ayah, so التالي/السابق appeared broken while a single ayah played. The effect now only follows a newly playing ayah (tracked by ref), and manual page turns are left alone. A stopped or connected (full-surah) session clears the marker, so the next single-ayah play follows again.
+- **Font size works in page mode (س08).** Three CSS rules forced `font-size`/`line-height` with `!important` on page-mode text, silently defeating the font-size preference. The overrides are removed; the chosen size (small/medium/large/x-large) now applies in page mode, scroll mode and reading mode alike, and the buttons are never dead.
+- **Real reading position (س16).** "متابعة القراءة" no longer stores only the surah. The reader now saves the actual position — the page index and real Mushaf page number in page mode, the first visible ayah in scroll mode (sampled on scroll, throttled, and once when leaving the surah) — under a registered settings key (`azkar_reading_position`) that is included in backups and the native mirror. Opening the surah again restores that exact position (page restore and scroll-to-ayah both covered by tests), and the continue-reading row in the surah list shows where reading stopped ("توقفت عند صفحة …" / "الآية …").
+- **Khatma inputs are validated and the goal has an effect (س17).** The khatma page is clamped to 0–604 and the daily target to 1–604 before anything is saved; unfinished input (empty box) is never persisted; out-of-range typing shows an inline hint and the box normalizes on blur; invalid values stored by older versions repair themselves on open. The target is now explicitly a daily-pages goal and produces a concrete estimate: remaining pages, days needed, and the expected finish date.
+- **One source of truth for settings (س18).** Quran preferences (font size, reciter, layout) now live in a single shared store backed by localStorage (`useSyncExternalStore`): every screen reads the same in-memory copy, every write goes through one path, and a fresh mount re-reads storage so backup imports and native-mirror restores are picked up. `settings.ts` now owns the canonical registries with the policy documented: localStorage is the source of truth, `BACKUP_KEYS` (deduplicated — it listed `azkar_reciter` and `azkar_custom_tasbih` twice — and now including the reading position) defines what export/import and the native mirror carry, and `SETTINGS_RESET_KEYS` defines what "reset settings" clears. Reset now covers every registered preference instead of a hand-maintained partial list that had drifted (it missed the daily-ayah time, tasbih button style, journey auto-advance and hadith/prophets toggles), and it still never touches user content or progress (favorites, azkar/tasbih progress, last surah/view, reading position, downloaded audio). The backup row in settings states this policy to the user.
+- **Design and accessibility.**
+  - Reading-mode fixed bar: safe-area top padding (no overlap with the status bar/notch), wider reciter selector with a readable 12px font.
+  - The reciter's name is shown in the reader header next to the surah metadata.
+  - Touch targets: font-size buttons grew from 32px to 40px, page navigation buttons to a 44px minimum height with larger text, and the small numbered ayah markers gained an invisible ~40px hit area without changing the text flow.
+  - Copying an ayah now shows a confirmation toast ("تم نسخ الآية") or a failure message instead of failing silently.
+
+## Verification and limits
+
+- Vitest: 541 tests pass (10 new: reading-position storage, khatma validation and estimate, the unified preferences store, the no-snap-back navigation, position save/restore in page mode, scroll-mode restore, the copy toast, and the khatma section UI). One full-suite run during development showed a single intermittent failure that passed on both surrounding runs; the final run is fully green.
+- `tsc --strict` and the production build pass.
+- Reader UI visually verified in headless Chromium against the production build (page mode with restored position, font-size change in page mode, khatma section with the estimate).
+- Not covered by automated tests: real-device scrolling and restore feel, actual clipboard and share sheets, and the previously noted real-device checks (locked-screen offline playback, real-network downloads) remain outstanding as in earlier phases.
+- No merge to `main`, no release, no APK.
