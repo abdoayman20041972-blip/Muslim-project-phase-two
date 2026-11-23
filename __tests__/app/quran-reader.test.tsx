@@ -13,7 +13,7 @@ const localAyahs = Array.from({ length: 21 }, (_, i) => ({
   numberInSurah: i + 1,
   text: i === 0 ? 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ آية أولى' : 'نص الآية ' + (i + 1),
 }))
-const tafsirJson = { tafseer: { id: 'muyassar' }, surah: { number: 2 }, ayah: { ayah: 1, text: 'تفسير تجريبي' } }
+const tafsirJson = { tafseer: { id: 'muyassar' }, surah: { number: 92 }, ayah: { ayah: 1, text: 'تفسير تجريبي' } }
 
 vi.mock('html-to-image', () => ({ toPng: toPngMock }))
 
