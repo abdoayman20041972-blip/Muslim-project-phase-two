@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useConfirmDialog } from '../../components/confirm-dialog'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
-import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
+import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
 import { AboutSection } from './sections/AboutSection'
 import { DeviceSection } from './sections/DeviceSection'
 import { HadithSection, ProphetsSection } from './sections/HadithProphetsSection'
@@ -218,50 +218,14 @@ export function SettingsView({ appearance, onAppearance, onBack }: Props) {
   const reset = async () => {
     if (
       !(await confirm({
-        message: 'إعادة الإعدادات الافتراضية؟ سيتم مسح الإعدادات المخصصة وبعض بيانات التخصيص مثل العبارات المخصصة والختمة.',
+        message: 'إعادة الإعدادات الافتراضية؟ سيتم مسح الإعدادات المخصصة وبعض بيانات التخصيص مثل العبارات المخصصة والختمة، وستبقى المفضلة وتقدم الأذكار والسبحة والتنزيلات وموضع القراءة كما هي.',
         danger: true,
       }))
     )
       return
-    const resetKeys = [
-      APP_SETTINGS_KEYS.darkMode,
-      APP_SETTINGS_KEYS.appearance,
-      APP_SETTINGS_KEYS.numberStyle,
-      APP_SETTINGS_KEYS.timeFormat,
-      APP_SETTINGS_KEYS.uiScale,
-      APP_SETTINGS_KEYS.reducedMotion,
-      APP_SETTINGS_KEYS.keepScreenAwake,
-      APP_SETTINGS_KEYS.restoreLastPage,
-      APP_SETTINGS_KEYS.uiSound,
-      APP_SETTINGS_KEYS.tasbihSound,
-      APP_SETTINGS_KEYS.vibration,
-      APP_SETTINGS_KEYS.reminders,
-      APP_SETTINGS_KEYS.prayerTime,
-      APP_SETTINGS_KEYS.dailyAyah,
-      APP_SETTINGS_KEYS.quranReminder,
-      APP_SETTINGS_KEYS.quranReminderTime,
-      APP_SETTINGS_KEYS.azkarMorning,
-      APP_SETTINGS_KEYS.azkarEvening,
-      APP_SETTINGS_KEYS.tafsirSource,
-      APP_SETTINGS_KEYS.khatmahPage,
-      APP_SETTINGS_KEYS.khatmahTarget,
-      APP_SETTINGS_KEYS.prayerCalcMethod,
-      APP_SETTINGS_KEYS.asrSchool,
-      APP_SETTINGS_KEYS.prayerReminderLead,
-      APP_SETTINGS_KEYS.coords,
-      APP_SETTINGS_KEYS.prayerLocationUpdatedAt,
-      APP_SETTINGS_KEYS.fontSize,
-      APP_SETTINGS_KEYS.reciter,
-      APP_SETTINGS_KEYS.readingLayout,
-      APP_SETTINGS_KEYS.hijriCalendar,
-      APP_SETTINGS_KEYS.dataSaver,
-      APP_SETTINGS_KEYS.customTasbih,
-      APP_SETTINGS_KEYS.azkarCounterEnabled,
-      'azkar_theme_color',
-      'azkar_custom_tasbih',
-      'azkar_custom_tasbih_list',
-    ]
-    resetKeys.forEach((k) => localStorage.removeItem(k))
+    // One canonical list lives in settings.ts (SETTINGS_RESET_KEYS) so this
+    // never drifts from the registered settings keys again.
+    SETTINGS_RESET_KEYS.forEach((k) => localStorage.removeItem(k))
     location.reload()
   }
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
