@@ -3,7 +3,7 @@ export const APP_SETTINGS_KEYS = {
   reducedMotion:'azkar_reduced_motion', keepScreenAwake:'azkar_keep_screen_awake', restoreLastPage:'azkar_restore_last_page',
   uiSound:'azkar_ui_sound_enabled', tasbihSound:'azkar_tasbih_sound_enabled', vibration:'azkar_vibration_enabled',
   reminders:'azkar_reminders_on', prayerTime:'azkar_prayer_time_notifications', dailyAyah:'azkar_daily_ayah_notifications', dailyAyahTime:'azkar_daily_ayah_time', quranReminder:'azkar_quran_reading_reminder', quranReminderTime:'azkar_quran_reading_reminder_time', azkarMorning:'azkar_azkar_morning_reminders', azkarEvening:'azkar_azkar_evening_reminders',
-  tafsirSource:'azkar_tafsir_source', khatmahPage:'azkar_khatmah_page', khatmahTarget:'azkar_khatmah_target',
+  tafsirSource:'azkar_tafsir_source', khatmahPage:'azkar_khatmah_page', khatmahTarget:'azkar_khatmah_target', readingPosition:'azkar_reading_position',
   prayerCalcMethod:'azkar_prayer_calc_method', asrSchool:'azkar_asr_school', prayerReminderLead:'azkar_prayer_reminder_lead', coords:'azkar_coords', prayerLocationUpdatedAt:'azkar_prayer_location_updated_at',
   fontSize:'azkar_font_size', reciter:'azkar_reciter', readingLayout:'azkar_reading_layout',
   hijriCalendar:'azkar_hijri_calendar', tasbihButtonShape:'azkar_tasbih_button_shape', tasbihButtonColor:'azkar_tasbih_button_color',
@@ -16,6 +16,21 @@ export const APP_SETTINGS_KEYS = {
 export function readSetting(key:string,fallback=''){try{return localStorage.getItem(key)??fallback}catch{return fallback}}
 export function writeSetting(key:string,value:string){try{localStorage.setItem(key,value)}catch(error){console.error('[settings] could not save',key,error)}}
 export const emitSettingsChanged=()=>window.dispatchEvent(new Event('azkar-settings-changed'))
+
+// Storage policy (single reference for the whole app):
+// - localStorage is the one source of truth for settings and progress; every
+//   screen reads and writes through readSetting/writeSetting or a shared store
+//   built on them, never through ad-hoc localStorage keys.
+// - BACKUP_KEYS below is the canonical list of what the export/import backup
+//   and the native SharedPreferences mirror carry: settings plus user content
+//   and progress (favorites, azkar progress, tasbih counts, reading position).
+//   Downloaded audio lives in IndexedDB and is deliberately NOT in the backup.
+// - SETTINGS_RESET_KEYS is the canonical list cleared by "reset settings":
+//   preferences only. User content and progress (favorites, azkar progress,
+//   tasbih counts, khatma page is a preference, reading position, last
+//   surah/view, downloads) survive a reset.
+// A new persistent key must be registered in APP_SETTINGS_KEYS (or documented
+// here) and consciously added to or excluded from both lists.
 try{localStorage.removeItem('azkar_app_lock_enabled');localStorage.removeItem('azkar_app_lock_pin')}catch (error) { console.debug('[settings]', error) }
 
 export const BACKUP_KEYS = new Set<string>([
@@ -25,9 +40,19 @@ export const BACKUP_KEYS = new Set<string>([
   APP_SETTINGS_KEYS.tafsirSource,APP_SETTINGS_KEYS.khatmahPage,APP_SETTINGS_KEYS.khatmahTarget,APP_SETTINGS_KEYS.prayerCalcMethod,
   APP_SETTINGS_KEYS.asrSchool,APP_SETTINGS_KEYS.prayerReminderLead,APP_SETTINGS_KEYS.coords,APP_SETTINGS_KEYS.prayerLocationUpdatedAt,APP_SETTINGS_KEYS.fontSize,
   APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonShape,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.customTasbih,
-  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.prophetShowQuestion,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
+  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
   'azkar_tasbih_selected_word','azkar_tasbih_rounds','azkar_tasbih_round_counts','azkar_tasbih_daily_history','azkar_custom_tasbih','azkar_custom_tasbih_list',
   'azkar_azkar_item_progress_v2','azkar_azkar_item_progress_v2_migrated','azkar_favorites','azkar_favorites_version','azkar_last_surah','azkar_last_view',
-  'azkar_journey_position','azkar_daily_ayah','azkar_reciter'
+  'azkar_journey_position','azkar_daily_ayah'
 ])
 export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.startsWith('azkar_tafsir_')}
+
+// Canonical reset list for "إعادة الإعدادات الافتراضية": every registered
+// preference, plus the custom tasbih phrases, which the reset dialog already
+// promises to clear. Progress and content keys (azkar_last_surah,
+// azkar_last_view, readingPosition, favorites, azkar/tasbih progress) and the
+// downloaded audio are NOT reset.
+export const SETTINGS_RESET_KEYS:readonly string[]=[
+  ...Object.values(APP_SETTINGS_KEYS).filter((key)=>key!==APP_SETTINGS_KEYS.readingPosition),
+  'azkar_theme_color','azkar_custom_tasbih','azkar_custom_tasbih_list',
+]
