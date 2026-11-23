@@ -1,19 +1,29 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FONT_ORDER, FONT_SIZES, type FontSizeKey, toArabicNumber } from '../../../constants'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from '../../quran/quranAudioPlayback'
 import {
+  cancelDownload,
   deleteReciterAll,
   deleteSurah,
   downloadReciterAll,
   downloadSurah,
   getDownloadStatus,
-  type OfflineDownloadState,
+  getReciterStorageBytes,
+  getStorageEstimate,
+  getStoragePersistence,
+  pauseDownload,
+  resumeDownload,
+  retryFailedDownloads,
+  subscribeToDownloadJobs,
+  type DownloadFailureReason,
+  type DownloadJobSnapshot,
+  type StatusSummary,
 } from '../../quran/offlineDownload'
 import { surahList } from '../../../../quran-meta'
 import { APP_SETTINGS_KEYS } from '../../../settings'
 import { Row, Section, Choice } from '../settingsPrimitives'
 
-const RECITER_SIZES: Record<QuranAudioReciter, string> = {
+const RECITER_SIZE_ESTIMATES: Record<QuranAudioReciter, string> = {
   'ar.minshawi': '~2.04 GB',
   'ar.alafasy': '~1.96 GB',
   'ar.husary': '~2.99 GB',
@@ -24,6 +34,15 @@ const RECITER_SIZES: Record<QuranAudioReciter, string> = {
   'ar.saoodshuraym': '~1.30 GB',
   'ar.ahmedajamy': '~2.10 GB',
   'ar.shaatree': '~1.77 GB',
+}
+
+const FAILURE_LABELS: Record<DownloadFailureReason, string> = {
+  network: 'انقطع الاتصال',
+  http: 'خطأ من الخادم',
+  'invalid-content': 'الملف المستلم ليس صوتًا',
+  truncated: 'الملف غير مكتمل',
+  stalled: 'توقف الإرسال',
+  storage: 'مشكلة في مساحة التخزين',
 }
 
 type QuranSectionProps = {
@@ -38,81 +57,88 @@ type QuranSectionProps = {
   save: (key: string, value: string) => void
 }
 
-type ReciterStatus = { completed: number[]; total: number }
-type ActiveJob = { kind: 'surah'; surahNumber: number } | { kind: 'reciter' }
+function formatBytes(bytes: number): string {
+  if (bytes >= 1_073_741_824) return `${toArabicNumber(Number((bytes / 1_073_741_824).toFixed(2)))} ج.ب`
+  if (bytes >= 1_048_576) return `${toArabicNumber(Number((bytes / 1_048_576).toFixed(1)))} م.ب`
+  if (bytes >= 1024) return `${toArabicNumber(Math.round(bytes / 1024))} ك.ب`
+  return `${toArabicNumber(bytes)} بايت`
+}
 
-function DownloadStatus({ state, active }: { state: OfflineDownloadState; active: boolean }) {
-  if (active || state === 'downloading') return <span className="text-azkar-gold">جاري التنزيل…</span>
-  if (state === 'completed') return <span className="text-azkar-teal">منزّلة</span>
-  return <span className="text-azkar-ink-faint">غير منزّلة</span>
+function surahName(surahNumber: number): string {
+  return surahList.find((surah) => surah.number === surahNumber)?.shortName ?? String(surahNumber)
+}
+
+function jobKey(job: DownloadJobSnapshot): string {
+  return `${job.reciter}:${job.state}:${job.completedCount}:${job.failed.length}:${job.pendingCount}`
 }
 
 export function QuranSection({
   fontSize, setFontSize, reciter, setReciter, layout, setLayout, tafsir, setTafsir, save,
 }: QuranSectionProps) {
-  const [statuses, setStatuses] = useState<Partial<Record<QuranAudioReciter, ReciterStatus>>>({})
+  const [statuses, setStatuses] = useState<Partial<Record<QuranAudioReciter, StatusSummary>>>({})
+  const [storageBytes, setStorageBytes] = useState<Partial<Record<QuranAudioReciter, number>>>({})
+  const [jobs, setJobs] = useState<DownloadJobSnapshot[]>([])
   const [openReciter, setOpenReciter] = useState<QuranAudioReciter | null>(null)
-  const [activeJobs, setActiveJobs] = useState<Partial<Record<QuranAudioReciter, ActiveJob>>>({})
+  const [confirmReciter, setConfirmReciter] = useState<QuranAudioReciter | null>(null)
+  const [wifiOnly, setWifiOnly] = useState(true)
+  const [freeSpace, setFreeSpace] = useState<number | undefined>(undefined)
+  const [persistenceNote, setPersistenceNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const refreshStatus = async (id: QuranAudioReciter) => {
-    const status = await getDownloadStatus(id)
-    setStatuses((current) => ({ ...current, [id]: status }))
-  }
-
-  useEffect(() => {
-    let cancelled = false
-    void Promise.all(QURAN_AUDIO_RECITERS.map(async (id) => {
+  const refreshAll = useCallback(async () => {
+    const nextStatuses: Partial<Record<QuranAudioReciter, StatusSummary>> = {}
+    const nextBytes: Partial<Record<QuranAudioReciter, number>> = {}
+    await Promise.all(QURAN_AUDIO_RECITERS.map(async (id) => {
       try {
-        const status = await getDownloadStatus(id)
-        if (!cancelled) setStatuses((current) => ({ ...current, [id]: status }))
+        nextStatuses[id] = await getDownloadStatus(id)
+        nextBytes[id] = await getReciterStorageBytes(id)
       } catch {
-        // Offline storage may be unavailable in restricted test/private contexts; keep the settings screen usable.
+        // Offline storage may be unavailable in restricted/private contexts; keep the screen usable.
       }
     }))
-    return () => { cancelled = true }
+    setStatuses(nextStatuses)
+    setStorageBytes(nextBytes)
   }, [])
 
   useEffect(() => {
-    const activeIds = QURAN_AUDIO_RECITERS.filter((id) => activeJobs[id])
-    if (!activeIds.length) return
-    const timer = window.setInterval(() => {
-      void Promise.all(activeIds.map(refreshStatus))
-    }, 400)
-    return () => window.clearInterval(timer)
-  }, [activeJobs])
-
-  const runDownload = async (id: QuranAudioReciter, job: ActiveJob, action: () => Promise<void>) => {
-    setError(null)
-    setActiveJobs((current) => ({ ...current, [id]: job }))
-    try {
-      await action()
-      await refreshStatus(id)
-    } catch {
-      await refreshStatus(id).catch((error) => console.debug('[QuranSection]', error))
-      setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.')
-    } finally {
-      setActiveJobs((current) => {
-        const next = { ...current }
-        delete next[id]
-        return next
-      })
+    void refreshAll()
+    void getStorageEstimate().then(({ usage, quota }) => {
+      if (quota !== undefined) setFreeSpace(Math.max(0, quota - (usage ?? 0)))
+    })
+    const persistence = getStoragePersistence()
+    if (persistence.supported && persistence.granted === false) {
+      setPersistenceNote('التخزين غير ثابت: قد يحذف المتصفح التنزيلات عند ضغط المساحة.')
+    } else if (persistence.supported && persistence.granted === true) {
+      setPersistenceNote('التخزين الثابت مفعّل: لن يحذف المتصفح التنزيلات تلقائيًا.')
     }
+  }, [refreshAll])
+
+  useEffect(() => subscribeToDownloadJobs(setJobs), [])
+
+  const jobsVersion = jobs.map(jobKey).join('|')
+  useEffect(() => {
+    void refreshAll()
+  }, [jobsVersion, refreshAll])
+
+  const jobFor = (id: QuranAudioReciter) => jobs.find((job) => job.reciter === id)
+
+  const startReciterDownload = (id: QuranAudioReciter) => {
+    setError(null)
+    setConfirmReciter(null)
+    void downloadReciterAll(id, { wifiOnly }).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
   }
 
-  const getState = (id: QuranAudioReciter, surahNumber?: number): OfflineDownloadState => {
-    const active = activeJobs[id]
-    if (active && (active.kind === 'reciter' || active.surahNumber === surahNumber)) return 'downloading'
-    if (surahNumber !== undefined && statuses[id]?.completed.includes(surahNumber)) return 'completed'
-    if (surahNumber === undefined && statuses[id]?.completed.length === 114) return 'completed'
-    return 'not-started'
+  const retryFailed = (id: QuranAudioReciter) => {
+    setError(null)
+    void retryFailedDownloads(id, { wifiOnly }).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
   }
 
-  const completedCount = (id: QuranAudioReciter) => statuses[id]?.completed.length ?? 0
-  const isFull = (id: QuranAudioReciter) => completedCount(id) === 114
-  const isPartial = (id: QuranAudioReciter) => completedCount(id) > 0 && !isFull(id)
+  const startSurahDownload = (id: QuranAudioReciter, surahNumber: number) => {
+    setError(null)
+    void downloadSurah(id, surahNumber).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
+  }
 
-  const reciterCards = useMemo(() => QURAN_AUDIO_RECITERS, [])
+  const totalStored = Object.values(storageBytes).reduce((sum, value) => sum + (value ?? 0), 0)
 
   return (
     <>
@@ -133,67 +159,180 @@ export function QuranSection({
         </Row>
       </Section>
 
-      <Section title="تنزيل للاستماع بدون إنترنت">
+      <Section title="مدير التنزيلات">
         <div className="space-y-3 p-3">
-          <p className="text-[10px] leading-5 text-azkar-ink-soft">
-            نزّل سورة واحدة أو مكتبة القارئ كاملة للاستماع لاحقًا دون اتصال. الحجم المعروض تقديري حسب بيانات فحص المصادر.
+          <p className="text-xs leading-6 text-azkar-ink-soft">
+            نزّل سورة واحدة أو مكتبة قارئ كاملة للاستماع لاحقًا دون اتصال. التنزيل يستمر حتى لو غادرت هذه الشاشة.
           </p>
-          {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[10px] text-red-700">{error}</div>}
-          {reciterCards.map((id) => {
-            const count = completedCount(id)
-            const full = isFull(id)
-            const partial = isPartial(id)
-            const active = Boolean(activeJobs[id])
+          <p className="text-xs text-azkar-ink-soft">
+            {totalStored > 0 ? `المساحة المستخدمة للتنزيلات: ${formatBytes(totalStored)}` : 'لا توجد تنزيلات محفوظة بعد.'}
+            {freeSpace !== undefined ? ` · المتاح التقريبي: ${formatBytes(freeSpace)}` : ''}
+          </p>
+          {persistenceNote && <p className="text-xs text-azkar-ink-soft">{persistenceNote}</p>}
+          {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+
+          {jobs.length > 0 && (
+            <div className="space-y-2" aria-label="التنزيلات الجارية">
+              {jobs.map((job) => {
+                const currentName = job.current ? surahName(job.current.surahNumber) : null
+                const percent = job.current?.totalBytes
+                  ? Math.min(100, Math.round((job.current.receivedBytes / job.current.totalBytes) * 100))
+                  : undefined
+                return (
+                  <div key={job.reciter} className="rounded-2xl border border-azkar-gold bg-azkar-card p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold text-azkar-teal-ink">
+                          {job.state === 'paused' ? 'متوقف مؤقتًا' : 'يجري الآن'} · {QURAN_AUDIO_RECITER_LABELS[job.reciter]}
+                        </div>
+                        <div className="mt-1 text-xs text-azkar-ink-soft">
+                          {job.pauseReason === 'wifi'
+                            ? 'بانتظار اتصال Wi-Fi للمتابعة.'
+                            : currentName
+                              ? `سورة ${currentName}${percent !== undefined ? ` · ${toArabicNumber(percent)}٪` : ''} · ${formatBytes(job.current?.receivedBytes ?? 0)}${job.current?.bytesPerSecond ? ` · ${formatBytes(Math.round(job.current.bytesPerSecond))}/ث` : ''}`
+                              : 'جاري التحضير…'}
+                        </div>
+                        <div className="mt-1 text-xs text-azkar-ink-soft">
+                          اكتمل {toArabicNumber(job.completedCount)} · متبقٍ {toArabicNumber(job.pendingCount)}
+                          {job.failed.length > 0 ? ` · فشل ${toArabicNumber(job.failed.length)}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-1.5">
+                        {job.state === 'running' ? (
+                          <button type="button" onClick={() => pauseDownload(job.reciter)} className="rounded-xl border px-3 py-2 text-xs">
+                            إيقاف مؤقت
+                          </button>
+                        ) : (
+                          <button type="button" onClick={() => void resumeDownload(job.reciter)} className="rounded-xl border px-3 py-2 text-xs">
+                            استئناف
+                          </button>
+                        )}
+                        <button type="button" onClick={() => cancelDownload(job.reciter)} className="rounded-xl border border-red-200 px-3 py-2 text-xs text-red-700">
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                    {percent !== undefined && (
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-azkar-teal-tint">
+                        <div className="h-full rounded-full bg-azkar-gold transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {QURAN_AUDIO_RECITERS.map((id) => {
+            const status = statuses[id]
+            const completed = status?.completed.length ?? 0
+            const failed = status?.failed ?? []
+            const full = completed === 114
+            const partial = completed > 0 && !full
+            const bytes = storageBytes[id] ?? 0
+            const job = jobFor(id)
             return (
               <div key={id} className="rounded-2xl border border-azkar-gold-soft bg-azkar-card p-3">
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="font-amiri font-bold text-base text-azkar-teal-ink">{QURAN_AUDIO_RECITER_LABELS[id]}</div>
-                    <div className="mt-0.5 text-[10px] text-azkar-ink-soft">{toArabicNumber(114)} سورة · {RECITER_SIZES[id]}</div>
-                    {active || count > 0 ? (
+                    <div className="font-amiri text-lg font-bold text-azkar-teal-ink">{QURAN_AUDIO_RECITER_LABELS[id]}</div>
+                    <div className="mt-0.5 text-xs text-azkar-ink-soft">
+                      {toArabicNumber(114)} سورة · {bytes > 0 ? `المساحة الفعلية ${formatBytes(bytes)}` : `الحجم التقديري ${RECITER_SIZE_ESTIMATES[id]}`}
+                    </div>
+                    {(completed > 0 || failed.length > 0) && (
                       <div className="mt-2">
-                        <div className="mb-1 flex items-center justify-between text-[9px] text-azkar-ink-soft">
-                          <span>{active ? 'جاري التنزيل' : full ? 'مكتمل' : 'تنزيل جزئي'}</span>
-                          <span>{toArabicNumber(count)} / {toArabicNumber(114)}</span>
+                        <div className="mb-1 flex items-center justify-between text-xs text-azkar-ink-soft">
+                          <span>{full ? 'مكتمل' : job ? 'جاري التنزيل' : 'تنزيل جزئي'}</span>
+                          <span>{toArabicNumber(completed)} / {toArabicNumber(114)}</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-azkar-teal-tint">
-                          <div className="h-full rounded-full bg-azkar-teal transition-all" style={{ width: `${Math.round((count / 114) * 100)}%` }} />
+                        <div className="h-2 overflow-hidden rounded-full bg-azkar-teal-tint">
+                          <div className="h-full rounded-full bg-azkar-teal transition-all" style={{ width: `${Math.round((completed / 114) * 100)}%` }} />
                         </div>
+                        {failed.length > 0 && (
+                          <div className="mt-1 text-xs text-red-700">
+                            فشل {toArabicNumber(failed.length)}: {failed.slice(0, 3).map((f) => `سورة ${surahName(f.surahNumber)} (${FAILURE_LABELS[f.reason]})`).join('، ')}{failed.length > 3 ? '…' : ''}
+                          </div>
+                        )}
                       </div>
-                    ) : null}
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    disabled={active}
-                    onClick={() => full ? void runDownload(id, { kind: 'reciter' }, () => deleteReciterAll(id)) : void runDownload(id, { kind: 'reciter' }, () => downloadReciterAll(id))}
-                    className="shrink-0 rounded-xl border px-2.5 py-2 text-[10px] disabled:opacity-50"
-                  >
-                    {active ? 'جاري…' : full ? 'حذف القارئ كاملًا' : partial ? 'استكمال' : 'تنزيل القارئ كاملًا'}
-                  </button>
+                  <div className="flex shrink-0 flex-col gap-1.5">
+                    {!job && !full && (
+                      <button type="button" onClick={() => setConfirmReciter(id)} className="rounded-xl border px-3 py-2 text-xs">
+                        {partial || failed.length > 0 ? 'استكمال التنزيل' : 'تنزيل القارئ كاملًا'}
+                      </button>
+                    )}
+                    {!job && failed.length > 0 && (
+                      <button type="button" onClick={() => retryFailed(id)} className="rounded-xl border px-3 py-2 text-xs">
+                        إعادة الفاشل ({toArabicNumber(failed.length)})
+                      </button>
+                    )}
+                    {!job && full && (
+                      <button type="button" onClick={() => void deleteReciterAll(id).then(refreshAll)} className="rounded-xl border border-red-200 px-3 py-2 text-xs text-red-700">
+                        حذف القارئ كاملًا
+                      </button>
+                    )}
+                    {job && <span className="text-xs text-azkar-ink-soft">أدرها من الأعلى</span>}
+                  </div>
                 </div>
 
-                <button type="button" onClick={() => setOpenReciter(openReciter === id ? null : id)} className="mt-3 text-[10px] text-azkar-teal-ink underline">
+                {confirmReciter === id && !job && (
+                  <div className="mt-3 rounded-xl border border-azkar-gold-soft bg-azkar-teal-tint p-3">
+                    <p className="text-xs leading-6 text-azkar-ink-soft">
+                      تنزيل المكتبة كاملة يستهلك حوالي {RECITER_SIZE_ESTIMATES[id]} من بيانات الهاتف والمساحة.
+                      {freeSpace !== undefined ? ` المتاح التقريبي الآن: ${formatBytes(freeSpace)}.` : ''}
+                    </p>
+                    <label className="mt-2 flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={wifiOnly} onChange={(e) => setWifiOnly(e.target.checked)} />
+                      التنزيل عبر Wi-Fi فقط (يتوقف مؤقتًا خارج Wi-Fi)
+                    </label>
+                    <div className="mt-2 flex gap-2">
+                      <button type="button" onClick={() => startReciterDownload(id)} className="rounded-xl bg-azkar-teal px-3 py-2 text-xs text-white">
+                        بدء التنزيل
+                      </button>
+                      <button type="button" onClick={() => setConfirmReciter(null)} className="rounded-xl border px-3 py-2 text-xs">
+                        تراجع
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <button type="button" onClick={() => setOpenReciter(openReciter === id ? null : id)} className="mt-3 text-xs text-azkar-teal-ink underline">
                   {openReciter === id ? 'إخفاء السور' : `عرض السور (${toArabicNumber(114)})`}
                 </button>
 
                 {openReciter === id && (
-                  <div className="mt-3 max-h-72 space-y-1.5 overflow-y-auto border-t border-azkar-gold-soft pt-3">
+                  <div className="mt-3 max-h-80 space-y-1.5 overflow-y-auto border-t border-azkar-gold-soft pt-3">
                     {surahList.map((surah) => {
-                      const state = getState(id, surah.number)
-                      const busy = activeJobs[id]?.kind === 'surah' && activeJobs[id]?.surahNumber === surah.number
+                      const isCompleted = status?.completed.includes(surah.number) ?? false
+                      const failedEntry = status?.failed.find((f) => f.surahNumber === surah.number)
+                      const isCurrent = job?.current?.surahNumber === surah.number
                       return (
-                        <div key={surah.number} className="flex items-center gap-2 rounded-xl bg-azkar-card px-2.5 py-2">
-                          <span className="min-w-0 flex-1 text-[11px]">
+                        <div key={surah.number} className="flex items-center gap-2 rounded-xl bg-azkar-card px-3 py-2.5">
+                          <span className="min-w-0 flex-1 text-sm">
                             {toArabicNumber(surah.number)}. {surah.shortName}
                           </span>
-                          <DownloadStatus state={state} active={busy} />
-                          {state === 'completed' ? (
-                            <button type="button" onClick={() => void runDownload(id, { kind: 'surah', surahNumber: surah.number }, () => deleteSurah(id, surah.number))} className="rounded-lg border px-2 py-1 text-[9px]">
+                          {isCurrent && job?.state === 'running' ? (
+                            <span className="text-xs text-azkar-gold">جاري التنزيل…</span>
+                          ) : isCompleted ? (
+                            <span className="text-xs text-azkar-teal">منزّلة</span>
+                          ) : failedEntry ? (
+                            <span className="text-xs text-red-700">فشل: {FAILURE_LABELS[failedEntry.reason]}</span>
+                          ) : (
+                            <span className="text-xs text-azkar-ink-faint">غير منزّلة</span>
+                          )}
+                          {isCompleted ? (
+                            <button type="button" onClick={() => void deleteSurah(id, surah.number).then(refreshAll)} className="rounded-lg border px-2.5 py-1.5 text-xs">
                               حذف
                             </button>
                           ) : (
-                            <button type="button" disabled={activeJobs[id] !== undefined} onClick={() => void runDownload(id, { kind: 'surah', surahNumber: surah.number }, () => downloadSurah(id, surah.number))} className="rounded-lg border px-2 py-1 text-[9px] disabled:opacity-50">
-                              {busy ? 'جاري…' : 'تنزيل'}
+                            <button
+                              type="button"
+                              disabled={Boolean(job)}
+                              onClick={() => startSurahDownload(id, surah.number)}
+                              className="rounded-lg border px-2.5 py-1.5 text-xs disabled:opacity-50"
+                            >
+                              {failedEntry ? 'إعادة' : 'تنزيل'}
                             </button>
                           )}
                         </div>
