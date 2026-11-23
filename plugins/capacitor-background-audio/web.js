@@ -3,7 +3,17 @@
 export const BackgroundAudioWeb = {
   async start() {},
   async stop() {},
+  async setKeepScreenOn() {},
   async isActive() {
     return { active: false }
+  },
+  async notificationPermission() {
+    return { granted: true }
+  },
+  async requestNotificationPermission() {
+    return { granted: true }
+  },
+  async addListener() {
+    return { remove: async () => {} }
   },
 }
