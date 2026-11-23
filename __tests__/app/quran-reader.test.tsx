@@ -9,35 +9,16 @@ const { toPngMock } = vi.hoisted(() => ({ toPngMock: vi.fn() }))
 
 const view: Extract<View, { name: 'mushaf-surah' }> = { name: 'mushaf-surah', number: 92 }
 const localAyahs = Array.from({ length: 21 }, (_, i) => ({
-  number: i + 8,
+  number: i + 6059,
   numberInSurah: i + 1,
   text: i === 0 ? 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ آية أولى' : 'نص الآية ' + (i + 1),
 }))
-const quranPages = {
-  '593': [
-    ...localAyahs.slice(0, 8).map(({ number, numberInSurah }) => ({
-      surahNumber: 92,
-      numberInSurah,
-      number,
-    })),
-    { surahNumber: 93, numberInSurah: 1, number: 999 },
-  ],
-  '594': localAyahs.slice(8).map(({ number, numberInSurah }) => ({
-    surahNumber: 92,
-    numberInSurah,
-    number,
-  })),
-}
 const tafsirJson = { tafseer: { id: 'muyassar' }, surah: { number: 2 }, ayah: { ayah: 1, text: 'تفسير تجريبي' } }
 
 vi.mock('html-to-image', () => ({ toPng: toPngMock }))
 
 vi.mock('../../src/app/features/quran/data/quran-uthmani.json', () => ({
   default: { '92': localAyahs },
-}))
-
-vi.mock('../../src/app/features/quran/data/quran-pages.json', () => ({
-  default: quranPages,
 }))
 
 describe('QuranReaderView', () => {
@@ -71,19 +52,19 @@ describe('QuranReaderView', () => {
     localStorage.setItem('azkar_reading_layout', 'pages')
     renderReader(view)
 
-    await waitFor(() => expect(screen.getAllByText(/صفحة ٥٩٣/)[0]).toBeTruthy())
-    expect(screen.getByText((_, node) => node?.textContent === '١ / ٢ · صفحة ٥٩٣')).toBeTruthy()
-    expect(document.querySelectorAll('[data-ayah]').length).toBe(8)
-    expect(screen.getByText(/نص الآية 8/)).toBeTruthy()
-    expect(screen.queryByText(/نص الآية 9$/)).toBeNull()
+    await waitFor(() => expect(screen.getAllByText(/صفحة ٥٩٥/)[0]).toBeTruthy())
+    expect(screen.getByText((_, node) => node?.textContent === '١ / ٢ · صفحة ٥٩٥')).toBeTruthy()
+    expect(document.querySelectorAll('[data-ayah]').length).toBe(14)
+    expect(screen.getByText(/نص الآية 14/)).toBeTruthy()
+    expect(screen.queryByText(/نص الآية 15$/)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'التالي' }))
 
-    expect(screen.getAllByText(/صفحة ٥٩٤/)[0]).toBeTruthy()
-    expect(screen.getByText((_, node) => node?.textContent === '٢ / ٢ · صفحة ٥٩٤')).toBeTruthy()
-    expect(document.querySelectorAll('[data-ayah]').length).toBe(13)
+    expect(screen.getAllByText(/صفحة ٥٩٦/)[0]).toBeTruthy()
+    expect(screen.getByText((_, node) => node?.textContent === '٢ / ٢ · صفحة ٥٩٦')).toBeTruthy()
+    expect(document.querySelectorAll('[data-ayah]').length).toBe(7)
     expect(screen.getByText(/نص الآية 21/)).toBeTruthy()
-    expect(screen.queryByText(/نص الآية 8$/)).toBeNull()
+    expect(screen.queryByText(/نص الآية 14$/)).toBeNull()
     expect(screen.getByRole('button', { name: 'التالي' })).toBeDisabled()
   })
 
@@ -91,9 +72,9 @@ describe('QuranReaderView', () => {
     localStorage.setItem('azkar_reading_layout', 'pages')
     renderReader(view)
 
-    await waitFor(() => expect(screen.getAllByText(/صفحة ٥٩٣/)[0]).toBeTruthy())
-    expect(document.querySelectorAll('[data-ayah]').length).toBe(8)
-    expect(screen.queryByText('آية من السورة الأخرى')).toBeNull()
+    await waitFor(() => expect(screen.getAllByText(/صفحة ٥٩٥/)[0]).toBeTruthy())
+    expect(document.querySelectorAll('[data-ayah]').length).toBe(14)
+    expect(Array.from(document.querySelectorAll('[data-ayah]')).map(node => Number(node.getAttribute('data-ayah')))).toEqual(Array.from({ length: 14 }, (_, index) => index + 1))
   })
 
   it('uses the selected page as the initial audio position', async () => {
@@ -101,7 +82,7 @@ describe('QuranReaderView', () => {
     const AudioMock = vi.fn().mockImplementation(function(){return {src:'',play:vi.fn().mockResolvedValue(undefined),pause:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn()}})
     vi.stubGlobal('Audio', AudioMock)
     renderReader(view)
-    await waitFor(() => screen.getAllByText(/صفحة ٥٩٣/)[0])
+    await waitFor(() => screen.getAllByText(/صفحة ٥٩٥/)[0])
     fireEvent.click(screen.getByRole('button',{name:'التالي'}))
     fireEvent.click(screen.getByRole('button',{name:'تشغيل التلاوة'}))
     expect(AudioMock).toHaveBeenCalled()
