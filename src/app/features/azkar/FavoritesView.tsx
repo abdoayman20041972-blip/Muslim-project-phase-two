@@ -3,7 +3,7 @@ import { copyText, shareText } from './shareActions'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
 import { toArabicDigits, toArabicNumber, type View } from '../../constants'
-import { isCountedZikr, itemCount, itemTarget, readAzkarProgress } from './azkarProgress'
+import { isCountedZikr, isOccasionalCategory, itemCount, itemTarget, readAzkarProgress, readOccasionProgress } from './azkarProgress'
 
 type Favorite = { key: string; category: ZikrCategory; item: ZikrCategory['items'][number] }
 type Props = { favorites: Favorite[]; onToggleFavorite: (key: string) => void; onBack: () => void; setView?: (view: View) => void }
@@ -22,15 +22,25 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [progress, setProgress] = useState<Record<string, number>>(() => readAzkarProgress())
+  const [occasionCounts, setOccasionCounts] = useState<Record<string, Record<string, number>>>({})
   useEffect(() => {
-    const refresh = () => setProgress(readAzkarProgress())
+    const refresh = () => {
+      setProgress(readAzkarProgress())
+      // Favorites from situational sections show their per-occasion count, not the day log.
+      const counts: Record<string, Record<string, number>> = {}
+      for (const { category } of favorites) {
+        if (isOccasionalCategory(category.id)) counts[category.id] = readOccasionProgress(category.id).counts
+      }
+      setOccasionCounts(counts)
+    }
+    refresh()
     window.addEventListener('azkar-progress-changed', refresh)
     window.addEventListener('focus', refresh)
     return () => {
       window.removeEventListener('azkar-progress-changed', refresh)
       window.removeEventListener('focus', refresh)
     }
-  }, [])
+  }, [favorites])
 
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>()
@@ -79,7 +89,7 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
                   const counted = isCountedZikr(item)
                   const kindLabel = item.kind === 'fadl' ? 'فضل وخبر' : item.kind === 'guidance' ? 'إرشاد وآداب' : undefined
                   const target = itemTarget(item.repeat)
-                  const current = itemCount(progress, key, item.repeat)
+                  const current = itemCount(isOccasionalCategory(category.id) ? occasionCounts[category.id] || {} : progress, key, item.repeat)
                   const completed = current >= target
                   return <article key={key} className="relative overflow-hidden px-4 py-5">
                     <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full border border-azkar-teal/10" />
