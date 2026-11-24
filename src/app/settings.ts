@@ -3,6 +3,7 @@ export const APP_SETTINGS_KEYS = {
   reducedMotion:'azkar_reduced_motion', keepScreenAwake:'azkar_keep_screen_awake', restoreLastPage:'azkar_restore_last_page',
   uiSound:'azkar_ui_sound_enabled', tasbihSound:'azkar_tasbih_sound_enabled', vibration:'azkar_vibration_enabled',
   reminders:'azkar_reminders_on', prayerTime:'azkar_prayer_time_notifications', dailyAyah:'azkar_daily_ayah_notifications', dailyAyahTime:'azkar_daily_ayah_time', quranReminder:'azkar_quran_reading_reminder', quranReminderTime:'azkar_quran_reading_reminder_time', azkarMorning:'azkar_azkar_morning_reminders', azkarEvening:'azkar_azkar_evening_reminders',
+  azkarMorningTime:'azkar_azkar_morning_time', azkarEveningTime:'azkar_azkar_evening_time',
   tafsirSource:'azkar_tafsir_source', khatmahPage:'azkar_khatmah_page', khatmahTarget:'azkar_khatmah_target', readingPosition:'azkar_reading_position',
   prayerCalcMethod:'azkar_prayer_calc_method', asrSchool:'azkar_asr_school', prayerReminderLead:'azkar_prayer_reminder_lead', coords:'azkar_coords', prayerLocationUpdatedAt:'azkar_prayer_location_updated_at',
   fontSize:'azkar_font_size', reciter:'azkar_reciter', readingLayout:'azkar_reading_layout',
@@ -34,12 +35,16 @@ export const emitSettingsChanged=()=>window.dispatchEvent(new Event('azkar-setti
 //   surah/view, downloads) survive a reset.
 // A new persistent key must be registered in APP_SETTINGS_KEYS (or documented
 // here) and consciously added to or excluded from both lists.
+// Derived caches are deliberately excluded from both: 'azkar_prayer_plan_cache_v1'
+// (the last location-based prayer plan, re-armed verbatim while the location is
+// unavailable) is rebuilt from live state on the next run with coordinates.
 try{localStorage.removeItem('azkar_app_lock_enabled');localStorage.removeItem('azkar_app_lock_pin')}catch (error) { console.debug('[settings]', error) }
 
 export const BACKUP_KEYS = new Set<string>([
   APP_SETTINGS_KEYS.darkMode,APP_SETTINGS_KEYS.appearance,APP_SETTINGS_KEYS.numberStyle,APP_SETTINGS_KEYS.timeFormat,APP_SETTINGS_KEYS.uiScale,
   APP_SETTINGS_KEYS.reducedMotion,APP_SETTINGS_KEYS.keepScreenAwake,APP_SETTINGS_KEYS.restoreLastPage,APP_SETTINGS_KEYS.uiSound,APP_SETTINGS_KEYS.tasbihSound,
   APP_SETTINGS_KEYS.vibration,APP_SETTINGS_KEYS.reminders,APP_SETTINGS_KEYS.prayerTime,APP_SETTINGS_KEYS.dailyAyah,APP_SETTINGS_KEYS.dailyAyahTime,APP_SETTINGS_KEYS.quranReminder,APP_SETTINGS_KEYS.quranReminderTime,APP_SETTINGS_KEYS.azkarMorning,APP_SETTINGS_KEYS.azkarEvening,
+  APP_SETTINGS_KEYS.azkarMorningTime,APP_SETTINGS_KEYS.azkarEveningTime,
   APP_SETTINGS_KEYS.tafsirSource,APP_SETTINGS_KEYS.khatmahPage,APP_SETTINGS_KEYS.khatmahTarget,APP_SETTINGS_KEYS.prayerCalcMethod,
   APP_SETTINGS_KEYS.asrSchool,APP_SETTINGS_KEYS.prayerReminderLead,APP_SETTINGS_KEYS.coords,APP_SETTINGS_KEYS.prayerLocationUpdatedAt,APP_SETTINGS_KEYS.fontSize,
   APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonShape,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.customTasbih,
