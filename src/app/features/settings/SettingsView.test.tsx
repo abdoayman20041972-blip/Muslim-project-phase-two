@@ -49,3 +49,33 @@ describe('SettingsView entry deep link', () => {
     notifications.getByText('السماح بالإشعارات')
   })
 })
+
+describe('SettingsView main grid grouping', () => {
+  it('shows six fixed groups with every category exactly once', () => {
+    const { container } = render(ui(null))
+    const groups = Array.from(container.querySelectorAll('section[aria-label]'))
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual([
+      'المظهر', 'الصلاة والإشعارات', 'القرآن والتفسير', 'الأذكار والسبحة', 'البيانات والخصوصية', 'حول',
+    ])
+    const tiles = groups.map((g) => Array.from(g.querySelectorAll('button b')).map((b) => b.textContent))
+    expect(tiles).toEqual([
+      ['عام'],
+      ['الصلاة', 'الإشعارات', 'الأذونات والجهاز'],
+      ['المصحف', 'الأحاديث', 'قصص الأنبياء'],
+      ['الأذكار', 'السبحة', 'التحفيز'],
+      ['الخصوصية والبيانات'],
+      ['حول مسلم'],
+    ])
+  })
+
+  it('every tile still opens its own section', () => {
+    const names = ['عام', 'الصلاة', 'الإشعارات', 'الأذونات والجهاز', 'المصحف', 'الأحاديث', 'قصص الأنبياء', 'الأذكار', 'السبحة', 'التحفيز', 'الخصوصية والبيانات', 'حول مسلم']
+    for (const n of names) {
+      const r = render(ui(null))
+      fireEvent.click(r.getByText(n, { selector: 'b' }).closest('button')!)
+      expect(r.queryByText('كل التفضيلات في مكان واحد')).toBeNull()
+      expect(r.getAllByText(n).length).toBeGreaterThan(0)
+      r.unmount()
+    }
+  })
+})
