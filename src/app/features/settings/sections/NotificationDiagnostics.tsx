@@ -133,7 +133,7 @@ export function NotificationDiagnostics() {
           type="button"
           className={buttonClass}
           disabled={busy !== ''}
-          onClick={() => void run('schedule', () => scheduleNativeNotifications({ force: true }))}
+          onClick={() => void run('schedule', () => scheduleNativeNotifications({ force: true, askPermission: true }))}
         >
           جدولة الآن
         </button>
