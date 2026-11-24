@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Row, Section, Choice } from '../settingsPrimitives'
 import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting } from '../../../settings'
 
-export const HADITH_FONT_KEY = 'hadith_font'
+export const HADITH_FONT_KEY = APP_SETTINGS_KEYS.hadithFont
 export const HADITH_NOTE_KEY = APP_SETTINGS_KEYS.hadithShowNote
 export const PROPHET_FONT_KEY = 'prophet_font'
 export const PROPHET_QUESTION_KEY = APP_SETTINGS_KEYS.prophetShowQuestion
