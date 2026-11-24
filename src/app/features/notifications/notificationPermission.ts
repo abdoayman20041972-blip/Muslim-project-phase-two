@@ -51,3 +51,30 @@ export async function refreshNotificationPermission(): Promise<NotificationPermi
     return 'unknown'
   }
 }
+
+/**
+ * One Arabic wording for every permission state the app can see (Android
+ * plugin values, the browser Notification API and the diagnostics record), so
+ * the device, notification and diagnostics screens always agree.
+ */
+export function permissionLabel(state: string | null | undefined): string {
+  switch (state) {
+    case 'granted':
+      return 'مسموح'
+    case 'denied':
+      return 'مرفوض'
+    case 'prompt':
+    case 'prompt-with-rationale':
+    case 'default':
+      return 'لم يُطلب بعد'
+    case 'unavailable':
+      return 'غير متاح'
+    case 'unknown':
+    case '':
+    case null:
+    case undefined:
+      return 'غير معروف'
+    default:
+      return 'غير معروف'
+  }
+}
