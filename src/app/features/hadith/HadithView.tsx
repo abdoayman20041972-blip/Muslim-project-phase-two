@@ -131,7 +131,18 @@ export function HadithView({ onBack }: { onBack: () => void }) {
           {curated.map((hadith) => (
             <article key={hadith.id} className="hadith-card">
               <div className="hadith-card-top">
-                <span>حديث مختار</span>
+                <span>
+                  حديث مختار
+                  {hadith.excerpt && (
+                    <span
+                      className="mr-2 rounded-full border border-azkar-hairline px-2 py-0.5 text-[9px] font-normal text-azkar-ink-soft"
+                      title="جزء من الحديث الوارد في المصدر"
+                      data-testid="hadith-excerpt-badge"
+                    >
+                      مقتطف
+                    </span>
+                  )}
+                </span>
                 <span className="hadith-source">{hadith.source}</span>
               </div>
               <p className={"hadith-text font-amiri " + fontClass}>«{hadith.text}»</p>
