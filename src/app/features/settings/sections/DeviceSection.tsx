@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { permissionLabel } from '../../notifications/notificationPermission'
 import { openSystemSettings } from '../../permissions/systemSettings'
 import { Geolocation } from '@capacitor/geolocation'
 import { acquireLocation, isLocationPermissionGranted, locationFailureMessage } from '../../location/acquireLocation'
@@ -53,8 +54,7 @@ export function DeviceSection() {
     setBusy('')
   }
 
-  const label = (state: string) =>
-    state === 'granted' ? 'مسموح' : state === 'denied' ? 'مرفوض' : state === 'prompt' ? 'لم يُطلب بعد' : state || '...'
+  const label = (state: string) => (state ? permissionLabel(state) : '...')
 
   return (
     <Section title="الأذونات والجهاز">
