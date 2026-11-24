@@ -345,7 +345,10 @@ export function QuranReaderView({ view, setView }: Props) {
   }, [])
   async function copy(text: string) {
     try {
-      await navigator.clipboard?.writeText(text)
+      // Optional chaining alone would turn a missing Clipboard API (older
+      // WebViews) into a false success toast; treat it as a failure instead.
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable')
+      await navigator.clipboard.writeText(text)
       showCopyNotice('تم نسخ الآية')
     } catch (error) {
       console.debug('[QuranReaderView]', error)
