@@ -49,14 +49,14 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
-          <p className="mt-0.5 text-[0.625rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
+          <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
         </div>
         <span className="hadith-mark" aria-hidden="true"><ScrollText className="h-4 w-4" /></span>
       </header>
 
       <div className="mb-1 flex items-center justify-between px-1">
         <span className="font-amiri text-base font-bold text-azkar-teal-ink">{PROPHET_STORIES.length} نبيًّا من قصص القرآن</span>
-        <span className="text-[0.5625rem] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
+        <span className="text-[0.6875rem] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
       </div>
 
       <ul className="grid gap-3">
@@ -102,7 +102,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{story.name}</h1>
-          <p className="mt-0.5 text-[0.625rem] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
+          <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
         </div>
         <span className="ps-count" aria-hidden="true">{index + 1}/{PROPHET_STORIES.length}</span>
       </header>
