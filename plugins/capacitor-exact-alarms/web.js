@@ -23,4 +23,13 @@ export const ExactAlarmsWeb = {
   async launchNotification() {
     return { notification: null }
   },
+  async fireLog() {
+    return { items: [] }
+  },
+  async clearFireLog() {
+    return undefined
+  },
+  async status() {
+    return { ignoringBatteryOptimizations: false, notificationsEnabled: true, needsReplan: false, storedAlarms: 0 }
+  },
 }
