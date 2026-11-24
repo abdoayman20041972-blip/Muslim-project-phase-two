@@ -355,10 +355,16 @@ export function App() {
     const prefetchImages = () => {
       // Warm the biggest background images too, so the first navigation to
       // each screen shows its artwork instantly. All local files inside the
-      // APK: warming them costs no network and no permission.
+      // APK: warming them costs no network and no permission. The tasbih
+      // screen renders only the ACTIVE theme's background, so warm only that
+      // one; the other theme's image loads if and when the theme switches.
+      const savedAppearance = readSetting(APP_SETTINGS_KEYS.appearance, '') || (readSetting(APP_SETTINGS_KEYS.darkMode) === '1' ? 'dark' : 'light');
+      const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+      const tasbihBackground = (savedAppearance === 'dark' || (savedAppearance === 'system' && systemDark))
+        ? "/img/tasbih-mosque-night.webp"
+        : "/img/tasbih-mosque-background.webp";
       for (const src of [
-        "/img/tasbih-mosque-background.jpg",
-        "/img/tasbih-mosque-night.jpg",
+        tasbihBackground,
         "/img/qibla-mobile.jpg",
         "/img/azkar-morning-wide-mosque.jpg",
         "/img/azkar-evening-wide-sunset-mosque.jpg",
