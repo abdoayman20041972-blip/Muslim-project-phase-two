@@ -100,6 +100,7 @@ let scheduledFingerprint = ''
 let lastFailureAt = 0
 let inFlight: Promise<void> | null = null
 let forceQueued = false
+let askQueued = false
 
 async function ensureChannels() {
   const sound = readAdhanSoundMode()
@@ -160,11 +161,28 @@ async function ensureChannels() {
   })
 }
 
-async function requestPermission(): Promise<boolean> {
+export type PermissionState = 'granted' | 'denied' | 'prompt'
+
+/**
+ * Reads the notification permission. The system dialog is shown ONLY when
+ * `ask` is true, and `ask` is true only for an explicit user gesture (turning
+ * a reminder on, the allow button, the test button, "schedule now"). Automatic
+ * runs (app start, resume, hourly, settings change) never prompt, so no
+ * system dialog can appear out of context.
+ */
+async function resolvePermission(ask: boolean): Promise<PermissionState> {
   const status = await LocalNotifications.checkPermissions()
-  if (status.display === 'granted') return true
-  const result = await LocalNotifications.requestPermissions()
-  return result.display === 'granted'
+  let display = status.display
+  if (display !== 'granted' && ask) {
+    const result = await LocalNotifications.requestPermissions()
+    display = result.display
+  }
+  if (display === 'granted') return 'granted'
+  return display === 'denied' ? 'denied' : 'prompt'
+}
+
+async function requestPermission(): Promise<boolean> {
+  return (await resolvePermission(true)) === 'granted'
 }
 
 /** Android 12+ exact-alarm state: 'granted' | 'denied' | 'prompt' | 'unknown'. */
@@ -254,7 +272,7 @@ async function computeAllTimings(coords: { lat: number; lng: number }, days: Dat
   return Promise.all(days.map((date) => computeTimingsLocally(coords, date, method, school)))
 }
 
-async function run(force: boolean) {
+async function run(force: boolean, askPermission: boolean) {
   const atTimeEnabled = readSetting(APP_SETTINGS_KEYS.prayerTime, '1') === '1'
   const beforeEnabled = readSetting(APP_SETTINGS_KEYS.reminders) === '1'
   const ayahEnabled = readSetting(APP_SETTINGS_KEYS.dailyAyah, '0') === '1'
@@ -304,9 +322,9 @@ async function run(force: boolean) {
   if (!force && fingerprint === scheduledFingerprint) return
   if (!force && lastFailureAt && Date.now() - lastFailureAt < RETRY_AFTER_FAILURE_MS) return
 
-  const granted = await requestPermission()
-  patchDiagnostics({ permission: granted ? 'granted' : 'denied', exactAlarm: await checkExactAlarm() })
-  if (!granted) return
+  const permission = await resolvePermission(askPermission)
+  patchDiagnostics({ permission, exactAlarm: await checkExactAlarm() })
+  if (permission !== 'granted') return
   await ensureChannels()
 
   const days = Array.from({ length: DAYS_AHEAD }, (_, i) => {
@@ -378,16 +396,17 @@ async function run(force: boolean) {
  * is a no-op unless `force` is set. Failures are logged and stored for the
  * diagnostics card, never swallowed.
  */
-export function scheduleNativeNotifications(options: { force?: boolean } = {}): Promise<void> {
+export function scheduleNativeNotifications(options: { force?: boolean; askPermission?: boolean } = {}): Promise<void> {
   if (!Capacitor.isNativePlatform()) return Promise.resolve()
   if (inFlight) {
     // Don't drop the request: run again right after the in-flight one so a
     // settings change made mid-run still lands.
     if (options.force) forceQueued = true
+    if (options.askPermission) askQueued = true
     return inFlight
   }
   const start = () => {
-    inFlight = run(Boolean(options.force))
+    inFlight = run(Boolean(options.force), Boolean(options.askPermission))
       .catch((error) => {
         lastFailureAt = Date.now()
         recordError('schedule', error)
@@ -396,7 +415,9 @@ export function scheduleNativeNotifications(options: { force?: boolean } = {}): 
         inFlight = null
         if (forceQueued) {
           forceQueued = false
-          void scheduleNativeNotifications({ force: true })
+          const ask = askQueued
+          askQueued = false
+          void scheduleNativeNotifications({ force: true, askPermission: ask })
         }
       })
     return inFlight
