@@ -236,37 +236,54 @@ const HADITH_LOCAL_BASE = '/data/hadith'
 
 export type ApiHadith = { hadithnumber: string | number; text: string }
 export type ApiEditionData = { hadiths: ApiHadith[] }
+/** Where the loaded edition actually came from: the file bundled in the app, or the CDN fallback. */
+export type EditionOrigin = 'bundled' | 'network'
+export type LoadedEdition = ApiEditionData & { origin: EditionOrigin }
 
-const editionCache = new Map<string, ApiEditionData>()
+const editionCache = new Map<string, LoadedEdition>()
 
-export async function loadApiEdition(edition: string): Promise<ApiEditionData> {
+export function clearEditionCache() {
+  editionCache.clear()
+  try {
+    sessionStorage.clear()
+  } catch {
+    // ignore
+  }
+}
+
+export async function loadApiEdition(edition: string): Promise<LoadedEdition> {
   const cached = editionCache.get(edition)
   if (cached) return cached
   const storageKey = `hadith-edition:${edition}`
   try {
     const stored = sessionStorage.getItem(storageKey)
     if (stored) {
-      const parsed = JSON.parse(stored) as ApiEditionData
-      editionCache.set(edition, parsed)
-      return parsed
+      const parsed = JSON.parse(stored) as LoadedEdition
+      if (Array.isArray(parsed.hadiths) && (parsed.origin === 'bundled' || parsed.origin === 'network')) {
+        editionCache.set(edition, parsed)
+        return parsed
+      }
     }
   } catch {
-    // sessionStorage unavailable; fall through to network
+    // sessionStorage unavailable; fall through to loading
   }
-  const sources = [`${HADITH_LOCAL_BASE}/${edition}.min.json`, `${HADITH_API_BASE}/${edition}.min.json`]
-  let data: ApiEditionData | null = null
+  const sources: { url: string; origin: EditionOrigin; timeout: number }[] = [
+    { url: `${HADITH_LOCAL_BASE}/${edition}.min.json`, origin: 'bundled', timeout: 8_000 },
+    { url: `${HADITH_API_BASE}/${edition}.min.json`, origin: 'network', timeout: 15_000 },
+  ]
+  let data: LoadedEdition | null = null
   for (const source of sources) {
     try {
-      const response = await fetchWithTimeout(source, source.startsWith(HADITH_API_BASE) ? 15_000 : 8_000)
+      const response = await fetchWithTimeout(source.url, source.timeout)
       if (!response.ok) continue
       const parsed = (await response.json()) as ApiEditionData
-      if (Array.isArray(parsed.hadiths)) data = parsed
+      if (Array.isArray(parsed.hadiths) && parsed.hadiths.length) data = { hadiths: parsed.hadiths, origin: source.origin }
       if (data) break
     } catch {
       // try the next source
     }
   }
-  if (!data) throw new Error('فشل تحميل الحديث')
+  if (!data) throw new Error('تعذّر تحميل هذا القسم: الملف المضمّن في التطبيق لم يُقرأ والشبكة غير متاحة.')
   editionCache.set(edition, data)
   try {
     sessionStorage.setItem(storageKey, JSON.stringify(data))
