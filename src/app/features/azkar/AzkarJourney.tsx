@@ -16,7 +16,7 @@ export function AzkarJourney({category,progress,counterEnabled,autoAdvanceEnable
  const item=category.items[safeIndex]
  const key=keys[safeIndex]
  const target=item?itemTarget(item.repeat):0
- const current=item?Number(progress[key]||0):0
+ const current=item?Math.min(Number(progress[key]||0),target):0
  const completed=!!item&&current>=target
  const isLast=!!item&&safeIndex===total-1
  const goNext=()=>{if(isLast){clearJourneyPosition(category.id);setFinished(true)}else{const nextIndex=safeIndex+1;saveJourneyPosition(category.id,nextIndex);setIndex(nextIndex)}}
@@ -24,7 +24,7 @@ export function AzkarJourney({category,progress,counterEnabled,autoAdvanceEnable
  if(finished||!item){const done=completedItemCount(category.items,keys,progress);return <div role="status" className="animate-in fade-in slide-in-from-bottom-2 duration-300 py-10 text-center"><div className="font-amiri text-2xl font-bold text-azkar-teal-ink">{'أنهيت رحلة '+category.label}</div>{counterEnabled?<div className="mt-2 text-[12px] text-azkar-ink-soft">{'أكملت '+toArabicNumber(done)+' من '+toArabicNumber(total)}</div>:<div className="mt-2 text-[12px] text-azkar-ink-soft">أنهيت قراءة أذكار القسم</div>}{counterEnabled&&done<total&&<div className="mt-1 text-[10px] text-azkar-ink-faint">{toArabicNumber(total-done)+' متبقي'}</div>}<button data-sound="none" onClick={onExit} aria-label="رجوع للقسم" className={pill+' mt-6 border-azkar-teal bg-azkar-teal text-azkar-card'}>رجوع للقسم</button></div>}
  const parsedSource=item.source?parseReference(item.source):undefined
  const displaySource=parsedSource&&!parsedSource.ignored?parsedSource.value:undefined
- const increment=()=>{onProgressChange({...progress,[key]:current+1})}
+ const increment=()=>{if(!item||completed)return;onProgressChange({...progress,[key]:current+1})}
  const goPrev=()=>{const nextIndex=Math.max(0,safeIndex-1);if(nextIndex!==safeIndex)saveJourneyPosition(category.id,nextIndex);setIndex(nextIndex)}
  const nextPrimary=completed||!counterEnabled
  const nextLabel=isLast?'إنهاء الرحلة':'التالي'
