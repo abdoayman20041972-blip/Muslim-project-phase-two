@@ -11,14 +11,8 @@ import {
 } from '../../notifications/nativeNotifications'
 import { patchDiagnostics, readDiagnostics } from '../../notifications/nativeDiagnostics'
 import { Row, Section } from '../settingsPrimitives'
+import { permissionLabel } from '../../notifications/notificationPermission'
 import { openSystemSettings } from '../../permissions/systemSettings'
-
-const PERMISSION_LABELS: Record<string, string> = {
-  granted: 'مسموح',
-  denied: 'مرفوض',
-  prompt: 'لم يُطلب بعد',
-  unknown: 'غير معروف',
-}
 
 const formatTime = (iso: string | null) => {
   if (!iso) return '—'
@@ -111,8 +105,8 @@ export function NotificationDiagnostics() {
           <span className="text-[11px] font-bold text-azkar-ink">{formatTime(diag.testScheduledAt)}</span>
         </Row>
       )}
-      <Row title="إذن الإشعارات" description={'المنبّه الدقيق: ' + (PERMISSION_LABELS[diag.exactAlarm] ?? diag.exactAlarm)}>
-        <span className="text-[11px] font-bold text-azkar-ink">{PERMISSION_LABELS[diag.permission] ?? diag.permission}</span>
+      <Row title="إذن الإشعارات" description={'المنبّه الدقيق: ' + permissionLabel(diag.exactAlarm)}>
+        <span className="text-[11px] font-bold text-azkar-ink">{permissionLabel(diag.permission)}</span>
       </Row>
       <Row
         title="خطة التنبيهات المحفوظة"
