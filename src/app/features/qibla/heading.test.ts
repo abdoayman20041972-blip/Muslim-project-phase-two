@@ -37,6 +37,79 @@ describe('headingFromEuler', () => {
   })
 })
 
+describe('headingFromEuler pose safety (stage-1 audit acceptance)', () => {
+  it('backward tilt across the old 53° flat threshold no longer flips the needle', () => {
+    // Reproduced from the audit: beta -52.9 → -53.3 used to jump +180° stably.
+    const before = headingFromEuler(0, -52.9, -1)
+    const after = headingFromEuler(0, -53.3, -1)
+    near(after, before as number, 0.5)
+  })
+  it('is continuous across the whole old threshold region (no branch seam)', () => {
+    // Dense scan around the former |cos(beta)*cos(gamma)| = 0.6 threshold surface
+    // (beta within 60° of flat): neighbouring poses must differ by well under 2°.
+    let maxDelta = 0
+    for (let alpha = 0; alpha < 360; alpha += 15) {
+      for (let beta = -60; beta <= 60; beta += 1) {
+        for (let gamma = -85; gamma <= 85; gamma += 2) {
+          const h = headingFromEuler(alpha, beta, gamma)
+          if (h === null) continue
+          for (const [db, dg] of [[1, 0], [0, 2]] as const) {
+            const h2 = headingFromEuler(alpha, beta + db, gamma + dg)
+            if (h2 === null) continue
+            maxDelta = Math.max(maxDelta, Math.abs(shortestDelta(h2, h)))
+          }
+        }
+      }
+    }
+    expect(maxDelta).toBeLessThan(1.8)
+  })
+  it('is continuous through all normal holding poses (flat to vertical)', () => {
+    // Wider sweep, beta from upside-down-vertical through flat to portrait.
+    // Residual deltas here are just yaw-like tracking where an Euler axis
+    // degenerates at vertical poses (gamma doubles as yaw at beta = ±90),
+    // not seams: the old defect was a stable 180° flip, which must stay gone.
+    let maxDelta = 0
+    for (let alpha = 0; alpha < 360; alpha += 15) {
+      for (let beta = -90; beta <= 90; beta += 1) {
+        for (let gamma = -85; gamma <= 85; gamma += 2) {
+          const h = headingFromEuler(alpha, beta, gamma)
+          if (h === null) continue
+          for (const [db, dg] of [[1, 0], [0, 2]] as const) {
+            const h2 = headingFromEuler(alpha, beta + db, gamma + dg)
+            if (h2 === null) continue
+            maxDelta = Math.max(maxDelta, Math.abs(shortestDelta(h2, h)))
+          }
+        }
+      }
+    }
+    expect(maxDelta).toBeLessThan(2.5)
+  })
+  it('face-down poses produce no heading', () => {
+    expect(headingFromEuler(0, 180, 0)).toBeNull()
+    expect(headingFromEuler(0, -180, 0)).toBeNull()
+    expect(headingFromEuler(45, 170, 40)).toBeNull()
+  })
+  it('degenerate screen-facing-down band produces no unstable heading', () => {
+    // Past upside-down vertical the two references physically oppose each other;
+    // the answer must be null, not a swinging value.
+    expect(headingFromEuler(75, 118, -2)).toBeNull()
+    expect(headingFromEuler(75, 118, 1)).toBeNull()
+  })
+  it('upside-down vertical keeps the flat-side heading (no 180° flip)', () => {
+    near(headingFromEuler(0, -90, 0), 0)
+    near(headingFromEuler(90, -90, 0), 270)
+    // Approached continuously from the flat side:
+    const seq = [-80, -85, -89, -90].map((b) => headingFromEuler(0, b, 0) as number)
+    for (let i = 1; i < seq.length; i++) {
+      expect(Math.abs(shortestDelta(seq[i], seq[i - 1]))).toBeLessThan(2)
+    }
+  })
+  it('still tracks yaw 1:1 when flat', () => {
+    near(headingFromEuler(30, 0, 0), 330)
+    near(headingFromEuler(30, 10, -20), 330, 6)
+  })
+})
+
 describe('needle', () => {
   it('rotates correctly for N/E/S/W headings (Cairo, bearing ~136)', () => {
     const b = 136
