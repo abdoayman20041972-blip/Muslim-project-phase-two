@@ -1648,6 +1648,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .q2-calibrate{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;height:2.6rem;padding:0 1.2rem;border-radius:999px;border:1px solid #c99a40;background:linear-gradient(180deg,#14382f,#0b241e);color:#f6e7b8;font-size:.85rem;font-weight:700;box-shadow:0 6px 14px rgba(0,0,0,.35);}
 .q2-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;color:#f6e7b8;text-shadow:0 2px 8px rgba(0,0,0,.6);}
 .q2-empty button{height:2.6rem;padding:0 1.2rem;border-radius:999px;border:1px solid #c99a40;background:#0b241e;color:#f6e7b8;font-weight:700;}
+.q2-empty .q2-empty-cta{background:#c99a40;color:#0b241e;}
 @media (max-height:680px){.q2-title{margin-top:1.5rem;}.q2-title h1{font-size:1.8rem;}.q2-kaaba{width:1.8rem;height:1.8rem;}.q2-compass-shell{gap:.45rem;}}
 
 .q2-dial.is-aligned{filter:drop-shadow(0 0 14px rgba(255,201,107,.5)) drop-shadow(0 22px 34px rgba(2,12,10,.45));}
