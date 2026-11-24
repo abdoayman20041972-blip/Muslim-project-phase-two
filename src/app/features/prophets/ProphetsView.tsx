@@ -49,14 +49,14 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
-          <p className="mt-0.5 text-[10px] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
+          <p className="mt-0.5 text-[0.625rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
         </div>
         <span className="hadith-mark" aria-hidden="true"><ScrollText className="h-4 w-4" /></span>
       </header>
 
       <div className="mb-1 flex items-center justify-between px-1">
         <span className="font-amiri text-base font-bold text-azkar-teal-ink">{PROPHET_STORIES.length} نبيًّا من قصص القرآن</span>
-        <span className="text-[9px] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
+        <span className="text-[0.5625rem] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
       </div>
 
       <ul className="grid gap-3">
@@ -69,7 +69,7 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
                   <span className="ps-card-name font-amiri">{story.name}</span>
                   <span className="ps-card-epithet">{story.epithet}</span>
                 </span>
-                <span className="mt-1 block text-[11px] leading-relaxed text-azkar-ink-soft">{story.summary}</span>
+                <span className="mt-1 block text-[0.6875rem] leading-relaxed text-azkar-ink-soft">{story.summary}</span>
               </span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-azkar-gold-deep" aria-hidden="true" />
             </button>
@@ -93,7 +93,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
     window.addEventListener('azkar-settings-changed', refresh)
     return () => window.removeEventListener('azkar-settings-changed', refresh)
   }, [])
-  const fontClass = font === 'sm' ? 'text-[13px]' : font === 'lg' ? 'text-[18px]' : 'text-[15px]'
+  const fontClass = font === 'sm' ? 'text-[0.8125rem]' : font === 'lg' ? 'text-[1.125rem]' : 'text-[0.9375rem]'
   return (
     <article>
       <header className="hadith-header">
@@ -102,7 +102,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{story.name}</h1>
-          <p className="mt-0.5 text-[10px] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
+          <p className="mt-0.5 text-[0.625rem] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
         </div>
         <span className="ps-count" aria-hidden="true">{index + 1}/{PROPHET_STORIES.length}</span>
       </header>
