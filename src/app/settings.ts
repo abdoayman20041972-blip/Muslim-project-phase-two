@@ -7,7 +7,7 @@ export const APP_SETTINGS_KEYS = {
   tafsirSource:'azkar_tafsir_source', khatmahPage:'azkar_khatmah_page', khatmahTarget:'azkar_khatmah_target', readingPosition:'azkar_reading_position',
   prayerCalcMethod:'azkar_prayer_calc_method', asrSchool:'azkar_asr_school', prayerReminderLead:'azkar_prayer_reminder_lead', coords:'azkar_coords', prayerLocationUpdatedAt:'azkar_prayer_location_updated_at',
   fontSize:'azkar_font_size', reciter:'azkar_reciter', readingLayout:'azkar_reading_layout',
-  hijriCalendar:'azkar_hijri_calendar', tasbihButtonShape:'azkar_tasbih_button_shape', tasbihButtonColor:'azkar_tasbih_button_color',
+  hijriCalendar:'azkar_hijri_calendar', tasbihButtonColor:'azkar_tasbih_button_color',
   dataSaver:'azkar_data_saver', customTasbih:'azkar_custom_tasbih',
   azkarCounterEnabled:'azkar_counter_enabled',
   journeyAutoAdvance:'azkar_journey_auto_advance',
@@ -41,14 +41,19 @@ export const emitSettingsChanged=()=>window.dispatchEvent(new Event('azkar-setti
 // Module runs on the server too (SSR); touch storage only in a browser.
 if (typeof localStorage !== 'undefined') { try{localStorage.removeItem('azkar_app_lock_enabled');localStorage.removeItem('azkar_app_lock_pin')}catch (error) { console.debug('[settings]', error) } }
 
+// Keys no screen reads or writes any more. They stay importable from old backups and
+// are cleared by reset, but are no longer registered as settings.
+export const LEGACY_UNUSED_KEYS:readonly string[]=['azkar_tasbih_button_shape']
+
 export const BACKUP_KEYS = new Set<string>([
+  ...LEGACY_UNUSED_KEYS,
   APP_SETTINGS_KEYS.darkMode,APP_SETTINGS_KEYS.appearance,APP_SETTINGS_KEYS.numberStyle,APP_SETTINGS_KEYS.timeFormat,APP_SETTINGS_KEYS.uiScale,
   APP_SETTINGS_KEYS.reducedMotion,APP_SETTINGS_KEYS.keepScreenAwake,APP_SETTINGS_KEYS.restoreLastPage,APP_SETTINGS_KEYS.uiSound,APP_SETTINGS_KEYS.tasbihSound,
   APP_SETTINGS_KEYS.vibration,APP_SETTINGS_KEYS.reminders,APP_SETTINGS_KEYS.prayerTime,APP_SETTINGS_KEYS.dailyAyah,APP_SETTINGS_KEYS.dailyAyahTime,APP_SETTINGS_KEYS.quranReminder,APP_SETTINGS_KEYS.quranReminderTime,APP_SETTINGS_KEYS.azkarMorning,APP_SETTINGS_KEYS.azkarEvening,
   APP_SETTINGS_KEYS.azkarMorningTime,APP_SETTINGS_KEYS.azkarEveningTime,
   APP_SETTINGS_KEYS.tafsirSource,APP_SETTINGS_KEYS.khatmahPage,APP_SETTINGS_KEYS.khatmahTarget,APP_SETTINGS_KEYS.prayerCalcMethod,
   APP_SETTINGS_KEYS.asrSchool,APP_SETTINGS_KEYS.prayerReminderLead,APP_SETTINGS_KEYS.coords,APP_SETTINGS_KEYS.prayerLocationUpdatedAt,APP_SETTINGS_KEYS.fontSize,
-  APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonShape,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.customTasbih,
+  APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.customTasbih,
   APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.azkarFontSize,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.hadithFont,APP_SETTINGS_KEYS.prophetFont,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.mutedPrayers,APP_SETTINGS_KEYS.kahfReminder,APP_SETTINGS_KEYS.kahfReminderTime,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
   'azkar_tasbih_selected_word','azkar_tasbih_rounds','azkar_tasbih_round_counts','azkar_tasbih_daily_history','azkar_custom_tasbih','azkar_custom_tasbih_list',
   'azkar_azkar_item_progress_v2','azkar_azkar_item_progress_v2_migrated','azkar_azkar_occasion_progress_v1','azkar_azkar_occasion_migrated_v1','azkar_favorites','azkar_favorites_version','azkar_last_surah','azkar_last_view',
@@ -64,5 +69,5 @@ export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.start
 // are NOT reset.
 export const SETTINGS_RESET_KEYS:readonly string[]=[
   ...Object.values(APP_SETTINGS_KEYS).filter((key)=>key!==APP_SETTINGS_KEYS.readingPosition),
-  'azkar_theme_color','azkar_custom_tasbih_list',
+  'azkar_theme_color','azkar_custom_tasbih_list',...LEGACY_UNUSED_KEYS,
 ]
