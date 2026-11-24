@@ -17,12 +17,23 @@ public class AlarmEntry {
      * the shade by itself (NotificationCompat.setTimeoutAfter). 0 = never.
      */
     public final long ttl;
+    /**
+     * True when the instant is a fixed local clock time (custom wird time, daily
+     * ayah, Quran reminder, Al-Kahf). False for physical instants (prayer,
+     * sunrise, sunset). Entries from older plans default to false.
+     */
+    public final boolean wallClock;
 
     public AlarmEntry(int id, long at, String title, String body, String channelId, String target, String group) {
         this(id, at, title, body, channelId, target, group, 0L);
     }
 
     public AlarmEntry(int id, long at, String title, String body, String channelId, String target, String group, long ttl) {
+        this(id, at, title, body, channelId, target, group, ttl, false);
+    }
+
+    public AlarmEntry(int id, long at, String title, String body, String channelId, String target, String group, long ttl, boolean wallClock) {
+        this.wallClock = wallClock;
         this.id = id;
         this.at = at;
         this.title = title == null ? "" : title;
@@ -43,6 +54,7 @@ public class AlarmEntry {
         object.put("target", target);
         object.put("group", group);
         object.put("ttl", ttl);
+        object.put("wallClock", wallClock);
         return object;
     }
 
@@ -55,7 +67,13 @@ public class AlarmEntry {
             object.optString("channel", "default"),
             object.optString("target", ""),
             object.optString("group", ""),
-            object.optLong("ttl", 0L)
+            object.optLong("ttl", 0L),
+            object.optBoolean("wallClock", false)
         );
+    }
+
+    /** The same entry at a different instant. */
+    public AlarmEntry withAt(long newAt) {
+        return new AlarmEntry(id, newAt, title, body, channelId, target, group, ttl, wallClock);
     }
 }
