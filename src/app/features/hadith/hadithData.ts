@@ -6,6 +6,8 @@ export type Hadith = {
   source: string
   note: string
   category?: string
+  /** True when `text` is only part of the full narration at the cited source. */
+  excerpt?: boolean
 }
 
 // Curated, well-established hadiths with primary collection references.
@@ -14,18 +16,21 @@ export type Hadith = {
 export const HADITH_COLLECTION: Hadith[] = [
   {
     id: 'bukhari-1',
+    excerpt: true,
     text: 'إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى',
     source: 'صحيح البخاري — ١',
     note: 'النية تصحّح العمل وتحوّله عبادةً لله، فمن عمل لدنيا لا شيء له إلا ما نوى.',
   },
   {
     id: 'muslim-55a',
+    excerpt: true,
     text: 'الدين النصيحة',
     source: 'صحيح مسلم — ٥٥',
     note: 'النصيحة لله ولكتابه ورسوله ولأئمة المسلمين وعامتهم أساس هذا الدين.',
   },
   {
     id: 'bukhari-10',
+    excerpt: true,
     text: 'المسلم من سلم المسلمون من لسانه ويده',
     source: 'صحيح البخاري — ١٠',
     note: 'الإيمان عملٌ يظهر في لسانك لا تجريحًا، ويديك لا ظلمًا.',
@@ -44,12 +49,14 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'muslim-101',
+    excerpt: true,
     text: 'من غشنا فليس منا',
     source: 'صحيح مسلم — ١٠١',
     note: 'النص والعمل واحدهما، فلا فرق بين العبادة والمعاملة في الأمانة.',
   },
   {
     id: 'bukhari-52',
+    excerpt: true,
     text: 'الحلال بيّن والحرام بيّن، وبينهما مشتبهات',
     source: 'صحيح البخاري — ٥٢',
     note: 'من اتّقى الشبهات استبرأ دينه وعرضه، ومن وقع فيها وقع في الحرام.',
@@ -80,12 +87,14 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'muslim-2664',
+    excerpt: true,
     text: 'المؤمن القويّ خيرٌ وأحبّ إلى الله من المؤمن الضعيف، وفي كلٍّ خير',
     source: 'صحيح مسلم — ٢٦٦٤',
     note: 'القوة هنا بالإيمان والعزم والعمل، فاحرص على قلبٍ قويّ وجسدٍ صالح.',
   },
   {
     id: 'muslim-2699',
+    excerpt: true,
     text: 'من سلك طريقًا يلتمس فيه علمًا سهّل الله له به طريقًا إلى الجنة',
     source: 'صحيح مسلم — ٢٦٩٩',
     note: 'طلب العلم عبادةٌ تفتح أبواب الجنة، فاعزم ولو خطوة.',
@@ -104,6 +113,7 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'muslim-223',
+    excerpt: true,
     text: 'الطُّهور شطر الإيمان',
     source: 'صحيح مسلم — ٢٢٣',
     note: 'النظافة والطهارة نصف الإيمان، ظاهرًا للبدن وباطنًا للقلب.',
@@ -116,18 +126,21 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'bukhari-6018',
+    excerpt: true,
     text: 'من كان يؤمن بالله واليوم الآخر فليقل خيرًا أو ليصمت',
     source: 'صحيح البخاري — ٦٠١٨',
     note: 'حفظ اللسان علامة إيمانٍ صادق، فقل خيرًا أو اسكت.',
   },
   {
     id: 'muslim-2578',
+    excerpt: true,
     text: 'اتقوا الظلم فإنّ الظلم ظلماتٌ يوم القيامة',
     source: 'صحيح مسلم — ٢٥٧٨',
     note: 'الظلم يظلم صاحبه أولًا، فاحذر أن تظلم وأنت الغالب.',
   },
   {
     id: 'tirmidhi-3895',
+    excerpt: true,
     text: 'خيرُكم خيرُكم لأهله، وأنا خيرُكم لأهلي',
     source: 'سنن الترمذي — ٣٨٩٥',
     note: 'خير الرجال من أحسن إلى أهله، فالبيت أول ميدان للإحسان.',
@@ -140,6 +153,7 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'muslim-91',
+    excerpt: true,
     text: 'إن الله جميل يحب الجمال',
     source: 'صحيح مسلم — ٩١',
     note: 'جمال اللسان والهيئة والعمل كل ما ليس فيه دنس ويستقيم، محبوب عند الله.',
@@ -170,12 +184,14 @@ export const HADITH_COLLECTION: Hadith[] = [
   },
   {
     id: 'tirmidhi-1956',
+    excerpt: true,
     text: 'تبسمك في وجه أخيك لك صدقة',
     source: 'سنن الترمذي — ١٩٥٦',
     note: 'أدنى الإحسان قد يكون صدقة موصى بها، فيتحول الألفة إلى عبادة.',
   },
   {
     id: 'bukhari-2989',
+    excerpt: true,
     text: 'الكلمة الطيبة صدقة',
     source: 'صحيح البخاري — ٢٩٨٩',
     note: 'الكلمة الطيبة صلة وتربية ودعاء، لا تكلفك إلا لسانك وتؤجرك مؤجورًا.',
