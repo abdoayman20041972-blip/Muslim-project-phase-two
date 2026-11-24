@@ -74,18 +74,18 @@ describe('independent azkar font size', () => {
   it('defaults to medium and persists enlargement', () => {
     renderCategory()
     const text = screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ')
-    expect(text.style.fontSize).toBe('19px')
+    expect(text.style.getPropertyValue('--zikr-scale')).toBe('1')
     fireEvent.click(screen.getByLabelText('تكبير خط الذكر'))
     expect(localStorage.getItem(APP_SETTINGS_KEYS.azkarFontSize)).toBe('l')
-    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.fontSize).toBe('22px')
+    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.getPropertyValue('--zikr-scale')).toBe('1.15')
   })
 
   it('applies the stored size and shrinks back', () => {
     localStorage.setItem(APP_SETTINGS_KEYS.azkarFontSize, 'l')
     renderCategory()
-    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.fontSize).toBe('22px')
+    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.getPropertyValue('--zikr-scale')).toBe('1.15')
     fireEvent.click(screen.getByLabelText('تصغير خط الذكر'))
     expect(localStorage.getItem(APP_SETTINGS_KEYS.azkarFontSize)).toBe('m')
-    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.fontSize).toBe('19px')
+    expect(screen.getByText('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ').style.getPropertyValue('--zikr-scale')).toBe('1')
   })
 })
