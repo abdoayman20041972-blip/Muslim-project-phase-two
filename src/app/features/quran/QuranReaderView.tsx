@@ -475,7 +475,7 @@ export function QuranReaderView({ view, setView }: Props) {
             <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">
               {activeSurah!.shortName}
             </div>
-            <div className="text-[10px] text-azkar-ink-faint mt-0.5 truncate">
+            <div className="text-[0.625rem] text-azkar-ink-faint mt-0.5 truncate">
               {activeSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} ·{' '}
               {toArabicNumber(activeSurah.numberOfAyahs)} آية ·{' '}
               {QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter}
@@ -540,12 +540,12 @@ export function QuranReaderView({ view, setView }: Props) {
               <div className="rounded-[1.3rem] border border-azkar-gold-soft bg-azkar-card p-3 flex items-center justify-between">
                 <button
                   onClick={() => setReadingMode(true)}
-                  className="u-pressable rounded-full bg-azkar-teal px-3.5 py-2 text-[10px] font-bold text-azkar-card"
+                  className="u-pressable rounded-full bg-azkar-teal px-3.5 py-2 text-[0.625rem] font-bold text-azkar-card"
                 >
                   وضع القراءة
                 </button>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-azkar-ink-soft">{fs.label}</span>
+                  <span className="text-[0.625rem] text-azkar-ink-soft">{fs.label}</span>
                   <button
                     aria-label="تصغير الخط"
                     onClick={() =>
@@ -580,14 +580,14 @@ export function QuranReaderView({ view, setView }: Props) {
                 <button
                   onClick={() => setLayout('scroll')}
                   aria-pressed={requestedLayout === 'scroll'}
-                  className={`rounded-[1rem] py-2 text-[11px] ${layout === 'scroll' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
+                  className={`rounded-[1rem] py-2 text-[0.6875rem] ${layout === 'scroll' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
                 >
                   آيات
                 </button>
                 <button
                   onClick={() => setLayout('pages')}
                   aria-pressed={requestedLayout === 'pages'}
-                  className={`rounded-[1rem] py-2 text-[11px] ${layout === 'pages' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
+                  className={`rounded-[1rem] py-2 text-[0.6875rem] ${layout === 'pages' ? 'bg-azkar-teal text-azkar-card' : 'text-azkar-teal'}`}
                 >
                   صفحات
                 </button>
@@ -635,7 +635,7 @@ export function QuranReaderView({ view, setView }: Props) {
           >
             السابق
           </button>
-          <span className="text-[11px] font-bold text-azkar-teal-ink" aria-live="polite">
+          <span className="text-[0.6875rem] font-bold text-azkar-teal-ink" aria-live="polite">
             {toArabicNumber(safePage + 1)} / {toArabicNumber(totalPages)}
             {currentRealPageNumber != null && ` · صفحة ${toArabicNumber(currentRealPageNumber)}`}
           </span>
@@ -696,7 +696,7 @@ export function QuranReaderView({ view, setView }: Props) {
                       panelAnchorRef.current = e.currentTarget.closest('[data-ayah]')
                       setPanel(a)
                     }}
-                    className="inline-flex items-center justify-center w-6 h-6 mx-1 rounded-full border border-azkar-gold-soft bg-azkar-bg-alt text-azkar-gold text-[10px] align-middle"
+                    className="inline-flex items-center justify-center w-6 h-6 mx-1 rounded-full border border-azkar-gold-soft bg-azkar-bg-alt text-azkar-gold text-[0.625rem] align-middle"
                   >
                     {toArabicNumber(a.numberInSurah)}
                   </button>{' '}
@@ -865,7 +865,7 @@ export function QuranReaderView({ view, setView }: Props) {
                     <div className="font-amiri font-bold text-lg">
                       تفسير الآية {toArabicNumber(tafsirFor.numberInSurah)}
                     </div>
-                    <div className="text-[11px] text-azkar-ink-soft mt-1">{tafsirLabel}</div>
+                    <div className="text-[0.6875rem] text-azkar-ink-soft mt-1">{tafsirLabel}</div>
                   </div>
                   <button
                     onClick={() => closeTafsir()}
@@ -887,12 +887,12 @@ export function QuranReaderView({ view, setView }: Props) {
                     تعذر تحميل التفسير. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.
                   </div>
                 ) : (
-                  <div className="font-amiri text-[18px] leading-[2.05] text-azkar-ink whitespace-pre-line">
+                  <div className="font-amiri text-[1.125rem] leading-[2.05] text-azkar-ink whitespace-pre-line">
                     {tafsirText}
                   </div>
                 )}
               </div>
-              <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-[10px] text-azkar-ink-soft">
+              <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-[0.625rem] text-azkar-ink-soft">
                 {tafsirLabel}
               </div>
             </div>
