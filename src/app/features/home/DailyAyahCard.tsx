@@ -84,7 +84,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
     }
   }
 
-  const pill = 'u-pressable flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
+  const pill = 'u-pressable flex min-h-10 flex-1 items-center justify-center whitespace-nowrap rounded-full px-2 py-1.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
   const quiet = `${pill} bg-azkar-teal-tint text-azkar-teal-ink`
   const primary = `${pill} bg-azkar-gold-tint text-azkar-gold-deep`
 
@@ -115,7 +115,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
       {surah && onOpenSurah && (
-        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-2 text-[0.6875rem] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
+        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-10 items-center text-[0.6875rem] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
       )}
       <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.6875rem] font-semibold text-azkar-teal-ink">{notice}</div>
       <div className="home-ayah-divider mt-1" aria-hidden="true" />
