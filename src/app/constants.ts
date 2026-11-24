@@ -60,10 +60,10 @@ export function quranSurahAudioUrl(reciter: QuranAudioReciter, surahNumber: numb
 export const FONT_SIZES={sm:{text:'text-[18px]',leading:'leading-[2.2]',label:'صغير'},md:{text:'text-[21px]',leading:'leading-[2.5]',label:'متوسط'},lg:{text:'text-[24px]',leading:'leading-[2.6]',label:'كبير'},xl:{text:'text-[28px]',leading:'leading-[2.9]',label:'كبير جدًا'}} as const
 export type FontSizeKey=keyof typeof FONT_SIZES
 export const FONT_ORDER:FontSizeKey[]=['sm','md','lg','xl']
-export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string;item?:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}
+export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string;item?:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}|{name:'more'}
 export type Section='mushaf'|'hadith'|'home'|'azkar'|'tasbih'|'more'
 export type Ayah={number:number;numberInSurah:number;text:string}
-export function sectionOf(view:View):Section|null{switch(view.name){case'home':return'home';case'mushaf-list':case'mushaf-surah':return'mushaf';case'hadith':return'hadith';case'azkar-list':case'category':case'favorites':return'azkar';case'tasbih':return'tasbih';case'settings':return'more';default:return null}}
+export function sectionOf(view:View):Section|null{switch(view.name){case'home':return'home';case'mushaf-list':case'mushaf-surah':return'mushaf';case'hadith':return'hadith';case'azkar-list':case'category':case'favorites':return'azkar';case'tasbih':case'settings':case'more':return'more';default:return null}}
 const DIACRITICS=/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D4-\u08E1\u08D3-\u08FF]/g
 export function normalizeArabic(s:string){return s.replace(DIACRITICS,'').replace(/[إأآٱ]/g,'ا').replace(/\s+/g,' ').trim()}
 export function stripBismillahPrefix(text:string){const target=normalizeArabic(BISMILLAH);let normalized='';for(let i=0;i<text.length;i++){normalized=normalizeArabic(text.slice(0,i+1));if(normalized===target){let cut=i+1;while(cut<text.length&&(text[cut]===' '||/[ؐ-ًؚ-ٰٟۖ-ۭ]/.test(text[cut])))cut++;return text.slice(cut).trim()}if(!target.startsWith(normalized))return text}return text}
