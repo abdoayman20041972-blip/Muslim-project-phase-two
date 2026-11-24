@@ -5,12 +5,20 @@ import { BackButton } from '../../components/app-chrome'
 import { useConfirmDialog } from '../../components/confirm-dialog'
 import { favoriteKey, legacyFavoriteKey } from './useFavorites'
 import { toArabicDigits, toArabicNumber } from '../../constants'
-import { APP_SETTINGS_KEYS,readSetting } from '../../settings'
+import { APP_SETTINGS_KEYS,emitSettingsChanged,readSetting,writeSetting } from '../../settings'
 import { AZKAR_PROGRESS_KEY, completedItemCount, completionPercent, saveAzkarProgress, todayKey, migrateLegacyProgress, isCountedZikr, countedItems } from './azkarProgress'
 import { AzkarJourney } from './AzkarJourney'
 import { parseReference } from './zikrReference'
 
-type Props = { category: ZikrCategory; favorites: string[]; onToggleFavorite: (key: string) => void; onBack: () => void }
+type Props = { category: ZikrCategory; favorites: string[]; onToggleFavorite: (key: string) => void; onBack: () => void; highlightItem?: string }
+
+const ZIKR_FONT_SIZES = { s: 17, m: 19, l: 22 } as const
+type ZikrFontSize = keyof typeof ZIKR_FONT_SIZES
+const ZIKR_FONT_ORDER: ZikrFontSize[] = ['s', 'm', 'l']
+function readZikrFontSize(): ZikrFontSize {
+  const stored = readSetting(APP_SETTINGS_KEYS.azkarFontSize, 'm')
+  return stored === 's' || stored === 'l' ? stored : 'm'
+}
 type Filter = 'all' | 'incomplete' | 'complete' | 'favorites'
 
 function StarIcon({ filled = false }: { filled?: boolean }) {
@@ -37,7 +45,7 @@ function CornerOrnament() {
   </div>
 }
 
-export function CategoryView({ category, favorites, onToggleFavorite, onBack }: Props) {
+export function CategoryView({ category, favorites, onToggleFavorite, onBack, highlightItem }: Props) {
   const { confirm } = useConfirmDialog()
   const [progress, setProgress] = useState<Record<string,number>>({})
   const [day, setDay] = useState(todayKey())
@@ -46,6 +54,16 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
   const [mode, setMode] = useState<'list' | 'journey'>('list')
   const [counterEnabled, setCounterEnabled] = useState(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled,'1') !== '0')
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'0') === '1')
+  const [zikrFontSize, setZikrFontSize] = useState<ZikrFontSize>(readZikrFontSize)
+  const [highlightedItem, setHighlightedItem] = useState<string | null>(null)
+  const cycleZikrFontSize = (direction: 1 | -1) => {
+    const index = ZIKR_FONT_ORDER.indexOf(zikrFontSize)
+    const next = ZIKR_FONT_ORDER[Math.min(ZIKR_FONT_ORDER.length - 1, Math.max(0, index + direction))]
+    if (next === zikrFontSize) return
+    setZikrFontSize(next)
+    writeSetting(APP_SETTINGS_KEYS.azkarFontSize, next)
+    emitSettingsChanged()
+  }
 
   const loadCurrentDay = () => {
     const currentDay = todayKey()
@@ -103,10 +121,28 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
     const refreshSettings = () => {
       setCounterEnabled(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled,'1') !== '0')
       setAutoAdvanceEnabled(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'0') === '1')
+      setZikrFontSize(readZikrFontSize())
     }
     window.addEventListener('azkar-settings-changed', refreshSettings)
     return () => window.removeEventListener('azkar-settings-changed', refreshSettings)
   }, [])
+
+  useEffect(() => {
+    if (!highlightItem) return
+    setFilter('all')
+    const frame = requestAnimationFrame(() => {
+      const target = document.querySelector(`[data-item-id="${CSS.escape(highlightItem)}"]`)
+      if (target && typeof target.scrollIntoView === 'function') target.scrollIntoView({ block: 'center' })
+      setHighlightedItem(highlightItem)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [highlightItem, category.id])
+
+  useEffect(() => {
+    if (!highlightedItem) return
+    const timer = window.setTimeout(() => setHighlightedItem(null), 3500)
+    return () => window.clearTimeout(timer)
+  }, [highlightedItem])
 
   const totalItems = category.items.length
   const itemKeys = category.items.map(item => favoriteKey(category, item))
@@ -137,10 +173,10 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
     }
     saveProgress(next)
   }
-  if (mode === 'journey') return <AzkarJourney category={category} progress={progress} counterEnabled={counterEnabled} autoAdvanceEnabled={autoAdvanceEnabled} onProgressChange={saveProgress} onExit={() => setMode('list')} />
+  if (mode === 'journey') return <AzkarJourney category={category} progress={progress} counterEnabled={counterEnabled} autoAdvanceEnabled={autoAdvanceEnabled} fontSize={ZIKR_FONT_SIZES[zikrFontSize] + 2} onProgressChange={saveProgress} onExit={() => setMode('list')} />
 
   return <div className="azkar-category-redesign">
-    <div className="azkar-category-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">{category.label}</div><div className="text-[11px] text-azkar-ink-faint mt-0.5">{category.subtitle}</div></div></div>
+    <div className="azkar-category-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">{category.label}</div><div className="text-[11px] text-azkar-ink-faint mt-0.5">{category.subtitle}</div></div><div className="flex shrink-0 items-center gap-1.5" role="group" aria-label="حجم خط الذكر"><button data-sound="none" onClick={() => cycleZikrFontSize(-1)} disabled={zikrFontSize === 's'} aria-label="تصغير خط الذكر" className="u-pressable flex h-9 w-9 items-center justify-center rounded-full border border-azkar-hairline bg-azkar-card text-[13px] font-bold text-azkar-ink-soft disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">أ-</button><button data-sound="none" onClick={() => cycleZikrFontSize(1)} disabled={zikrFontSize === 'l'} aria-label="تكبير خط الذكر" className="u-pressable flex h-9 w-9 items-center justify-center rounded-full border border-azkar-hairline bg-azkar-card text-[15px] font-bold text-azkar-ink-soft disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">أ+</button></div></div>
     {totalItems > 0 && <button data-sound="none" onClick={() => setMode('journey')} aria-label="بدء رحلة الأذكار المتسلسلة" className="u-pressable mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-azkar-teal/20 bg-azkar-teal-tint px-4 text-[12px] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><span aria-hidden="true">▶</span><span>ابدأ الرحلة</span></button>}
 
     {dayChanged && <div role="status" className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-azkar-teal/15 bg-azkar-teal-tint px-3.5 py-2.5 text-[10px] text-azkar-teal-ink"><span>بدأ يوم جديد — تم عرض تقدم اليوم الجديد.</span><button onClick={() => setDayChanged(false)} className="font-bold underline underline-offset-2">إخفاء</button></div>}
@@ -182,7 +218,8 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
           if (completed) return
           saveProgress({...progress,[key]:current+1})
         }
-        return <article key={key} className="relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6">
+        const isHighlighted = highlightedItem === item.id
+        return <article key={key} data-item-id={item.id} data-highlighted={isHighlighted ? 'true' : undefined} className={"relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6 transition-colors duration-500 " + (isHighlighted ? "bg-azkar-gold-tint/60 ring-2 ring-inset ring-azkar-gold/70" : "")}>
           <CornerOrnament />
 
           <div className="relative mb-4 flex items-center justify-between gap-3">
@@ -192,7 +229,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
             </button>
           </div>
 
-          <p className="relative u-reading-text text-[19px] leading-[2] text-azkar-ink whitespace-pre-line">{toArabicDigits(item.text)}</p>
+          <p className="relative u-reading-text text-[19px] leading-[2] text-azkar-ink whitespace-pre-line" style={{ fontSize: ZIKR_FONT_SIZES[zikrFontSize] }}>{toArabicDigits(item.text)}</p>
 
           {counterEnabled && counted && <div className="relative mt-5 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-2.5"><div className="mb-2 flex items-center justify-between px-1"><span className="text-[9px] text-azkar-ink-faint">التقدم</span><span className="text-[12px] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[9px] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span></div><div className="mb-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={"تقدم الذكر: " + current + " من " + target}><div className={"h-full rounded-full transition-all duration-200 " + (completed ? 'bg-azkar-gold' : 'bg-azkar-teal')} style={{ width: Math.min(100, current / target * 100) + '%' }} /></div><div className="flex items-center gap-3"><button data-sound="tasbih" onClick={increment} disabled={completed} aria-label={completed ? 'تم إكمال الذكر' : 'تسجيل مرة من الذكر'} className={"u-pressable flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[12px] font-bold transition " + (completed ? 'bg-azkar-teal text-azkar-card' : 'bg-azkar-teal-tint text-azkar-teal-ink hover:bg-azkar-teal/20') + ' disabled:cursor-default'}><span className="text-base">{completed ? '✓' : '＋'}</span><span>{completed ? 'تم الإكمال' : 'اضغط للتسجيل'}</span></button><div className="min-w-[68px] text-center"><div className="text-[9px] text-azkar-ink-faint">المتبقي</div><div className="text-[13px] font-bold text-azkar-ink">{toArabicNumber(target-current)}</div></div></div></div>}
 
