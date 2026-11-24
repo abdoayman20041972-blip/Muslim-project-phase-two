@@ -7,6 +7,7 @@ import { favoriteKey, legacyFavoriteKey } from './useFavorites'
 import { toArabicDigits, toArabicNumber } from '../../constants'
 import { APP_SETTINGS_KEYS,emitSettingsChanged,readSetting,writeSetting } from '../../settings'
 import { AZKAR_PROGRESS_KEY, completedItemCount, completionPercent, readAzkarProgress, saveAzkarProgress, todayKey, migrateLegacyProgress, isCountedZikr, countedItems, isOccasionalCategory, readOccasionProgress, resetOccasionProgress, saveOccasionProgress } from './azkarProgress'
+import { clearJourneyPosition } from './journeyPosition'
 import { AzkarJourney } from './AzkarJourney'
 import { parseReference } from './zikrReference'
 
@@ -60,7 +61,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
   const [filter, setFilter] = useState<Filter>('all')
   const [mode, setMode] = useState<'list' | 'journey'>('list')
   const [counterEnabled, setCounterEnabled] = useState(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled,'1') !== '0')
-  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'0') === '1')
+  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'1') === '1')
   const [zikrFontSize, setZikrFontSize] = useState<ZikrFontSize>(readZikrFontSize)
   const [highlightedItem, setHighlightedItem] = useState<string | null>(null)
   const cycleZikrFontSize = (direction: 1 | -1) => {
@@ -103,7 +104,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
   useEffect(() => {
     loadCurrentDay()
     setCounterEnabled(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled,'1') !== '0')
-    setAutoAdvanceEnabled(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'0') === '1')
+    setAutoAdvanceEnabled(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'1') === '1')
     setFilter('all')
     setMode('list')
   }, [category.id])
@@ -135,7 +136,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
   useEffect(() => {
     const refreshSettings = () => {
       setCounterEnabled(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled,'1') !== '0')
-      setAutoAdvanceEnabled(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'0') === '1')
+      setAutoAdvanceEnabled(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance,'1') === '1')
       setZikrFontSize(readZikrFontSize())
     }
     window.addEventListener('azkar-settings-changed', refreshSettings)
@@ -182,6 +183,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
     if (occasional) {
       if (!(await confirm({ message: 'بدء موقف جديد؟ يُصفَّر عدّاد هذا القسم فقط.', danger: true }))) return
       const nextOccasion = resetOccasionProgress(category.id)
+      clearJourneyPosition(category.id)
       setOccasion(nextOccasion.occasion)
       setProgress({})
       window.dispatchEvent(new Event('azkar-progress-changed'))
@@ -194,6 +196,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
       delete next[favoriteKey(category, item)]
       delete next[legacyFavoriteKey(category, item)]
     }
+    clearJourneyPosition(category.id)
     saveProgress(next)
   }
   if (mode === 'journey') return <AzkarJourney category={category} progress={progress} counterEnabled={counterEnabled} autoAdvanceEnabled={autoAdvanceEnabled} fontSize={ZIKR_FONT_SIZES[zikrFontSize] + 2} onProgressChange={saveProgress} onExit={() => setMode('list')} />
