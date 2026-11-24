@@ -237,12 +237,21 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
         const completed = current >= target
         const parsedSource = item.source ? parseReference(item.source) : undefined
         const displaySource = parsedSource && !parsedSource.ignored ? parsedSource.value : undefined
-        const increment = () => {
+        const increment = (event: { currentTarget: HTMLButtonElement }) => {
           if (completed) return
-          saveProgress({...progress,[key]:current+1})
+          const next = current + 1
+          // Completion tap gets the completion sound; ordinary taps keep the tap sound.
+          // The tap-sound listener also fires the completion vibration, honoring settings.
+          event.currentTarget.dataset.sound = next >= target ? 'tasbih-complete' : 'tasbih'
+          saveProgress({...progress,[key]:next})
         }
+        const decrement = () => {
+          if (current <= 0) return
+          saveProgress({...progress,[key]:current-1})
+        }
+        const countRing = { radius: 26, circumference: 2 * Math.PI * 26 }
         const isHighlighted = highlightedItem === item.id
-        return <article key={key} data-item-id={item.id} data-highlighted={isHighlighted ? 'true' : undefined} className={"relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6 transition-colors duration-500 " + (isHighlighted ? "bg-azkar-gold-tint/60 ring-2 ring-inset ring-azkar-gold/70" : "")}>
+        return <article key={key} data-item-id={item.id} data-highlighted={isHighlighted ? 'true' : undefined} className={"relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6 transition-colors duration-500 " + (item.kind === 'fadl' ? "azkar-fadl-card " : item.kind === 'guidance' ? "azkar-guidance-card " : "") + (isHighlighted ? "bg-azkar-gold-tint/60 ring-2 ring-inset ring-azkar-gold/70" : "")}>
           <CornerOrnament />
 
           <div className="relative mb-4 flex items-center justify-between gap-3">
@@ -254,7 +263,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
 
           <p className="relative u-reading-text text-[19px] leading-[2] text-azkar-ink whitespace-pre-line" style={{ fontSize: ZIKR_FONT_SIZES[zikrFontSize] }}>{toArabicDigits(item.text)}</p>
 
-          {counterEnabled && counted && <div className="relative mt-5 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-2.5"><div className="mb-2 flex items-center justify-between px-1"><span className="text-[9px] text-azkar-ink-faint">التقدم</span><span className="text-[12px] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[9px] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span></div><div className="mb-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={"تقدم الذكر: " + current + " من " + target}><div className={"h-full rounded-full transition-all duration-200 " + (completed ? 'bg-azkar-gold' : 'bg-azkar-teal')} style={{ width: Math.min(100, current / target * 100) + '%' }} /></div><div className="flex items-center gap-3"><button data-sound="tasbih" onClick={increment} disabled={completed} aria-label={completed ? 'تم إكمال الذكر' : 'تسجيل مرة من الذكر'} className={"u-pressable flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[12px] font-bold transition " + (completed ? 'bg-azkar-teal text-azkar-card' : 'bg-azkar-teal-tint text-azkar-teal-ink hover:bg-azkar-teal/20') + ' disabled:cursor-default'}><span className="text-base">{completed ? '✓' : '＋'}</span><span>{completed ? 'تم الإكمال' : 'اضغط للتسجيل'}</span></button><div className="min-w-[68px] text-center"><div className="text-[9px] text-azkar-ink-faint">المتبقي</div><div className="text-[13px] font-bold text-azkar-ink">{toArabicNumber(target-current)}</div></div></div></div>}
+          {counterEnabled && counted && <div className="relative mt-5 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-3"><div className="flex items-center gap-3"><button data-sound="tasbih" onClick={increment} disabled={completed} aria-label={completed ? 'تم إكمال الذكر' : 'تسجيل مرة من الذكر'} className={"azkar-count-button u-pressable relative flex min-h-[84px] flex-1 items-center justify-center gap-4 rounded-[1rem] px-4 text-[13px] font-bold transition " + (completed ? 'bg-azkar-teal text-azkar-card' : 'bg-azkar-teal-tint text-azkar-teal-ink hover:bg-azkar-teal/20') + ' disabled:cursor-default'} style={completed ? { backgroundColor: 'hsl(var(--azkar-teal))', color: 'hsl(var(--azkar-card))' } : undefined}><span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={"تقدم الذكر: " + current + " من " + target}><svg viewBox="0 0 64 64" className="absolute inset-0 h-14 w-14" aria-hidden="true"><circle cx="32" cy="32" r={countRing.radius} fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="5"/><circle cx="32" cy="32" r={countRing.radius} fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeDasharray={countRing.circumference} strokeDashoffset={countRing.circumference * (1 - current / target)} transform="rotate(-90 32 32)" className="transition-all duration-300"/></svg><span className="relative text-[13px] font-bold tabular-nums">{toArabicNumber(current)}<span className="text-[9px] opacity-70">/{toArabicNumber(target)}</span></span></span><span>{completed ? '✓ تم الإكمال' : 'اضغط للتسجيل'}</span></button><div className="flex w-[76px] shrink-0 flex-col items-center gap-2"><div className="text-center"><div className="text-[9px] text-azkar-ink-faint">المتبقي</div><div className="text-[15px] font-bold text-azkar-ink">{toArabicNumber(target-current)}</div></div>{current > 0 && <button data-sound="none" onClick={decrement} aria-label="تراجع عن آخر نقرة" className="u-pressable rounded-full border border-azkar-hairline bg-azkar-card px-3 py-1.5 text-[9.5px] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">↩ تراجع</button>}</div></div></div>}
 
           {(displaySource || item.reference) && <div className="relative mt-4 flex flex-wrap items-center gap-2">
             {displaySource && <p className="text-[10.5px] text-azkar-ink-faint">{toArabicDigits(displaySource)}</p>}
