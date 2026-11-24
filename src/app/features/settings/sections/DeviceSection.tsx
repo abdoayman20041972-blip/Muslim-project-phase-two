@@ -54,21 +54,21 @@ export function DeviceSection() {
     <Section title="الأذونات والجهاز">
       <Row title="الموقع" description="لحساب مواقيت الصلاة واتجاه القبلة تلقائيًا.">
         <div className="flex flex-col items-end gap-1">
-          <span className="max-w-[12rem] text-left text-[0.5625rem] text-azkar-ink-soft">{locMessage || label(locState)}</span>
+          <span className="max-w-[12rem] text-left text-[0.6875rem] text-azkar-ink-soft">{locMessage || label(locState)}</span>
           {locState !== 'granted' && (
-            <button onClick={() => void askLocation()} disabled={busy === 'loc'} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card disabled:opacity-60">
+            <button onClick={() => void askLocation()} disabled={busy === 'loc'} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card disabled:opacity-60">
               {busy === 'loc' ? '...' : 'طلب الإذن'}
             </button>
           )}
           {locState === 'denied' && Capacitor.isNativePlatform() && (
-            <button onClick={() => void openSystemSettings('app')} className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.625rem] font-bold text-azkar-teal-ink">
+            <button onClick={() => void openSystemSettings('app')} className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.6875rem] font-bold text-azkar-teal-ink">
               فتح إعدادات النظام
             </button>
           )}
         </div>
       </Row>
       <Row title="الحركة والبوصلة" description="يُطلب تلقائيًا عند فتح صفحة القبلة لتدوير المؤشر مع الجهاز." last>
-        <span className="text-[0.5625rem] text-azkar-ink-soft">
+        <span className="text-[0.6875rem] text-azkar-ink-soft">
           {Capacitor.isNativePlatform() ? 'مدمج في التطبيق' : 'يعمل في المتصفح'}
         </span>
       </Row>
