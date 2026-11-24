@@ -5,8 +5,10 @@ import {
   HADITH_COLLECTION,
   loadApiEdition,
   type ApiHadith,
+  type EditionOrigin,
 } from './hadithData'
-import { readSetting } from '../../settings'
+import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
+import { toArabicDigits, toArabicNumber } from '../../constants'
 
 type Tab = 'curated' | 'nawawi' | 'qudsi' | 'dehlawi'
 
@@ -19,14 +21,17 @@ export function HadithView({ onBack }: { onBack: () => void }) {
   const [query, setQuery] = useState('')
   const [apiState, setApiState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [apiHadiths, setApiHadiths] = useState<ApiHadith[]>([])
+  const [origin, setOrigin] = useState<EditionOrigin>('bundled')
   const [error, setError] = useState('')
+  const [, setNumberTick] = useState(0)
   const [attempt, setAttempt] = useState(0)
-  const [font, setFont] = useState(() => readSetting('hadith_font', 'md'))
+  const [font, setFont] = useState(() => readSetting(APP_SETTINGS_KEYS.hadithFont, 'md'))
   const [showNote, setShowNote] = useState(() => readSetting('azkar_hadith_show_note', '1') !== '0')
 
   useEffect(() => {
     const refresh = () => {
-      setFont(readSetting('hadith_font', 'md'))
+      setNumberTick((n) => n + 1)
+      setFont(readSetting(APP_SETTINGS_KEYS.hadithFont, 'md'))
       setShowNote(readSetting('azkar_hadith_show_note', '1') !== '0')
     }
     window.addEventListener('azkar-settings-changed', refresh)
@@ -48,6 +53,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
       .then((data) => {
         if (cancelled) return
         setApiHadiths(data.hadiths)
+        setOrigin(data.origin)
         setApiState('ready')
       })
       .catch((cause: unknown) => {
@@ -126,7 +132,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
         <div className="grid gap-3">
           <div className="mb-1 flex items-center justify-between px-1">
             <span className="font-amiri text-base font-bold text-azkar-teal-ink">مختارات يعمل دون إنترنت</span>
-            <span className="text-[9px] text-azkar-ink-faint">{curated.length} حديثًا</span>
+            <span className="text-[9px] text-azkar-ink-faint">{toArabicNumber(curated.length)} حديثًا</span>
           </div>
           {curated.map((hadith) => (
             <article key={hadith.id} className="hadith-card">
@@ -143,7 +149,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
                     </span>
                   )}
                 </span>
-                <span className="hadith-source">{hadith.source}</span>
+                <span className="hadith-source">{toArabicDigits(hadith.source)}</span>
               </div>
               <p className={"hadith-text font-amiri " + fontClass}>«{hadith.text}»</p>
               {showNote && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[11px] leading-relaxed text-azkar-ink-soft">{hadith.note}</p>}
@@ -161,21 +167,23 @@ export function HadithView({ onBack }: { onBack: () => void }) {
             <div className="mb-1 flex items-center justify-between px-1">
               <span className="font-amiri text-base font-bold text-azkar-teal-ink">{activeEdition.name}</span>
               <span className="text-[9px] text-azkar-ink-faint">
-                {apiState === 'ready' ? `${apiFiltered.length} حديثًا · متاح بدون إنترنت` : 'من مكتبة مفتوحة'}
+                {apiState === 'ready'
+                  ? `${toArabicNumber(apiFiltered.length)} حديثًا · ${origin === 'bundled' ? 'من ملف مضمّن، يعمل دون إنترنت' : 'حُمّل من الإنترنت لتعذر الملف المضمّن'}`
+                  : apiState === 'loading' ? 'جارٍ التحميل' : 'تعذّر التحميل'}
               </span>
             </div>
           )}
           {activeEdition && <p className="px-1 pb-1 text-[11px] leading-relaxed text-azkar-ink-soft">{activeEdition.blurb}</p>}
           {apiState === 'loading' && (
             <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-10 text-center text-xs text-azkar-ink-soft">
-              جارٍ التحميل من المكتبة المفتوحة...
+              جارٍ تحميل الأحاديث...
             </div>
           )}
           {apiState === 'error' && (
             <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-8 text-center">
               <BookOpen className="mx-auto mb-2 h-5 w-5 text-azkar-gold-deep" aria-hidden="true" />
               <p className="text-xs text-azkar-ink-soft">{error || 'تعذّر الاتصال بالشبكة'}</p>
-              <p className="mt-1 text-[10px] text-azkar-ink-faint">المختارات أعلاه تعمل دون إنترنت.</p>
+              <p className="mt-1 text-[10px] text-azkar-ink-faint">تبويب «مختارات» مضمّن في التطبيق ويعمل دون إنترنت.</p>
               <button
                 type="button"
                 className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[11px] font-bold text-azkar-teal-ink"
@@ -188,7 +196,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
           {apiState === 'ready' && apiFiltered.map((hadith) => (
             <article key={String(hadith.hadithnumber)} className="hadith-card">
               <div className="hadith-card-top">
-                <span>حديث {hadith.hadithnumber}</span>
+                <span>حديث {toArabicDigits(String(hadith.hadithnumber))}</span>
                 <span className="hadith-source">{activeEdition?.name}</span>
               </div>
               <p className={"hadith-text font-amiri " + fontClass}>{hadith.text}</p>
