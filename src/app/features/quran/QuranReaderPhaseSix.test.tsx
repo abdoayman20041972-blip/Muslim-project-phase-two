@@ -120,4 +120,13 @@ describe('Quran reader phase six', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('تم نسخ الآية')
     expect(writeText).toHaveBeenCalled()
   })
+
+  it('reports failure instead of success when the Clipboard API is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
+    renderReader()
+    const options = await screen.findAllByLabelText(/خيارات الآية/)
+    fireEvent.click(options[1])
+    fireEvent.click(await screen.findByRole('button', { name: 'نسخ الآية' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('تعذّر النسخ، جرّب مرة أخرى')
+  })
 })
