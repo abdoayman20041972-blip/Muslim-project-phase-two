@@ -52,8 +52,9 @@ describe('search reaches the dhikr itself', () => {
 
 describe('visible days log', () => {
   it('shows previous days in a visible region', async () => {
-    localStorage.setItem(AZKAR_PROGRESS_KEY, JSON.stringify({ version: 2, days: { '2026-11-23': { 't:t:item-1': 3 } } }))
-    render(<AzkarListView categories={[category]} favoritesCount={0} onBack={() => {}} setView={() => {}} />)
+    const morning: ZikrCategory = { ...category, id: 'morning', items: category.items.map(item => ({ ...item, id: item.id!.replace('t:', 'm:') })) }
+    localStorage.setItem(AZKAR_PROGRESS_KEY, JSON.stringify({ version: 2, days: { '2026-11-23': { 'morning:m:item-1': 3 } } }))
+    render(<AzkarListView categories={[morning]} favoritesCount={0} onBack={() => {}} setView={() => {}} />)
     const toggle = screen.getAllByRole('button', { name: /سجل الأيام/ })[0]
     fireEvent.click(toggle)
     const region = await screen.findByRole('region', { name: 'سجل الأيام' })
