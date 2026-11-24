@@ -61,7 +61,7 @@ import {
 export type AdhanSoundMode = 'adhan' | 'default' | 'silent'
 
 export function readAdhanSoundMode(): AdhanSoundMode {
-  const v = readSetting('adhan_sound', 'adhan')
+  const v = readSetting(APP_SETTINGS_KEYS.adhanSound, 'adhan')
   return v === 'default' || v === 'silent' ? v : 'adhan'
 }
 
@@ -314,6 +314,34 @@ function cachePrayerEntries(entries: PlannedNotification[]) {
     localStorage.setItem(PRAYER_PLAN_CACHE_KEY, JSON.stringify(prayerEntries.map((entry) => ({ ...entry, at: entry.at.getTime() }))))
   } catch (error) {
     console.debug('[notifications] prayer plan cache write failed', error)
+  }
+}
+
+/**
+ * Reset and import can remove the stored location. The "location unavailable"
+ * carry-over above is meant for a location that is only temporarily missing,
+ * so after an explicit reset/import the old prayer plan (cache) and the armed
+ * native alarms computed from the old location and method must not survive.
+ * Replaces the native plan with an empty one (the plugin keeps only the
+ * diagnostic test alarm), after waiting for any run already in flight. The
+ * next run after the reload re-creates exactly what the new settings allow.
+ * Returns false when the native replace failed, so the caller does not reload
+ * and does not claim success.
+ */
+export async function dropPrayerPlanCarryover(): Promise<boolean> {
+  if (inFlight) await inFlight.catch(() => {})
+  try {
+    localStorage.removeItem(PRAYER_PLAN_CACHE_KEY)
+  } catch (error) {
+    console.debug('[notifications] prayer plan cache clear failed', error)
+  }
+  if (!Capacitor.isNativePlatform()) return true
+  try {
+    await ExactAlarms.schedule({ alarms: [], keepIds: [TEST_NOTIFICATION_ID], armWithinMs: ARM_WINDOW_MS })
+    return true
+  } catch (error) {
+    recordError('carryover-clear', error)
+    return false
   }
 }
 
