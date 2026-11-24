@@ -218,7 +218,10 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         .filter(isBackupKey)
         .forEach((k) => localStorage.removeItem(k))
       entries.forEach(([k, v]) => localStorage.setItem(k, v))
-      await replaceMirror(entries)
+      if (!(await replaceMirror(entries))) {
+        await alert({ message: 'تم استيراد النسخة، لكن تعذّر تحديث التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود بيانات قديمة. حاول الاستيراد مرة أخرى.' })
+        return
+      }
       location.reload()
     } catch {
       await alert({ message: 'ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق مسلم.' })
@@ -235,7 +238,10 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     // One canonical list lives in settings.ts (SETTINGS_RESET_KEYS) so this
     // never drifts from the registered settings keys again.
     SETTINGS_RESET_KEYS.forEach((k) => localStorage.removeItem(k))
-    await removeFromMirror([...SETTINGS_RESET_KEYS])
+    if (!(await removeFromMirror([...SETTINGS_RESET_KEYS]))) {
+      await alert({ message: 'تعذّر مسح الإعدادات من التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود إعدادات قديمة. حاول إعادة الضبط مرة أخرى.' })
+      return
+    }
     location.reload()
   }
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
