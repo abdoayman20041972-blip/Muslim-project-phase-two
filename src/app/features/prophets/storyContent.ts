@@ -8,6 +8,7 @@ import { AYYUB_STORY } from './ayyubStory'
 import { YUNUS_STORY } from './yunusStory'
 import { SALIH_STORY } from './salihStory'
 import { HUD_STORY } from './hudStory'
+import { ISA_STORY } from './isaStory'
 
 // Detailed stories by prophet id. A story listed here is shown with the shared story body;
 // the card summary, verse and lessons stay in prophetsData.ts.
@@ -21,4 +22,5 @@ export const DETAILED_STORIES: Record<string, StoryContent> = {
   yunus: YUNUS_STORY,
   salih: SALIH_STORY,
   hud: HUD_STORY,
+  isa: ISA_STORY,
 }
