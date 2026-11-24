@@ -203,6 +203,18 @@ describe('SettingsView smoke coverage', () => {
     await waitFor(() => expect(screen.queryByText(/توقيت ثابت/)).toBeNull())
   })
 
+  it('warns beside the lead setting that a changed lead may stay pending without a location', async () => {
+    openCategory('الإشعارات')
+    fireEvent.click(screen.getByRole('switch', { name: /قبل الصلاة/ }))
+    await waitFor(() => {
+      expect(localStorage.getItem('azkar_reminders_on')).toBe('1')
+    })
+    expect(screen.getByText(/قد تبقى التنبيهات المضبوطة سابقًا بمدتها القديمة/)).toBeTruthy()
+    localStorage.setItem('azkar_coords', JSON.stringify({ lat: 30.06, lng: 31.25 }))
+    window.dispatchEvent(new Event('azkar-prayer-settings-changed'))
+    await waitFor(() => expect(screen.queryByText(/قد تبقى التنبيهات المضبوطة سابقًا بمدتها القديمة/)).toBeNull())
+  })
+
   it('does not show notification settings in the general category', () => {
     openCategory('عام')
     expect(screen.queryByText('تذكير الأذكار')).toBeNull()
