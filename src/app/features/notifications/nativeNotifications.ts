@@ -239,6 +239,20 @@ async function cancelLegacyStockAlarms() {
   }
 }
 
+/**
+ * Settings that change the computed prayer times or the text of the armed
+ * notifications. They are part of the re-arm fingerprint so changing one of
+ * them re-arms the alarms instead of being skipped as "nothing changed".
+ */
+export function scheduleSettingsKey(): string {
+  return [
+    readSetting(APP_SETTINGS_KEYS.prayerCalcMethod, ''),
+    readSetting(APP_SETTINGS_KEYS.asrSchool, ''),
+    readSetting(APP_SETTINGS_KEYS.timeFormat, '24'),
+    readSetting(APP_SETTINGS_KEYS.numberStyle, ''),
+  ].join(',')
+}
+
 /** "٤:٥٢" or "٤:٥٢ ص" following the app's clock format and digit style. */
 export function timeLabel(date: Date): string {
   const use12 = readSetting(APP_SETTINGS_KEYS.timeFormat, '24') === '12'
@@ -423,6 +437,7 @@ async function run(force: boolean, askPermission: boolean) {
     mutedPrayers.join(','),
     lead,
     sound,
+    scheduleSettingsKey(),
     dateKey(now),
     now.getTimezoneOffset(),
   ].join('|')
@@ -699,4 +714,4 @@ export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
     recordError('list-pending', error)
     return []
   }
-}
+  }
