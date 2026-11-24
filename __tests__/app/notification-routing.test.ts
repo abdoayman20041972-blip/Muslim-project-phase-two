@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { notificationOpenTarget } from '../../src/app/App'
+import { permissionLabel } from '../../src/app/features/notifications/notificationPermission'
 import { APP_SETTINGS_KEYS, BACKUP_KEYS, SETTINGS_RESET_KEYS, isBackupKey } from '../../src/app/settings'
 
 describe('notification routing', () => {
@@ -59,5 +60,15 @@ describe('notification settings persistence', () => {
     expect(APP_SETTINGS_KEYS.prayerReminderLead).toBe('azkar_prayer_reminder_lead')
     expect(APP_SETTINGS_KEYS.mutedPrayers).toBe('azkar_muted_prayers')
     expect(APP_SETTINGS_KEYS.kahfReminder).toBe('azkar_friday_kahf_reminder')
+  })
+})
+
+describe('permission wording', () => {
+  it('uses one Arabic label per state across device, notification and diagnostics screens', () => {
+    expect(permissionLabel('granted')).toBe('مسموح')
+    expect(permissionLabel('denied')).toBe('مرفوض')
+    for (const state of ['prompt', 'prompt-with-rationale', 'default']) expect(permissionLabel(state)).toBe('لم يُطلب بعد')
+    expect(permissionLabel('unavailable')).toBe('غير متاح')
+    for (const state of ['unknown', '', null, undefined, 'weird']) expect(permissionLabel(state as string)).toBe('غير معروف')
   })
 })
