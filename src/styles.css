@@ -1726,3 +1726,41 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .dashboard-nav-indicator,.dashboard-nav-indicator::before{animation:none!important}
 .nav-home .dashboard-nav-indicator{animation:dashboard-nav-breathe 3.2s ease-in-out infinite!important}
 .nav-home .dashboard-nav-indicator::before{animation:dashboard-nav-liquid 3.1s cubic-bezier(.45,0,.55,1) infinite!important}
+
+/* Tasbih button color customization (color only; the button stays circular).
+   Specificity must beat every plain .tasbih-count-button background rule. */
+.tasbih-minimal .tasbih-count-button.tasbih-color-gold{
+  background:radial-gradient(circle at 50% 32%,hsl(42 85% 62%/.96),hsl(35 62% 30%) 72%);
+  box-shadow:0 13px 28px hsl(35 60% 12%/.22),inset 0 0 1.7rem hsl(0 0% 0%/.12),0 0 0 5px hsl(var(--azkar-gold)/.055);
+}
+.tasbih-minimal .tasbih-count-button.tasbih-color-blue{
+  background:radial-gradient(circle at 50% 32%,hsl(212 74% 55%/.96),hsl(222 58% 24%) 72%);
+  box-shadow:0 13px 28px hsl(222 55% 12%/.22),inset 0 0 1.7rem hsl(0 0% 0%/.12),0 0 0 5px hsl(var(--azkar-gold)/.055);
+}
+.tasbih-minimal .tasbih-count-button.tasbih-color-rose{
+  background:radial-gradient(circle at 50% 32%,hsl(346 68% 60%/.96),hsl(340 56% 28%) 72%);
+  box-shadow:0 13px 28px hsl(340 55% 12%/.22),inset 0 0 1.7rem hsl(0 0% 0%/.12),0 0 0 5px hsl(var(--azkar-gold)/.055);
+}
+
+/* Color swatches in Settings > Tasbih. */
+.tasbih-color-swatch{
+  width:1.65rem;
+  height:1.65rem;
+  border-radius:50%;
+  border:2px solid hsl(var(--azkar-card));
+  outline:2px solid hsl(var(--azkar-hairline));
+  outline-offset:1px;
+  cursor:pointer;
+  padding:0;
+  transition:transform .15s ease,outline-color .15s ease;
+}
+.tasbih-color-swatch:hover{transform:scale(1.08);}
+.tasbih-color-swatch:focus-visible{outline-color:hsl(var(--azkar-gold));}
+.tasbih-color-swatch.is-selected{outline-color:hsl(var(--azkar-teal));outline-width:3px;}
+.tasbih-color-swatch-teal{background:radial-gradient(circle at 50% 32%,hsl(165 40% 27%/.96),hsl(var(--azkar-teal-deep)) 72%);}
+.tasbih-color-swatch-gold{background:radial-gradient(circle at 50% 32%,hsl(42 85% 62%/.96),hsl(35 62% 30%) 72%);}
+.tasbih-color-swatch-blue{background:radial-gradient(circle at 50% 32%,hsl(212 74% 55%/.96),hsl(222 58% 24%) 72%);}
+.tasbih-color-swatch-rose{background:radial-gradient(circle at 50% 32%,hsl(346 68% 60%/.96),hsl(340 56% 28%) 72%);}
+
+/* Visible focus for phrase-picker options during keyboard navigation. */
+.tasbih-word-menu-option:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:-2px;background:hsl(var(--azkar-gold)/.09);}
