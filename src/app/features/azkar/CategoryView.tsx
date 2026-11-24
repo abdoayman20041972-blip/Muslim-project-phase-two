@@ -273,7 +273,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
           {(displaySource || item.reference) && <div className="relative mt-4 flex flex-wrap items-center gap-2">
             {displaySource && <p className="text-[0.6875rem] text-azkar-ink-faint">{toArabicDigits(displaySource)}</p>}
             {item.reference?.grade && <span className="rounded-full border border-azkar-hairline bg-azkar-surface-1 px-2 py-0.5 text-[0.6875rem] font-bold text-azkar-ink-soft">{item.reference.grade}</span>}
-            {item.reference?.url && <a href={item.reference.url} target="_blank" rel="noreferrer" className="text-[0.6875rem] font-bold text-azkar-teal underline underline-offset-2">المصدر</a>}
+            {item.reference?.url && <a href={item.reference.url} target="_blank" rel="noreferrer" className="inline-flex min-h-[2.5rem] items-center px-1 text-[0.6875rem] font-bold text-azkar-teal underline underline-offset-2">المصدر</a>}
           </div>}
 
           <div className="relative mt-5 flex items-center gap-2 border-t border-azkar-hairline pt-4">
