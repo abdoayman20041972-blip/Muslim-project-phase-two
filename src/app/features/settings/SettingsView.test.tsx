@@ -39,4 +39,13 @@ describe('SettingsView entry deep link', () => {
     first.getByText('الموقع')
     expect(first.queryByText('كل التفضيلات في مكان واحد')).toBeNull()
   })
+
+  it('keeps notification permission in the notifications section, not the device section', () => {
+    const device = render(ui({ category: 'device', at: 1 }))
+    expect(device.queryByText('إشعارات التطبيق')).toBeNull()
+    device.getByText('الموقع')
+    device.unmount()
+    const notifications = render(ui({ category: 'notifications', at: 1 }))
+    notifications.getByText('السماح بالإشعارات')
+  })
 })
