@@ -6,7 +6,10 @@ import { toArabicDigits } from '../../constants'
 import {
   ID_BASE,
   ID_RANGE,
+  KIND,
   planNotifications,
+  PRAYERS,
+  TTL,
   PRAYER_GROUP,
   TEST_NOTIFICATION_ID,
   type PlannedNotification,
@@ -272,6 +275,58 @@ async function computeAllTimings(coords: { lat: number; lng: number }, days: Dat
   return Promise.all(days.map((date) => computeTimingsLocally(coords, date, method, school)))
 }
 
+/**
+ * The exact-alarm scheduler replaces the whole stored plan on every run. With
+ * no stored location the fresh plan has no prayer entries, so a replace would
+ * silently cancel every armed prayer alarm. Instead the last location-based
+ * prayer plan is cached here and its still-future entries are re-included
+ * verbatim (same deterministic ids), keeping the exact same alarms armed
+ * until a location is available again.
+ */
+const PRAYER_PLAN_CACHE_KEY = 'azkar_prayer_plan_cache_v1'
+
+function cachePrayerEntries(entries: PlannedNotification[]) {
+  const prayerEntries = entries.filter((entry) => entry.target === 'prayer')
+  if (!prayerEntries.length) return
+  try {
+    localStorage.setItem(PRAYER_PLAN_CACHE_KEY, JSON.stringify(prayerEntries.map((entry) => ({ ...entry, at: entry.at.getTime() }))))
+  } catch (error) {
+    console.debug('[notifications] prayer plan cache write failed', error)
+  }
+}
+
+const prayerKindOf = (id: number) => Math.floor((id - ID_BASE) / 1000)
+const isPrayerId = (id: number) => prayerKindOf(id) === KIND.at || prayerKindOf(id) === KIND.before
+
+/** Rebuilds a full plan entry from a still-armed native alarm (id/at/title only). */
+function reconstructPrayerEntry(item: { id: number; at: number; title: string }, lead: number, sound: AdhanSoundMode): PlannedNotification {
+  const at = new Date(item.at)
+  if (prayerKindOf(item.id) === KIND.before) {
+    return { id: item.id, at, title: item.title, body: 'تبقى ' + lead + (lead <= 10 ? ' دقائق' : ' دقيقة') + ' على الأذان', channel: PRAYER_CHANNEL, target: 'prayer', group: PRAYER_GROUP, ttl: Math.max(TTL.before, lead * 60_000) }
+  }
+  return { id: item.id, at, title: item.title, body: 'حي على الصلاة، حي على الفلاح', channel: adhanChannelId(sound), target: 'prayer', group: PRAYER_GROUP, ttl: TTL.at }
+}
+
+function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[]): PlannedNotification[] {
+  try {
+    const raw = localStorage.getItem(PRAYER_PLAN_CACHE_KEY)
+    if (!raw) return []
+    const muted = new Set(mutedPrayers)
+    const parsed = JSON.parse(raw) as Array<Omit<PlannedNotification, 'at'> & { at: number }>
+    return parsed
+      .filter((entry) => entry.at > nowMs)
+      .filter((entry) => {
+        // makeId: BASE + kind * 1000 + dayIndex * 10 + slot, slot = PRAYERS index
+        const slot = (entry.id - ID_BASE) % 10
+        return !(slot >= 0 && slot < PRAYERS.length && muted.has(PRAYERS[slot]))
+      })
+      .map((entry) => ({ ...entry, at: new Date(entry.at) }))
+  } catch (error) {
+    console.debug('[notifications] prayer plan cache unreadable', error)
+    return []
+  }
+}
+
 async function run(force: boolean, askPermission: boolean) {
   const atTimeEnabled = readSetting(APP_SETTINGS_KEYS.prayerTime, '1') === '1'
   const beforeEnabled = readSetting(APP_SETTINGS_KEYS.reminders) === '1'
@@ -283,6 +338,8 @@ async function run(force: boolean, askPermission: boolean) {
   const quranTime = readSetting(APP_SETTINGS_KEYS.quranReminderTime, '20:00')
   const kahfEnabled = readSetting(APP_SETTINGS_KEYS.kahfReminder, '0') === '1'
   const kahfTime = readSetting(APP_SETTINGS_KEYS.kahfReminderTime, '10:00')
+  const morningTime = readSetting(APP_SETTINGS_KEYS.azkarMorningTime, '')
+  const eveningTime = readSetting(APP_SETTINGS_KEYS.azkarEveningTime, '')
   const mutedPrayers = readMutedPrayers()
   const lead = Number(readSetting(APP_SETTINGS_KEYS.prayerReminderLead, '5')) || 5
   const sound = readAdhanSoundMode()
@@ -290,17 +347,18 @@ async function run(force: boolean, askPermission: boolean) {
   const prayerDependent = atTimeEnabled || beforeEnabled || morningEnabled || eveningEnabled
   patchDiagnostics({ locationMissing: prayerDependent && !coords })
 
-  // ROOT-CAUSE FIX: a replace run with prayers enabled but no location would
-  // cancel the previously armed prayer plan and store a prayer-less one.
-  // Skip instead — the armed alarms stay correct, the diagnostics explain why,
-  // and the next trigger (resume/settings/coords arrival) retries.
+  // No stored location: the run continues. The pure plan gives the wirds
+  // fixed fallback times and keeps the coords-free kinds (ayah, Quran,
+  // Kahf); the previously armed prayer alarms are preserved below by
+  // re-including the cached prayer plan (see PRAYER_PLAN_CACHE_KEY) instead
+  // of silently cancelling them. The locationMissing diagnostic plus the
+  // settings notice tell the user why fixed times are in effect.
   if (!coords && prayerDependent) {
     // Still record the permission state (read only, never a prompt) so the
     // diagnostics card does not show "unknown" just because the location is missing.
     await resolvePermission(false)
       .then((permission) => patchDiagnostics({ permission }))
       .catch((error) => recordError('permission-check', error))
-    return
   }
 
   const now = new Date()
@@ -318,6 +376,8 @@ async function run(force: boolean, askPermission: boolean) {
     quranTime,
     morningEnabled,
     eveningEnabled,
+    morningTime,
+    eveningTime,
     kahfEnabled,
     kahfTime,
     mutedPrayers.join(','),
@@ -347,7 +407,7 @@ async function run(force: boolean, askPermission: boolean) {
     : days.map(() => null)
   const missingDays = timingsByDay.filter((t) => !t).length
 
-  const entries = withTimeInBody(
+  const planned = withTimeInBody(
     planNotifications({
       now: Date.now(),
       days,
@@ -360,6 +420,8 @@ async function run(force: boolean, askPermission: boolean) {
       quranTime,
       morningEnabled,
       eveningEnabled,
+      morningTime,
+      eveningTime,
       kahfEnabled,
       kahfTime,
       mutedPrayers,
@@ -367,6 +429,27 @@ async function run(force: boolean, askPermission: boolean) {
       channels: { adhan: adhanChannelId(sound), prayer: PRAYER_CHANNEL, reminder: REMINDER_CHANNEL },
     }),
   )
+  // Location missing with prayer kinds on: re-include the still-future cached
+  // prayer alarms (already enriched bodies) so the replace below keeps them armed.
+  let entries = planned
+  if (!coords && (atTimeEnabled || beforeEnabled)) {
+    const nowMs = Date.now()
+    const carried = carriedPrayerEntries(nowMs, mutedPrayers)
+    const carriedIds = new Set(carried.map((entry) => entry.id))
+    // Upgrade path: the cache only exists after the first location-based run
+    // of this version, so also carry still-armed native prayer alarms (the
+    // 48-hour window) that the cache does not cover yet.
+    const pendingNow = await ExactAlarms.pending().catch((error) => {
+      recordError('pending-carry', error)
+      return null
+    })
+    const mutedSet = new Set(mutedPrayers)
+    const reconstructed = (pendingNow?.items ?? [])
+      .filter((item) => isPrayerId(item.id) && item.at > nowMs && !carriedIds.has(item.id))
+      .filter((item) => !mutedSet.has(PRAYERS[(item.id - ID_BASE) % 10] ?? ''))
+      .map((item) => reconstructPrayerEntry(item, lead, sound))
+    entries = [...carried, ...withTimeInBody(reconstructed), ...planned]
+  }
 
   await cancelLegacyStockAlarms()
   // Always a replace run — even with an empty plan it must cancel whatever was
@@ -374,6 +457,7 @@ async function run(force: boolean, askPermission: boolean) {
   // side stores the full 30-day plan but arms only the 48h window; the fire
   // receiver chain-advances the window as alarms fire.
   const armed = await scheduleEntries(entries)
+  if (armed >= 0 && coords) cachePrayerEntries(entries)
 
   // Only now is the run considered successful; a failure above leaves the
   // fingerprint untouched so the next trigger retries.
@@ -381,7 +465,7 @@ async function run(force: boolean, askPermission: boolean) {
     recordError('pending', error)
     return null
   })
-  if (missingDays > 0 || armed < 0) lastFailureAt = Date.now()
+  if ((coords && missingDays > 0) || armed < 0) lastFailureAt = Date.now()
   else {
     lastFailureAt = 0
     scheduledFingerprint = fingerprint
@@ -392,7 +476,7 @@ async function run(force: boolean, askPermission: boolean) {
     armed,
     armWindowMs: ARM_WINDOW_MS,
     pending: pending ? pending.items.length : null,
-    timingsMissingDays: missingDays,
+    timingsMissingDays: coords ? missingDays : 0,
   })
 }
 
