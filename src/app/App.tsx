@@ -21,7 +21,7 @@ import { TasbihView } from "./features/tasbih/TasbihView";
 import { useTasbih } from "./features/tasbih/useTasbih";
 import { useAzkarCatalog } from "./features/azkar/useAzkarCatalog";
 import { useAzkarFeature } from "./features/azkar/useAzkarFeature";
-import { SettingsView } from "./features/settings/SettingsView";
+import { SettingsView, type SettingsEntry } from "./features/settings/SettingsView";
 import { useWakeLockSetting } from "./features/settings/useWakeLockSetting";
 import { useAppearanceMode } from "./features/settings/useAppearanceMode";
 import { useUiScaleSync } from "./features/settings/useUiScaleSync";
@@ -76,6 +76,9 @@ export function App() {
     tryFinishSplashRef.current();
   }, []);
   const [view, setView] = useState<View>({ name: "home" });
+  // One-shot deep link into a settings section (currently the qibla empty
+  // state's "set location" path into the device/permissions section).
+  const [settingsEntry, setSettingsEntry] = useState<SettingsEntry | null>(null);
   // In-app view history so the Android hardware back button can navigate
   // backwards instead of closing the app (native only, see effect below).
   const viewHistoryRef = useRef<View[]>([]);
@@ -484,9 +487,10 @@ export function App() {
         appearance={appearance}
         onAppearance={setAppearance}
         onBack={() => setView({ name: "home" })}
+        entry={settingsEntry}
       />
     ),
-    [darkMode, appearance, setAppearance],
+    [darkMode, appearance, setAppearance, settingsEntry],
   );
   const azkarListScreen = useMemo(
     () => (
@@ -573,7 +577,18 @@ export function App() {
     ),
     [],
   );
-  const qiblaScreen = useMemo(() => <QiblaView onBack={() => setView({ name: "home" })} />, []);
+  const qiblaScreen = useMemo(
+    () => (
+      <QiblaView
+        onBack={() => setView({ name: "home" })}
+        onOpenLocation={() => {
+          setSettingsEntry({ category: "device", at: Date.now() });
+          setView({ name: "settings" });
+        }}
+      />
+    ),
+    [],
+  );
   const prophetsScreen = useMemo(() => <ProphetsView onBack={() => setView({ name: "home" })} />, []);
   const hadithScreen = useMemo(() => <HadithView onBack={() => setView({ name: "home" })} />, []);
   const tasbihScreen = useMemo(
