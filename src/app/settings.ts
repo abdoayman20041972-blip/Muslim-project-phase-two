@@ -11,6 +11,7 @@ export const APP_SETTINGS_KEYS = {
   azkarCounterEnabled:'azkar_counter_enabled',
   journeyAutoAdvance:'azkar_journey_auto_advance',
   hadithShowNote:'azkar_hadith_show_note',
+  hadithFont:'hadith_font',
   prophetShowQuestion:'azkar_prophet_show_question',
 } as const
 export function readSetting(key:string,fallback=''){try{return localStorage.getItem(key)??fallback}catch{return fallback}}
@@ -40,7 +41,7 @@ export const BACKUP_KEYS = new Set<string>([
   APP_SETTINGS_KEYS.tafsirSource,APP_SETTINGS_KEYS.khatmahPage,APP_SETTINGS_KEYS.khatmahTarget,APP_SETTINGS_KEYS.prayerCalcMethod,
   APP_SETTINGS_KEYS.asrSchool,APP_SETTINGS_KEYS.prayerReminderLead,APP_SETTINGS_KEYS.coords,APP_SETTINGS_KEYS.prayerLocationUpdatedAt,APP_SETTINGS_KEYS.fontSize,
   APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonShape,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.customTasbih,
-  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
+  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.hadithFont,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
   'azkar_tasbih_selected_word','azkar_tasbih_rounds','azkar_tasbih_round_counts','azkar_tasbih_daily_history','azkar_custom_tasbih','azkar_custom_tasbih_list',
   'azkar_azkar_item_progress_v2','azkar_azkar_item_progress_v2_migrated','azkar_favorites','azkar_favorites_version','azkar_last_surah','azkar_last_view',
   'azkar_journey_position','azkar_daily_ayah'
