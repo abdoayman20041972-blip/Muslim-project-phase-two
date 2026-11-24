@@ -738,7 +738,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 .azkar-list-cards{background:radial-gradient(circle at 100% 0%,hsl(var(--azkar-gold)/.045),transparent 20%),hsl(var(--azkar-card))!important}
 .azkar-list-cards article{transition:background .2s ease,transform .2s ease}
 .azkar-list-cards article:focus-within,.azkar-list-cards article:has(button:active){background:hsl(var(--azkar-gold)/.035)}
-.azkar-list-cards article p.u-reading-text{font-family:Amiri,serif!important;font-size:1.2rem!important;line-height:2.25!important;text-align:center}
+.azkar-list-cards article p.u-reading-text{font-family:Amiri,serif!important;font-size:calc(1.2rem*var(--zikr-scale,1))!important;line-height:2.25!important;text-align:center}
 .azkar-list-cards article>div:last-child button{min-height:2.45rem}
 .azkar-list-cards article .rounded-2xl{background:linear-gradient(180deg,hsl(var(--azkar-surface-1)),hsl(var(--azkar-card)))!important;border-color:hsl(var(--azkar-teal)/.1)!important}
 .azkar-favorites-redesign{position:relative}
@@ -756,7 +756,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 .azkar-journey-redesign .mb-4.h-1\.5>div{background:linear-gradient(90deg,hsl(var(--azkar-teal)),hsl(var(--azkar-gold)))!important}
 .azkar-journey-card{position:relative;overflow:hidden;min-height:24rem;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(circle at 50% 0%,hsl(var(--azkar-gold)/.09),transparent 30%),linear-gradient(180deg,hsl(var(--azkar-card)),hsl(var(--azkar-bg-alt)))!important;border-color:hsl(var(--azkar-gold)/.32)!important;box-shadow:0 20px 44px hsl(165 30% 15%/.09),inset 0 0 0 4px hsl(var(--azkar-gold)/.035)!important}
 .azkar-journey-card::before{content:"";position:absolute;inset:.7rem;border:1px solid hsl(var(--azkar-gold)/.12);border-radius:1.1rem;pointer-events:none}
-.azkar-journey-card p.u-reading-text{position:relative;font-family:Amiri,serif!important;font-size:1.55rem!important;line-height:2.35!important;text-align:center}
+.azkar-journey-card p.u-reading-text{position:relative;font-family:Amiri,serif!important;font-size:calc(1.55rem*var(--zikr-scale,1))!important;line-height:2.35!important;text-align:center}
 .azkar-journey-counter{background:hsl(var(--azkar-bg-alt)/.75)!important;border-color:hsl(var(--azkar-gold)/.16)!important}
 .azkar-journey-counter .size-12{width:4rem!important;height:4rem!important;box-shadow:0 0 0 5px hsl(var(--azkar-gold)/.06),0 8px 22px hsl(165 30% 15%/.1)}
 .azkar-journey-redesign>div:last-child{padding-inline:.2rem}
@@ -994,8 +994,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 .dark .hadith-card,.dark .hadith-search-wrap{background:linear-gradient(145deg,hsl(var(--azkar-card)),hsl(var(--azkar-surface-2)));border-color:hsl(0 0% 100%/.07);box-shadow:0 10px 26px hsl(0 0% 0%/.18);}
 .dark .hadith-text{color:hsl(var(--azkar-ink));}
+.hadith-text[data-size=sm]{font-size:1.05rem}.hadith-text[data-size=lg]{font-size:1.5rem}
 .dark .hadith-search-wrap input{color:hsl(var(--azkar-ink));}
-@media(max-width:380px){.hadith-text{font-size:1.12rem;line-height:1.95}.hadith-card{padding:.9rem}.settings-spacing .grid.gap-3>button{min-height:4.35rem;}}
+@media(max-width:380px){.hadith-text{font-size:1.12rem;line-height:1.95}.hadith-text[data-size=sm]{font-size:.95rem}.hadith-text[data-size=lg]{font-size:1.3rem}.hadith-card{padding:.9rem}.settings-spacing .grid.gap-3>button{min-height:4.35rem;}}
 @media(prefers-reduced-motion:reduce){.u-pressable{transition:none!important}.u-pressable:active{transform:none}}
 
 /* Tasbih — focused counting surface */
