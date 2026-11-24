@@ -60,6 +60,14 @@ const CITIES = [
   ['مرسى مطروح', 31.3534, 27.2243],
   ['الخارجة', 25.4514, 30.5464],
 ] as const
+function CompassIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  )
+}
 function PinIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
@@ -243,7 +251,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
             aria-label="القبلة"
             title="القبلة"
           >
-            🧭
+            <CompassIcon />
           </button>
         ) : (
           <span className="w-9 h-9 rounded-full bg-azkar-teal-tint text-azkar-teal-ink flex items-center justify-center">
