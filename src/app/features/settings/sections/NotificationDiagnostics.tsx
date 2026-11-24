@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { ExactAlarms, type FireLogItem, type NativeStatus } from '@muslim/exact-alarms'
+import { fireResultLabel, isFailure, lateSeconds, nativeWarnings, recentFireLog } from '../../notifications/fireLog'
 import { toArabicNumber } from '../../../constants'
 import {
   checkExactAlarm,
@@ -31,6 +33,21 @@ export function NotificationDiagnostics() {
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState('')
   const [items, setItems] = useState<ScheduledItem[] | null>(null)
+  const [status, setStatus] = useState<NativeStatus | null>(null)
+  const [fireLog, setFireLog] = useState<FireLogItem[] | null>(null)
+
+  const loadNative = useCallback(async () => {
+    try {
+      setStatus(await ExactAlarms.status())
+      setFireLog((await ExactAlarms.fireLog()).items)
+    } catch (error) {
+      console.error('[notifications] native status unavailable', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadNative()
+  }, [loadNative])
 
   useEffect(() => {
     const refresh = () => setDiag(readDiagnostics())
@@ -57,8 +74,9 @@ export function NotificationDiagnostics() {
     } finally {
       setBusy('')
       setDiag(readDiagnostics())
+      void loadNative()
     }
-  }, [])
+  }, [loadNative])
 
   if (!Capacitor.isNativePlatform()) return null
 
@@ -85,7 +103,23 @@ export function NotificationDiagnostics() {
           <span className="text-[11px] font-bold text-azkar-ink">!</span>
         </Row>
       )}
-      <Row title="توفير البطارية" description="إن تأخرت الإشعارات فاسمح للتطبيق بالعمل دون قيود البطارية.">
+      {nativeWarnings(status)
+        .filter((warning) => warning.key !== 'battery')
+        .map((warning) => (
+          <Row key={warning.key} title={warning.title} description={warning.description}>
+            <span className="text-[11px] font-bold text-azkar-ink">!</span>
+          </Row>
+        ))}
+      <Row
+        title="توفير البطارية"
+        description={
+          status
+            ? status.ignoringBatteryOptimizations
+              ? 'مسموح للتطبيق بالعمل دون قيود البطارية.'
+              : 'التطبيق خاضع لتحسين البطارية. إن تأخرت الإشعارات أو غابت فاسمح له بالعمل دون قيود.'
+            : 'إن تأخرت الإشعارات فاسمح للتطبيق بالعمل دون قيود البطارية.'
+        }
+      >
         <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[10px] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
           فتح الإعدادات
         </button>
@@ -156,6 +190,36 @@ export function NotificationDiagnostics() {
         >
           عرض المجدول
         </button>
+      </div>
+      <div className="border-t border-azkar-gold-soft/50 px-4 py-3 text-[10px] text-azkar-ink-soft">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <span className="font-bold text-azkar-ink">سجل التسليم (آخر ما فعله النظام)</span>
+          {fireLog && fireLog.length > 0 && (
+            <button
+              type="button"
+              className="text-[10px] font-bold text-azkar-teal-ink"
+              onClick={() => void run('clear-log', async () => { await ExactAlarms.clearFireLog() })}
+            >
+              مسح
+            </button>
+          )}
+        </div>
+        {!fireLog || fireLog.length === 0 ? (
+          <div>لا يوجد شيء مسجّل بعد. يُسجَّل كل تنبيه يرنّ بعد هذا التحديث.</div>
+        ) : (
+          recentFireLog(fireLog).map((item) => {
+            const late = lateSeconds(item)
+            return (
+              <div key={item.at + ':' + item.id + ':' + item.result} className="flex justify-between gap-2 py-0.5">
+                <span className={isFailure(item) ? 'font-bold text-azkar-ink' : ''}>
+                  {(item.title ? item.title + ': ' : '') + fireResultLabel(item.result)}
+                  {late !== null && late > 60 ? ' (تأخر ' + toArabicNumber(Math.round(late / 60)) + ' د)' : ''}
+                </span>
+                <span className="shrink-0">{formatTime(new Date(item.at).toISOString())}</span>
+              </div>
+            )
+          })
+        )}
       </div>
       {message && <div className="px-4 pb-3 text-[10px] text-azkar-ink-soft">{message}</div>}
       {items && (
