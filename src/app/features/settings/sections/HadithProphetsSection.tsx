@@ -77,7 +77,7 @@ function ReadingToggles({
 export function HadithSection() {
   return (
     <Section title="تفضيلات الأحاديث">
-      <ReadingToggles fontKey={HADITH_FONT_KEY} noteKey={HADITH_NOTE_KEY} fontLabel="حجم خط الحديث" preview="«إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى»" />
+      <ReadingToggles fontKey={HADITH_FONT_KEY} noteKey={HADITH_NOTE_KEY} fontLabel="حجم خط الحديث" preview="إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى" />
     </Section>
   )
 }
