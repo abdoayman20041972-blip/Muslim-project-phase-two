@@ -178,8 +178,9 @@ export function HadithView({ onBack }: { onBack: () => void }) {
         try {
           await navigator.share({ text: shareText })
           return
-        } catch {
-          // cancelled or failed: fall back to copy
+        } catch (cause) {
+          if (cause instanceof DOMException && cause.name === 'AbortError') return
+          // Sharing failed: copy is the supported fallback.
         }
       }
       await copy()
@@ -224,7 +225,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
                   <p className="mt-2 text-[10px] text-azkar-ink-faint" data-testid="hadith-source-pending">رابط المصدر غير معروض: المرجع قيد المراجعة.</p>
                 )
               )}
-              {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[11px] leading-relaxed text-azkar-ink-soft">{item.note}</p>}
+              {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[11px] leading-relaxed text-azkar-ink-soft"><span className="block font-bold">ملاحظة توضيحية</span>{item.note}</p>}
               <div className="mt-3 flex gap-2 border-t border-azkar-hairline pt-3">
                 <button type="button" onClick={copy} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[11px] font-bold text-azkar-teal-ink"><Copy className="h-3.5 w-3.5" aria-hidden="true" /> نسخ</button>
                 <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[11px] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
@@ -259,12 +260,14 @@ export function HadithView({ onBack }: { onBack: () => void }) {
                 <button key={item.key} type="button" onClick={() => open(group.key, itemsOf(group.key).findIndex((entry) => entry.key === item.key))} className="hadith-card u-pressable text-right" data-testid="hadith-result">
                   <div className="hadith-card-top"><span>{item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}</span>{item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}</div>
                   <p className={'hadith-text font-amiri line-clamp-3 ' + fontClass}><HighlightedText text={item.text} query={query} /></p>
+                  {item.note && matches(item.note, query) && !matches(item.text, query) && <p className="mt-2 text-[11px] text-azkar-ink-soft">ملاحظة: <HighlightedText text={item.note} query={query} /></p>}
                 </button>
               ))}
               {hits.length > 20 && <p className="px-1 text-[10px] text-azkar-ink-faint">يظهر أول {toArabicNumber(20)} نتيجة. دقّق البحث لتضييق النتائج.</p>}
             </div>
           ))}
-          {!results.length && <div className="hadith-empty">لا يوجد حديث يطابق بحثك.</div>}
+          {!results.length && <div className="hadith-empty">{API_EDITIONS.some((entry) => !editions[entry.key] || editions[entry.key].state === 'loading') ? 'جارٍ تحميل بقية الأقسام للبحث...' : 'لا يوجد حديث يطابق بحثك.'}</div>}
+          {API_EDITIONS.some((entry) => editions[entry.key]?.state === 'error') && <p role="status" className="hadith-empty">البحث غير مكتمل: تعذّر تحميل بعض الأقسام. <button type="button" onClick={() => setAttempt((n) => n + 1)} className="underline">إعادة المحاولة</button></p>}
         </div>
       ) : (
         <div className="grid gap-3" data-testid="hadith-groups">
