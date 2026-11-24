@@ -178,7 +178,7 @@ export function Splash({ exiting = false, onImageSettled }: { exiting?: boolean;
 /** Shared on/off switch used across Settings and Prayer Times reminder toggles. Visual output is unchanged from the previous per-file copies. */
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
-    <button type="button" onClick={onChange} role="switch" aria-checked={checked} aria-label={label} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal ${checked ? "bg-azkar-teal" : "bg-azkar-bg-alt"}`}>
+    <button type="button" onClick={onChange} role="switch" aria-checked={checked} aria-label={label} className={`relative h-7 w-12 after:absolute after:-inset-x-1 after:-inset-y-2 after:content-[''] shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal ${checked ? "bg-azkar-teal" : "bg-azkar-bg-alt"}`}>
       <span aria-hidden="true" className={`absolute right-0 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-[-1.25rem]" : "translate-x-[-0.125rem]"}`} />
     </button>
   );
