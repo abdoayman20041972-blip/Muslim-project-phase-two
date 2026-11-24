@@ -120,10 +120,10 @@ describe('search', () => {
     expect(document.querySelector('.hadith-text')?.textContent).toContain(HADITH_COLLECTION[3].text)
     expect(screen.getByTestId('hadith-position').textContent).toContain(ar(4))
   })
-  it('says so when nothing matches', () => {
+  it('says so when nothing matches', async () => {
     render(<HadithView onBack={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('البحث في الأحاديث'), { target: { value: 'zzzz' } })
-    expect(document.body.textContent).toContain('لا يوجد حديث يطابق بحثك')
+    await waitFor(() => expect(document.body.textContent).toContain('لا يوجد حديث يطابق بحثك'))
   })
 })
 
@@ -132,6 +132,9 @@ describe('hadith font setting registry', () => {
     expect(APP_SETTINGS_KEYS.hadithFont).toBe('hadith_font')
     expect(isBackupKey('hadith_font')).toBe(true)
     expect(SETTINGS_RESET_KEYS).toContain('hadith_font')
+    expect(APP_SETTINGS_KEYS.prophetFont).toBe('prophet_font')
+    expect(isBackupKey('prophet_font')).toBe(true)
+    expect(SETTINGS_RESET_KEYS).toContain('prophet_font')
   })
 })
 
