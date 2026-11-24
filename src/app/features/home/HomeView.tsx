@@ -80,7 +80,7 @@ function QuickTool({ onClick, title, icon, tone, ariaLabel }: { onClick: () => v
   return (
     <button onClick={onClick} aria-label={ariaLabel || title} className="u-pressable flex min-w-[4.2rem] flex-col items-center gap-1.5 text-center">
       <span className={`home-quick-icon ${tone} flex h-12 w-12 items-center justify-center rounded-full`}>{icon}</span>
-      <span className="home-quick-label whitespace-nowrap text-[0.5625rem] font-bold text-azkar-ink">{title}</span>
+      <span className="home-quick-label whitespace-nowrap text-[0.6875rem] font-bold text-azkar-ink">{title}</span>
     </button>
   )
 }
@@ -237,7 +237,7 @@ export function HomeView({
               )
             })}
           </div>
-          <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[0.5625rem] text-white/75" dir="ltr">
+          <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[0.6875rem] text-white/75" dir="ltr">
             <span>Illustrative photo, not your location · </span>
             <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.artist}</a>
             <span> / Wikimedia Commons / </span>
