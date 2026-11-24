@@ -63,7 +63,7 @@ const CATEGORY_GROUPS: ReadonlyArray<readonly [string, ReadonlyArray<readonly [C
     ['notifications', 'الإشعارات', 'الأذان والتنبيهات', BellRing],
     ['device', 'الأذونات والجهاز', 'الموقع والحركة', ShieldCheck],
   ]],
-  ['القرآن والتفسير', [
+  ['القرآن والحديث والقصص', [
     ['quran', 'المصحف', 'الخط والقارئ والتفسير', BookOpen],
     ['hadith', 'الأحاديث', 'حجم الخط والملاحظات', ScrollText],
     ['prophets', 'قصص الأنبياء', 'الخط وأسئلة التأمل', Star],
