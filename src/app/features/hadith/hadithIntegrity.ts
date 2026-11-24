@@ -1,6 +1,6 @@
 // Pure integrity helpers for the hadith section. They only inspect data; nothing here
-// rewrites a hadith text, reference or grade. Content changes live in
-// review/phase1-proposal.json and wait for human review before they reach the data.
+// rewrites active data by itself. The documented mechanical conversion is also
+// used by the loader; applied content decisions are recorded in review/phase1-proposal.json.
 
 export type IntegrityEntry = { id: string; text: string; source: string }
 
