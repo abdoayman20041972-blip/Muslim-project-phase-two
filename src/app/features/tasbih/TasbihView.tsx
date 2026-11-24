@@ -37,6 +37,16 @@ export function TasbihView({
   const [menuOpen, setMenuOpen] = useState(false)
   const [wordsVersion, setWordsVersion] = useState(0)
   const [announce, setAnnounce] = useState('')
+  // Only the ACTIVE theme's background is rendered (and therefore fetched):
+  // the day mosque in light mode, the night mosque in dark mode. Toggling the
+  // theme swaps instantly because the .dark class flips on <html>.
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+  useEffect(() => {
+    const root = document.documentElement
+    const observer = new MutationObserver(() => setIsDark(root.classList.contains('dark')))
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   const tasbihWords = useMemo(() => getTasbihWords(), [wordsVersion])
   const wordIndex = Math.max(
@@ -59,9 +69,15 @@ export function TasbihView({
   const completedRounds = currentWord ? (rounds[currentWord.id] || 0) : 0
   const progress = currentWord ? Math.min(currentRound / Math.max(currentWord.goal, 1), 1) : 0
   const totalForWord = currentWord ? (counts[currentWord.id] || 0) : 0
-  const beadCount = 33
-  // The prominent imam bead is bead #1; the 32 surrounding beads are #2–#33.
-  const litRegularBeads = Math.max(0, Math.min(currentRound - 1, beadCount - 1))
+  // 33 small beads around the ring plus one large imam bead. The imam bead is
+  // bead #34 in the lighting cycle (it no longer lights first): lit beads =
+  // ((round progress - 1) mod 34) + 1, so the small beads light in order up to
+  // 33, the imam lights on tap 34, and the next tap starts a new illumination
+  // cycle from the first bead. The underlying count/rounds never reset.
+  const beadCount = 34
+  const litBeads = currentRound > 0 ? ((currentRound - 1) % beadCount) + 1 : 0
+  const litRegularBeads = Math.min(litBeads, beadCount - 1)
+  const imamBeadLit = litBeads === beadCount
   const beadStep = 360 / beadCount
 
   const selectWord = (id: string) => {
@@ -102,21 +118,13 @@ export function TasbihView({
           tab is tapped (the fade+slide used to replay on EVERY visit because
           keep-alive toggles display:none, which restarts CSS animations). */}
       <div dir="rtl" className="tasbih-redesign tasbih-minimal">
-        {/* Two backgrounds, not one: the bright day mosque for light mode and a
-            genuinely dark night mosque for dark mode. The dark mode is a real
-            dark IMAGE (not a dark veil over a light photo), toggled purely via
-            CSS so it swaps instantly with the theme. */}
+        {/* One background at a time: the bright day mosque in light mode or a
+            genuinely dark night mosque in dark mode (a real dark IMAGE, not a
+            dark veil over a light photo). Only the active theme's image is
+            rendered, so the inactive one is never fetched. */}
         <img
-          className="tasbih-background-photo"
-          src="/img/tasbih-mosque-background.jpg"
-          alt=""
-          aria-hidden="true"
-          loading="eager"
-          decoding="async"
-        />
-        <img
-          className="tasbih-background-photo-dark"
-          src="/img/tasbih-mosque-night.jpg"
+          className={isDark ? 'tasbih-background-photo-dark' : 'tasbih-background-photo'}
+          src={isDark ? '/img/tasbih-mosque-night.webp' : '/img/tasbih-mosque-background.webp'}
           alt=""
           aria-hidden="true"
           loading="eager"
@@ -200,7 +208,7 @@ export function TasbihView({
                 <span className="tasbih-count">{toArabicNumber(currentRound)}</span>
                 <span className="tasbih-count-goal">من {toArabicNumber(currentWord?.goal ?? 0)}</span>
               </button>
-              <span className={`tasbih-imam-bead ${currentRound > 0 ? 'is-lit' : ''}`} aria-hidden="true" />
+              <span className={`tasbih-imam-bead ${imamBeadLit ? 'is-lit' : ''}`} aria-hidden="true" />
               <span className="tasbih-tassel" aria-hidden="true"><span /></span>
             </div>
 
