@@ -79,7 +79,11 @@ export function TasbihSection({
               type="button"
               className="rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[10px] font-bold text-azkar-ink-soft"
               onClick={async () => {
-                const selected = localStorage.getItem('azkar_tasbih_selected_word')
+                const rawSelected = localStorage.getItem('azkar_tasbih_selected_word')
+                // Normalize legacy values (stored phrase text instead of the
+                // stable id) exactly like the hook does on load, otherwise the
+                // reset writes a round-count key nobody reads and silently no-ops.
+                const selected = getTasbihWords().find((w) => w.id === rawSelected || w.word === rawSelected)?.id ?? null
                 if (!selected) {
                   await alert({ message: 'اختر الذكر أولًا من شاشة السبحة.' })
                   return
@@ -89,6 +93,8 @@ export function TasbihSection({
                   const raw = JSON.parse(localStorage.getItem('azkar_tasbih_round_counts') || '{}')
                   if (raw && typeof raw === 'object' && !Array.isArray(raw)) raw[selected] = 0
                   localStorage.setItem('azkar_tasbih_round_counts', JSON.stringify(raw))
+                  localStorage.setItem('azkar_tasbih_selected_word', selected)
+                  window.dispatchEvent(new Event('azkar-tasbih-reload'))
                   window.dispatchEvent(new Event('azkar-tasbih-changed'))
                 } catch (error) { console.debug('[TasbihSection]', error) }
               }}
@@ -102,6 +108,7 @@ export function TasbihSection({
                 if (!(await confirm({ message: 'تصفير إجمالي تسبيح اليوم؟', danger: true }))) return
                 localStorage.setItem('azkar_day_total', '0')
                 localStorage.setItem('azkar_day_total_date', todayKey())
+                window.dispatchEvent(new Event('azkar-tasbih-reload'))
                 window.dispatchEvent(new Event('azkar-tasbih-changed'))
               }}
             >
@@ -121,6 +128,7 @@ export function TasbihSection({
                   'azkar_tasbih_round_counts',
                   'azkar_tasbih_daily_history',
                 ].forEach((key) => localStorage.removeItem(key))
+                window.dispatchEvent(new Event('azkar-tasbih-reload'))
                 window.dispatchEvent(new Event('azkar-tasbih-changed'))
               }}
             >
