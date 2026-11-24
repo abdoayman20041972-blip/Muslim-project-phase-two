@@ -17,6 +17,7 @@ export type AppContentProps = {
   prophets?: ReactNode
   hadith?: ReactNode
   tasbih: ReactNode
+  more?: ReactNode
   onHome: () => void
 }
 
@@ -72,7 +73,7 @@ function wrapScreen(content: ReactNode, resetKey: string, onHome: () => void, sh
   return <ScreenErrorBoundary resetKey={resetKey} onHome={onHome} showHome={showHome}>{content}</ScreenErrorBoundary>
 }
 
-export function AppContent({ view, home, settings, azkarList, favorites, category, mushafList, mushafReader, mushafReaderActive, prayer, qibla, prophets, hadith, tasbih, onHome }: AppContentProps) {
+export function AppContent({ view, home, settings, azkarList, favorites, category, mushafList, mushafReader, mushafReaderActive, prayer, qibla, prophets, hadith, tasbih, more, onHome }: AppContentProps) {
   // Keep-alive: a screen that has been visited once stays MOUNTED (hidden)
   // afterwards, so going back to a tab is instant — no remount, no data
   // reload, no loading indicator, and the scroll position survives too.
@@ -106,6 +107,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
       {view.name === 'qibla' && wrapScreen(qibla, 'qibla', onHome)}
       {keep('prophets') && shell('prophets', wrapScreen(prophets, 'prophets', onHome))}
       {keep('hadith') && shell('hadith', wrapScreen(hadith, 'hadith', onHome))}
+      {more != null && keep('more') && shell('more', wrapScreen(more, 'more', onHome))}
       {keep('tasbih') && shell('tasbih', wrapScreen(tasbih, 'tasbih', onHome))}
     </main>
       </ConfirmDialogProvider>
@@ -116,8 +118,7 @@ function NavIcon({ section }: { section: Section }) {
   if (section === 'home') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true"><path d="m3.5 10.8 8.5-7 8.5 7M5.5 9.5v10h13v-10M9 19.5v-6h6v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
   if (section === 'hadith') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 3 4.5v15c2.5-1 6-1 9 1 3-2 6.5-2 9-1v-15c-2.5-1-6-1-9 1Zm0 0v15" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
   if (section === 'mushaf') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true"><path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h5v18H7a2.5 2.5 0 0 0-2.5 2V5.5ZM19.5 5.5A2.5 2.5 0 0 0 17 3h-5v18h5a2.5 2.5 0 0 1 2.5 2V5.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
-  if (section === 'tasbih') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">{[[12,5],[18,10],[18,17],[12,21],[6,17],[6,10]].map(([x,y]) => <circle key={String(x)+'-'+String(y)} cx={x} cy={y} r="1.8" stroke="currentColor" strokeWidth="1.45"/>)}</svg>
-  if (section === 'more') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+  if (section === 'more') return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">{[5,12,19].flatMap((x) => [5,12,19].map((y) => <circle key={x + '-' + y} cx={x} cy={y} r="1.6"/>))}</svg>
   return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true"><path d="M12 2c.6 3.6 1.9 4.9 5.5 5.5C13.9 8.1 12.6 9.4 12 13c-.6-3.6-1.9-4.9-5.5-5.5C10.1 6.9 11.4 5.6 12 2Z" stroke="currentColor" strokeWidth="1.5"/></svg>
 }
 
@@ -128,14 +129,14 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
     { section: 'hadith', label: 'الأحاديث' },
     { section: 'home', label: 'الرئيسية' },
     { section: 'azkar', label: 'الأذكار' },
-    { section: 'tasbih', label: 'السبحة' },
+    { section: 'more', label: 'المزيد' },
   ]
   const activeIndex = items.findIndex(({ section }) => {
     if (section === 'home') return view.name === 'home'
     if (section === 'hadith') return view.name === 'hadith'
     if (section === 'mushaf') return view.name === 'mushaf-list' || view.name === 'mushaf-surah'
     if (section === 'azkar') return view.name === 'azkar-list' || view.name === 'category' || view.name === 'favorites'
-    return view.name === 'tasbih'
+    return view.name === 'more' || view.name === 'tasbih' || view.name === 'settings'
   })
 
   return (
