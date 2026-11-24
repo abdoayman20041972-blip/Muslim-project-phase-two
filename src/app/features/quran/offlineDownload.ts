@@ -10,9 +10,9 @@ const TOTAL_SURAHS = 114
 // multiply connections beyond this limit (issue س12).
 const MAX_GLOBAL_CONCURRENCY = 2
 const MAX_RETRIES = 2
-const HEADERS_TIMEOUT_MS = 30_000
-// The header timeout only covers waiting for the response. A body that
-// trickles or stops mid-file needs its own stall watchdog (issue ج3).
+// One 30s stall budget covers the header wait and the body alike: a response
+// that never arrives, trickles, or stops mid-file trips the same watchdog
+// (issue ج3).
 const BODY_STALL_TIMEOUT_MS = 30_000
 // Shortest surahs on MP3Quran still measure tens of KB; anything smaller is
 // an error page or a stub, not audio (issue س09).
@@ -164,6 +164,16 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   })
 }
 
+/** Opens the database, runs the operation, and always closes the connection. */
+async function withDatabase<T>(run: (db: IDBDatabase) => Promise<T>): Promise<T> {
+  const db = await openDatabase()
+  try {
+    return await run(db)
+  } finally {
+    db.close()
+  }
+}
+
 function key(reciter: QuranAudioReciter, surahNumber: number): [QuranAudioReciter, number] {
   return [reciter, surahNumber]
 }
@@ -180,60 +190,47 @@ async function setStatus(
   state: OfflineDownloadState,
   reason?: DownloadFailureReason,
 ): Promise<void> {
-  const db = await openDatabase()
-  try {
-    const transaction = db.transaction(STATUS_STORE, 'readwrite')
-    transaction.objectStore(STATUS_STORE).put({
-      reciter,
-      surahNumber,
-      state,
-      reason,
-      updatedAt: Date.now(),
-    } satisfies StoredStatus)
+  await withDatabase(async (db) => {
     try {
+      const transaction = db.transaction(STATUS_STORE, 'readwrite')
+      transaction.objectStore(STATUS_STORE).put({
+        reciter,
+        surahNumber,
+        state,
+        reason,
+        updatedAt: Date.now(),
+      } satisfies StoredStatus)
       await transactionDone(transaction)
     } catch (error) {
       throw asStorageError(error)
     }
-  } catch (error) {
-    throw asStorageError(error)
-  } finally {
-    db.close()
-  }
+  })
 }
 
 async function clearStatus(reciter: QuranAudioReciter, surahNumber: number): Promise<void> {
-  const db = await openDatabase()
-  try {
-    const transaction = db.transaction(STATUS_STORE, 'readwrite')
-    transaction.objectStore(STATUS_STORE).delete(key(reciter, surahNumber))
+  await withDatabase(async (db) => {
     try {
+      const transaction = db.transaction(STATUS_STORE, 'readwrite')
+      transaction.objectStore(STATUS_STORE).delete(key(reciter, surahNumber))
       await transactionDone(transaction)
     } catch (error) {
       throw asStorageError(error)
     }
-  } catch (error) {
-    throw asStorageError(error)
-  } finally {
-    db.close()
-  }
+  })
 }
 
 async function getStoredStatus(
   reciter: QuranAudioReciter,
   surahNumber: number,
 ): Promise<OfflineDownloadState | undefined> {
-  const db = await openDatabase()
-  try {
+  return withDatabase(async (db) => {
     const transaction = db.transaction(STATUS_STORE, 'readonly')
     const result = await requestResult<StoredStatus | undefined>(
       transaction.objectStore(STATUS_STORE).get(key(reciter, surahNumber)),
     )
     await transactionDone(transaction)
     return result?.state
-  } finally {
-    db.close()
-  }
+  })
 }
 
 async function storeCompletedAudio(
@@ -241,23 +238,22 @@ async function storeCompletedAudio(
   surahNumber: number,
   blob: Blob,
 ): Promise<void> {
-  const db = await openDatabase()
-  try {
-    const transaction = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
-    transaction.objectStore(AUDIO_STORE).put({ reciter, surahNumber, blob } satisfies StoredAudio)
-    transaction.objectStore(STATUS_STORE).put({
-      reciter,
-      surahNumber,
-      state: 'completed',
-      byteSize: blob.size,
-      updatedAt: Date.now(),
-    } satisfies StoredStatus)
-    await transactionDone(transaction)
-  } catch (error) {
-    throw asStorageError(error)
-  } finally {
-    db.close()
-  }
+  await withDatabase(async (db) => {
+    try {
+      const transaction = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
+      transaction.objectStore(AUDIO_STORE).put({ reciter, surahNumber, blob } satisfies StoredAudio)
+      transaction.objectStore(STATUS_STORE).put({
+        reciter,
+        surahNumber,
+        state: 'completed',
+        byteSize: blob.size,
+        updatedAt: Date.now(),
+      } satisfies StoredStatus)
+      await transactionDone(transaction)
+    } catch (error) {
+      throw asStorageError(error)
+    }
+  })
 }
 
 async function markFailed(
@@ -304,17 +300,14 @@ export async function getStorageEstimate(): Promise<{ usage?: number; quota?: nu
  * saved files themselves, not from a static per-reciter estimate (issue س13).
  */
 export async function getReciterStorageBytes(reciter: QuranAudioReciter): Promise<number> {
-  const db = await openDatabase()
-  try {
+  return withDatabase(async (db) => {
     const transaction = db.transaction(STATUS_STORE, 'readonly')
     const entries = await requestResult<StoredStatus[]>(transaction.objectStore(STATUS_STORE).getAll())
     await transactionDone(transaction)
     return entries
       .filter((entry) => entry.reciter === reciter && entry.state === 'completed')
       .reduce((total, entry) => total + (entry.byteSize ?? 0), 0)
-  } finally {
-    db.close()
-  }
+  })
 }
 
 function looksLikeAudio(first: Uint8Array): boolean {
@@ -344,8 +337,8 @@ function validateAudioFile(
 /**
  * Downloads one surah with byte-level progress. Each attempt gets its own
  * abort controller chained to the job signal, plus a stall watchdog that
- * aborts when no bytes arrive for BODY_STALL_TIMEOUT_MS. The watchdog fires
- * for the header wait too, on top of fetchWithTimeout's own header timeout.
+ * aborts when no bytes arrive for BODY_STALL_TIMEOUT_MS, covering the header
+ * wait as well as the body.
  */
 async function fetchSurahBlobOnce(
   reciter: QuranAudioReciter,
@@ -758,8 +751,7 @@ export function cancelDownload(reciter: QuranAudioReciter): void {
 }
 
 export async function getDownloadStatus(reciter: QuranAudioReciter): Promise<StatusSummary> {
-  const db = await openDatabase()
-  try {
+  return withDatabase(async (db) => {
     const transaction = db.transaction(STATUS_STORE, 'readonly')
     const statuses = await requestResult<StoredStatus[]>(
       transaction.objectStore(STATUS_STORE).getAll(),
@@ -794,9 +786,7 @@ export async function getDownloadStatus(reciter: QuranAudioReciter): Promise<Sta
       failed: failed.sort((a, b) => a.surahNumber - b.surahNumber),
       total: TOTAL_SURAHS,
     }
-  } finally {
-    db.close()
-  }
+  })
 }
 
 export async function deleteSurah(
@@ -804,21 +794,17 @@ export async function deleteSurah(
   surahNumber: number,
 ): Promise<void> {
   validateSurahNumber(surahNumber)
-  const db = await openDatabase()
-  try {
+  await withDatabase(async (db) => {
     const transaction = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
     transaction.objectStore(AUDIO_STORE).delete(key(reciter, surahNumber))
     transaction.objectStore(STATUS_STORE).delete(key(reciter, surahNumber))
     await transactionDone(transaction)
-  } finally {
-    db.close()
-  }
+  })
 }
 
 export async function deleteReciterAll(reciter: QuranAudioReciter): Promise<void> {
   cancelDownload(reciter)
-  const db = await openDatabase()
-  try {
+  await withDatabase(async (db) => {
     const transaction = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
     const audioStore = transaction.objectStore(AUDIO_STORE)
     const statusStore = transaction.objectStore(STATUS_STORE)
@@ -831,9 +817,7 @@ export async function deleteReciterAll(reciter: QuranAudioReciter): Promise<void
       }
     }
     await transactionDone(transaction)
-  } finally {
-    db.close()
-  }
+  })
 }
 
 export async function isSurahDownloaded(
@@ -850,15 +834,12 @@ export async function getDownloadedSurahBlob(
   surahNumber: number,
 ): Promise<Blob | undefined> {
   validateSurahNumber(surahNumber)
-  const db = await openDatabase()
-  try {
+  return withDatabase(async (db) => {
     const transaction = db.transaction(AUDIO_STORE, 'readonly')
     const result = await requestResult<StoredAudio | undefined>(
       transaction.objectStore(AUDIO_STORE).get(key(reciter, surahNumber)),
     )
     await transactionDone(transaction)
     return result?.blob
-  } finally {
-    db.close()
-  }
+  })
 }
