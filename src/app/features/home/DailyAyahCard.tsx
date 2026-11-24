@@ -121,4 +121,4 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       <div className="home-ayah-divider mt-1" aria-hidden="true" />
     </div>
   )
-    }
+}
