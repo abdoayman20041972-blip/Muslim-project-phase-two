@@ -53,6 +53,40 @@ describe('QiblaCompass sensor stream', () => {
     expect(Math.abs(shortestDelta(afterThreshold, beforeThreshold))).toBeLessThan(5)
   })
 
+  it('applies declination on the iOS webkitCompassHeading path', async () => {
+    const { container } = render(<QiblaCompass coords={CAIRO} />)
+    // A magnetic reading of ~131.4° plus Cairo's +4.8° declination lands on the
+    // true qibla (~136.1°): the needle should settle at the top.
+    for (let i = 0; i < 8; i++) {
+      const e = new Event('deviceorientation')
+      Object.assign(e, { webkitCompassHeading: 131.37, webkitCompassAccuracy: 10 })
+      window.dispatchEvent(e)
+      await new Promise((r) => setTimeout(r, 45))
+    }
+    await waitFor(() => {
+      const r = needleRotationDeg(container)
+      expect(r).not.toBeNull()
+      expect(Math.abs(shortestDelta(r as number, 0))).toBeLessThan(3)
+    })
+  })
+
+  it('refuses to show a confident heading when declination is unavailable', async () => {
+    // An out-of-range latitude makes magneticDeclination return null: the iOS
+    // magnetic reading cannot be corrected, so it must never appear as a
+    // valid qibla heading.
+    const { container } = render(<QiblaCompass coords={{ lat: 95, lng: 0 }} />)
+    for (let i = 0; i < 8; i++) {
+      const e = new Event('deviceorientation')
+      Object.assign(e, { webkitCompassHeading: 120, webkitCompassAccuracy: 10 })
+      window.dispatchEvent(e)
+      await new Promise((r) => setTimeout(r, 45))
+    }
+    await waitFor(() => {
+      expect(needleRotationDeg(container)).toBeNull()
+      expect(container.querySelector('.q2-status')?.textContent).toContain('لا يمكن حساب اتجاه القبلة')
+    })
+  })
+
   it('drops the heading and says so when the phone goes face-down', async () => {
     const { container } = render(<QiblaCompass coords={CAIRO} />)
     await streamPose(0, 0, 0)
