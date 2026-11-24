@@ -329,19 +329,43 @@ function cachePrayerEntries(entries: PlannedNotification[]) {
  * and does not claim success.
  */
 export async function dropPrayerPlanCarryover(): Promise<boolean> {
-  if (inFlight) await inFlight.catch(() => {})
+  // Wait for every run in flight. The loop re-checks because a run can start
+  // while we wait; once it exits inFlight is null and, with no await before
+  // the assignment below, nothing else can slip in.
+  while (inFlight) await inFlight.catch(() => {})
+  const work = (async () => {
+    try {
+      localStorage.removeItem(PRAYER_PLAN_CACHE_KEY)
+    } catch (error) {
+      console.debug('[notifications] prayer plan cache clear failed', error)
+    }
+    if (!Capacitor.isNativePlatform()) return true
+    try {
+      await ExactAlarms.schedule({ alarms: [], keepIds: [TEST_NOTIFICATION_ID], armWithinMs: ARM_WINDOW_MS })
+      return true
+    } catch (error) {
+      recordError('carryover-clear', error)
+      return false
+    }
+  })()
+  // While the clear runs, scheduleNativeNotifications() joins it as the run in
+  // flight (a forced request is queued), so a new run can never read the old
+  // pending alarms and re-arm them after the clear. Queued work starts after.
+  const guard = work.then(
+    () => {},
+    () => {},
+  )
+  inFlight = guard
   try {
-    localStorage.removeItem(PRAYER_PLAN_CACHE_KEY)
-  } catch (error) {
-    console.debug('[notifications] prayer plan cache clear failed', error)
-  }
-  if (!Capacitor.isNativePlatform()) return true
-  try {
-    await ExactAlarms.schedule({ alarms: [], keepIds: [TEST_NOTIFICATION_ID], armWithinMs: ARM_WINDOW_MS })
-    return true
-  } catch (error) {
-    recordError('carryover-clear', error)
-    return false
+    return await work
+  } finally {
+    if (inFlight === guard) inFlight = null
+    if (forceQueued) {
+      forceQueued = false
+      const ask = askQueued
+      askQueued = false
+      void scheduleNativeNotifications({ force: true, askPermission: ask })
+    }
   }
 }
 
