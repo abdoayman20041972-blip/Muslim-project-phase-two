@@ -172,6 +172,11 @@ export function NotificationsSection({
             onChange={(v) => { setLead(v); writeSetting(APP_SETTINGS_KEYS.prayerReminderLead, v); emitSettingsChanged() }}
             labels={{ '5': `${toArabicNumber(5)} د`, '10': `${toArabicNumber(10)} د`, '15': `${toArabicNumber(15)} د`, '20': `${toArabicNumber(20)} د`, '30': `${toArabicNumber(30)} د` }}
           />
+          {!coords && (
+            <p className="text-[11px] leading-5 text-azkar-muted">
+              بدون موقع حاليًا، قد تبقى التنبيهات المضبوطة سابقًا بمدتها القديمة حتى يتوفر الموقع وتُعاد جدولة المواقيت.
+            </p>
+          )}
         </Row>
       )}
       <Row title="آية اليوم" description="إشعار يومي في الوقت الذي تحدده، افتراضيًا ٩ صباحًا.">
