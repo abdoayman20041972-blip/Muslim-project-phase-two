@@ -163,4 +163,90 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     expect(items[0]!.id).toBe(700000005)
     expect(items[0]!.at).toBeTypeOf('string')
   })
+
+  it('never shows the system permission dialog on an automatic run', async () => {
+    ln.checkPermissions.mockResolvedValue({ display: 'prompt' })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    await scheduleNativeNotifications()
+    expect(ln.requestPermissions).not.toHaveBeenCalled()
+    expect(alarms.schedule).not.toHaveBeenCalled()
+    expect(JSON.parse(localStorage.getItem('muslim_diag_notifications_v1')!).permission).toBe('prompt')
+  })
+
+  it('asks for permission only on an explicit user gesture, then arms the plan', async () => {
+    ln.checkPermissions.mockResolvedValue({ display: 'prompt' })
+    ln.requestPermissions.mockResolvedValue({ display: 'granted' })
+    alarms.schedule.mockResolvedValue({ armed: 10, stored: 10 })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true, askPermission: true })
+    expect(ln.requestPermissions).toHaveBeenCalledTimes(1)
+    expect(alarms.schedule).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not re-prompt a denied permission on automatic runs and records it', async () => {
+    ln.checkPermissions.mockResolvedValue({ display: 'denied' })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    expect(ln.requestPermissions).not.toHaveBeenCalled()
+    expect(JSON.parse(localStorage.getItem('muslim_diag_notifications_v1')!).permission).toBe('denied')
+  })
+
+  it('replaces the stored plan when a prayer is muted so stale alarms are cancelled', async () => {
+    alarms.schedule.mockResolvedValue({ armed: 10, stored: 10 })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    localStorage.setItem(APP_SETTINGS_KEYS.mutedPrayers, 'Fajr,Isha')
+    await scheduleNativeNotifications({ force: true })
+    const slots = (call: number) => new Set((alarms.schedule.mock.calls[call]![0] as { alarms: Array<{ id: number }> }).alarms.map((a) => (a.id - 700000000) % 10))
+    expect([...slots(0)].sort()).toEqual([0, 1, 2, 3, 4])
+    expect([...slots(1)].sort()).toEqual([1, 2, 3])
+  })
+
+  it('re-plans when the reminder lead changes, with the new minutes in the body', async () => {
+    alarms.schedule.mockResolvedValue({ armed: 10, stored: 10 })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerReminderLead, '20')
+    await scheduleNativeNotifications()
+    expect(alarms.schedule).toHaveBeenCalledTimes(2)
+    const reminder = (alarms.schedule.mock.calls[1]![0] as { alarms: Array<{ id: number; body: string }> }).alarms.find((a) => Math.floor((a.id - 700000000) / 1000) === 1)!
+    expect(reminder.body).toContain('20 دقيقة')
+  })
+
+  it('turning every notification off still sends an empty replace run that cancels the armed plan', async () => {
+    alarms.schedule.mockResolvedValue({ armed: 0, stored: 0 })
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerTime, '0')
+    localStorage.setItem(APP_SETTINGS_KEYS.reminders, '0')
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    expect((alarms.schedule.mock.calls[0]![0] as { alarms: unknown[] }).alarms).toEqual([])
+  })
+
+  it('survives invalid saved times and unknown muted names', async () => {
+    alarms.schedule.mockResolvedValue({ armed: 1, stored: 1 })
+    localStorage.setItem(APP_SETTINGS_KEYS.quranReminder, '1')
+    localStorage.setItem(APP_SETTINGS_KEYS.quranReminderTime, '')
+    localStorage.setItem(APP_SETTINGS_KEYS.dailyAyah, '1')
+    localStorage.setItem(APP_SETTINGS_KEYS.dailyAyahTime, 'not-a-time')
+    localStorage.setItem(APP_SETTINGS_KEYS.mutedPrayers, 'Fajr,Bogus,,')
+    const { scheduleNativeNotifications, readMutedPrayers } = await load()
+    expect(readMutedPrayers()).toEqual(['Fajr'])
+    await scheduleNativeNotifications({ force: true })
+    const plan = (alarms.schedule.mock.calls[0]![0] as { alarms: Array<{ id: number; at: number }> }).alarms
+    expect(plan.some((a) => Math.floor((a.id - 700000000) / 1000) === 5)).toBe(false) // no quran entry from an empty time
+    const ayah = plan.find((a) => Math.floor((a.id - 700000000) / 1000) === 4)!
+    expect(new Date(ayah.at).getHours()).toBe(9) // falls back to 09:00
+  })
+
+  it('unchanged state is a no-op (deduplicated), a new day or timezone offset re-arms', async () => {
+    alarms.schedule.mockResolvedValue({ armed: 10, stored: 10 })
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications()
+    await scheduleNativeNotifications()
+    expect(alarms.schedule).toHaveBeenCalledTimes(1)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(-180)
+    await scheduleNativeNotifications()
+    expect(alarms.schedule).toHaveBeenCalledTimes(2)
+  })
 })
