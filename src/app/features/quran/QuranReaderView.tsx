@@ -8,7 +8,6 @@ import {
   type Ayah,
   type View,
 } from '../../constants'
-import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
 import { useQuranReaderData } from './useQuranReaderData'
 import { useQuranPreferences } from './useQuranPreferences'
 import { BackButton } from '../../components/app-chrome'
