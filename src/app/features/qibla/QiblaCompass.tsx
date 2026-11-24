@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { magneticDeclination } from './declination'
@@ -38,13 +39,25 @@ type OrientationEvent = DeviceOrientationEvent & {
 
 type Status = 'idle' | 'needs-permission' | 'waiting' | 'active' | 'denied' | 'unavailable' | 'no-absolute' | 'insecure'
 
-const STATUS_TEXT: Partial<Record<Status, string>> = {
+// Browser wording: inside a real browser the user CAN reach these settings.
+const STATUS_TEXT_WEB: Partial<Record<Status, string>> = {
   'needs-permission': 'اضغط «تفعيل» للسماح باستخدام بوصلة الهاتف',
   waiting: 'جارٍ قراءة مستشعر الاتجاه…',
   denied: 'تم رفض إذن الحركة والاتجاه. فعّله من إعدادات المتصفح ثم أعد المحاولة',
   unavailable: 'لا تصل قراءات من المستشعر. تأكد أن «Motion sensors» مفعّل لهذا الموقع في إعدادات Chrome ثم أعد المحاولة',
   insecure: 'مستشعر الاتجاه يتطلب اتصالًا آمنًا (HTTPS)',
   'no-absolute': 'المتصفح لا يوفّر اتجاه الشمال المغناطيسي، لذا لا يمكن تحديد القبلة بدقة',
+}
+
+// Installed-app wording: there are no Chrome settings inside the APK, so the
+// guidance must be things the user can actually do on the device itself.
+const STATUS_TEXT_NATIVE: Partial<Record<Status, string>> = {
+  'needs-permission': 'اضغط «تفعيل» للسماح باستخدام بوصلة الهاتف',
+  waiting: 'جارٍ قراءة مستشعر الاتجاه…',
+  denied: 'تم رفض إذن الحركة والاتجاه. فعّله من إعدادات الجهاز ثم أعد المحاولة',
+  unavailable: 'لا تصل قراءات من مستشعر الاتجاه. ابتعد عن المعادن والمغناطيس ثم أعد المحاولة؛ وإن استمرت المشكلة فربما لا يحتوي الجهاز على مستشعر للاتجاه',
+  insecure: 'مستشعر الاتجاه يتطلب اتصالًا آمنًا (HTTPS)',
+  'no-absolute': 'الجهاز لا يوفّر اتجاه الشمال المغناطيسي، لذا لا يمكن تحديد القبلة بدقة',
 }
 
 const TICKS = Array.from({ length: 72 }, (_, i) => i * 5)
@@ -221,7 +234,8 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const rotation = active ? needleRotation(bearing, heading) : 0
   const aligned = active && Math.abs(shortestDelta(bearing, normalize360(heading))) <= 4
 
-  let message = STATUS_TEXT[status] ?? ''
+  const statusText = Capacitor.isNativePlatform() ? STATUS_TEXT_NATIVE : STATUS_TEXT_WEB
+  let message = statusText[status] ?? ''
   if (declinationUnknown) message = 'لا يمكن حساب اتجاه القبلة بدقة في موقعك الحالي'
   else if (status === 'active' && invalidPose) message = 'الهاتف مقلوب على وجهه أو في وضع لا تظهر فيه الشاشة، أدره حتى تتضح القراءة'
   else if (status === 'active' && lowAccuracy) message = 'دقة البوصلة منخفضة، ابتعد عن المعادن والمغناطيس'
