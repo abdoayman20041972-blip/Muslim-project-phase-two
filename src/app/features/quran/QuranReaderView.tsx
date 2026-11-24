@@ -263,13 +263,33 @@ export function QuranReaderView({ view, setView }: Props) {
   if (savedPositionRef.current === null) savedPositionRef.current = loadReadingPosition()
   useEffect(() => {
     if (restoreDoneRef.current || !ayahs?.length) return
-    if (layout === 'pages' && !pageGroups.length) return
-    restoreDoneRef.current = true
     const saved = savedPositionRef.current
-    if (!saved || saved.surah !== view.number) return
-    if (saved.layout === 'pages' && layout === 'pages' && saved.pageIndex !== undefined) {
+    if (!saved || saved.surah !== view.number) {
+      restoreDoneRef.current = true
+      return
+    }
+    if (saved.layout === 'pages' && saved.pageIndex !== undefined) {
+      if (layout !== 'pages') {
+        // The surah data and the page map load through two independent async
+        // imports, and layout stays 'scroll' until BOTH are ready. Marking the
+        // restore done here used to drop a saved page position forever whenever
+        // the surah data won the race (observed as a load-dependent flake: the
+        // reader stayed on page 1). Wait while the map can still arrive; give
+        // up only when pages are genuinely unavailable (failed or invalid map).
+        if (requestedLayout === 'pages' && !pageMapFailed && !(quranPageMap && !pageGroups.length)) return
+        restoreDoneRef.current = true
+        return
+      }
+      restoreDoneRef.current = true
       setPageIndex(Math.min(saved.pageIndex, Math.max(0, pageGroups.length - 1)))
-    } else if (saved.layout === 'scroll' && layout === 'scroll' && saved.ayah !== undefined) {
+      return
+    }
+    if (saved.layout === 'scroll' && saved.ayah !== undefined) {
+      if (layout !== 'scroll') {
+        restoreDoneRef.current = true
+        return
+      }
+      restoreDoneRef.current = true
       const target = mushafRef.current?.querySelector(`[data-ayah="${saved.ayah}"]`)
       if (target instanceof HTMLElement) {
         try {
@@ -278,8 +298,10 @@ export function QuranReaderView({ view, setView }: Props) {
           // jsdom and older WebViews lack scrollIntoView; the position is still saved.
         }
       }
+      return
     }
-  }, [ayahs, layout, pageGroups, view.number])
+    restoreDoneRef.current = true
+  }, [ayahs, layout, pageGroups, view.number, requestedLayout, pageMapFailed, quranPageMap])
 
   // Page mode: every settled page is the reading position.
   useEffect(() => {
