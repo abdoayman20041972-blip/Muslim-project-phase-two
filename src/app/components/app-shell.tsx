@@ -152,7 +152,7 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
           const active = index === activeIndex
           return (
             <button key={section} type="button" aria-current={active ? 'page' : undefined} onClick={() => onNavigate(section)}
-              className={`dashboard-nav-item u-pressable relative z-10 flex min-h-12 flex-col items-center justify-center gap-1 rounded-[1rem] text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold ${active ? 'dashboard-nav-item-active text-azkar-card' : 'text-azkar-ink-soft hover:text-azkar-teal-ink'}`}>
+              className={`dashboard-nav-item u-pressable relative z-10 flex min-h-12 flex-col items-center justify-center gap-1 rounded-[1rem] text-[0.625rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold ${active ? 'dashboard-nav-item-active text-azkar-card' : 'text-azkar-ink-soft hover:text-azkar-teal-ink'}`}>
               <span className="dashboard-nav-icon relative z-10"><NavIcon section={section} /></span>
               <span className="relative z-10">{label}</span>
             </button>
