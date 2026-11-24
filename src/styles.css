@@ -1638,9 +1638,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .q2-dial::before{content:'';position:absolute;inset:-24%;border-radius:50%;z-index:-1;background:radial-gradient(circle,rgba(4,18,15,.62) 32%,rgba(4,18,15,.28) 56%,rgba(4,18,15,0) 72%);}
 .q2-dial-face,.q2-needle,.q2-cardinals{position:absolute;inset:0;width:100%;height:100%;display:block;}
 .q2-cardinals{pointer-events:none;}
-.q2-cardinal{fill:#efd9a7;font-size:13px;font-weight:700;opacity:.92;}
-.q2-cardinal-n{fill:#f8ecc0;font-size:15px;}
-.q2-bearing{margin:0;font-size:.85rem;font-weight:600;color:#e9d9a8;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+.q2-cardinal{fill:#f4e4b8;font-size:11px;font-weight:700;letter-spacing:.5px;paint-order:stroke;stroke:rgba(18,9,1,.85);stroke-width:3.5px;stroke-linejoin:round;}
+.q2-cardinal-n{fill:#fbf0cd;font-size:12px;}
+.q2-bearing{margin:0;padding:.32rem .95rem;border-radius:999px;border:1px solid rgba(239,217,167,.3);background:rgba(16,9,2,.66);box-shadow:0 3px 10px rgba(0,0,0,.3);font-size:.85rem;font-weight:600;color:#f2e3b6;}
+.q2-num{direction:ltr;unicode-bidi:isolate;}
 .q2-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 .q2-needle-layer{position:absolute;inset:0;opacity:0;will-change:transform;transition:opacity .25s ease;}
 .q2-needle-layer.is-on{opacity:1;}
