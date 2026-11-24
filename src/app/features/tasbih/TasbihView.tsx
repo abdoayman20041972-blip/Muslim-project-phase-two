@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react'
 import { BackButton } from '../../components/app-chrome'
 import { useConfirmDialog } from '../../components/confirm-dialog'
 import {
@@ -8,6 +8,7 @@ import {
 } from '../../constants'
 import { addCustomTasbih, updateCustomTasbih } from './customTasbih'
 import { useCustomTasbihDialog } from './custom-tasbih-dialog'
+import { getTasbihButtonColor } from './tasbihButtonColor'
 
 export function TasbihView({
   counts,
@@ -37,6 +38,9 @@ export function TasbihView({
   const [menuOpen, setMenuOpen] = useState(false)
   const [wordsVersion, setWordsVersion] = useState(0)
   const [announce, setAnnounce] = useState('')
+  const selectorRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   // Only the ACTIVE theme's background is rendered (and therefore fetched):
   // the day mosque in light mode, the night mosque in dark mode. Toggling the
   // theme swaps instantly because the .dark class flips on <html>.
@@ -54,6 +58,70 @@ export function TasbihView({
     tasbihWords.findIndex((item) => item.id === selectedWord || item.word === selectedWord),
   )
   const currentWord = tasbihWords[wordIndex] || tasbihWords[0]
+  // Read during render: the azkar-settings-changed listener below bumps
+  // wordsVersion, which re-renders and picks up a freshly chosen color.
+  const buttonColor = getTasbihButtonColor()
+
+  // Phrase picker: full listbox interaction. Escape or a press outside closes
+  // it; Arrow/Home/End keys move between options; focus returns to the trigger
+  // on close.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      setMenuOpen(false)
+      triggerRef.current?.focus()
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (selectorRef.current && !selectorRef.current.contains(event.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [menuOpen])
+
+  useEffect(() => {
+    if (menuOpen) optionRefs.current[wordIndex]?.focus()
+    // Focus the selected option only when the menu OPENS; later focus moves are
+    // driven by the arrow keys themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuOpen])
+
+  const moveOptionFocus = (fromIndex: number, delta: number) => {
+    const total = tasbihWords.length
+    if (!total) return
+    const next = ((fromIndex + delta) % total + total) % total
+    optionRefs.current[next]?.focus()
+  }
+
+  const onOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      moveOptionFocus(index, 1)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      moveOptionFocus(index, -1)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      optionRefs.current[0]?.focus()
+    } else if (event.key === 'End') {
+      event.preventDefault()
+      optionRefs.current[tasbihWords.length - 1]?.focus()
+    } else if (event.key === 'Tab') {
+      setMenuOpen(false)
+    }
+  }
+
+  const onTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      setMenuOpen(true)
+    }
+  }
 
   useEffect(() => {
     const refresh = () => setWordsVersion((value) => value + 1)
@@ -140,13 +208,15 @@ export function TasbihView({
         </header>
 
         <main className="tasbih-minimal-main" aria-label="عداد السبحة">
-          <div className="tasbih-selector-wrap">
+          <div className="tasbih-selector-wrap" ref={selectorRef}>
             <button
               type="button"
+              ref={triggerRef}
               className="tasbih-current-word"
               aria-haspopup="listbox"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
+              onKeyDown={onTriggerKeyDown}
             >
               <span className="tasbih-current-word-label">الذكر</span>
               <strong>{currentWord?.word ?? 'سبحان الله'}</strong>
@@ -155,14 +225,16 @@ export function TasbihView({
 
             {menuOpen && (
               <div className="tasbih-word-menu" role="listbox" aria-label="اختيار الذكر">
-                {tasbihWords.map((word) => (
+                {tasbihWords.map((word, index) => (
                   <button
                     key={word.id}
                     type="button"
                     role="option"
+                    ref={(el) => { optionRefs.current[index] = el }}
                     aria-selected={word.id === currentWord?.id}
                     className={`tasbih-word-menu-option ${word.id === currentWord?.id ? 'is-active' : ''}`}
                     onClick={() => selectWord(word.id)}
+                    onKeyDown={(event) => onOptionKeyDown(event, index)}
                   >
                     <span>{word.word}</span>
                     <small>{toArabicNumber(word.goal)}</small>
@@ -202,7 +274,7 @@ export function TasbihView({
                 data-sound="tasbih"
                 onClick={handleTap}
                 aria-label={`تسجيل تسبيحة لـ ${currentWord?.word ?? 'الذكر الحالي'}، الجولة الحالية ${currentRound} من ${currentWord?.goal ?? 0}`}
-                className="tasbih-count-button"
+                className={`tasbih-count-button tasbih-color-${buttonColor}`}
               >
                 <span className="tasbih-count-mark" aria-hidden="true">✦</span>
                 <span className="tasbih-count">{toArabicNumber(currentRound)}</span>
