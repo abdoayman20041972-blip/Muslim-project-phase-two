@@ -64,3 +64,43 @@ describe('preferences mirror', () => {
     expect(store.has(KEY)).toBe(false)
   })
 })
+
+describe('preferences mirror: reset and import wait for native storage', () => {
+  beforeEach(() => {
+    store.clear()
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.resetModules()
+  })
+
+  it('removeFromMirror clears native keys so startup cannot restore them', async () => {
+    store.set('muslim_mirror_v1_done', '1')
+    store.set(KEY, '07:45')
+    store.set('azkar_theme_color', 'rose')
+    const mirror = await import('../../src/app/features/storage/preferencesMirror')
+    await mirror.removeFromMirror([KEY, 'azkar_theme_color'])
+    expect(store.has(KEY)).toBe(false)
+    expect(store.has('azkar_theme_color')).toBe(false)
+    expect(store.get('muslim_mirror_v1_done')).toBe('1')
+    // Simulated next start: nothing comes back from native storage.
+    expect(await mirror.restorePreferencesMirror()).toBe(false)
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(localStorage.getItem('azkar_theme_color')).toBeNull()
+  })
+
+  it('replaceMirror makes native storage equal the imported entries only', async () => {
+    store.set('muslim_mirror_v1_done', '1')
+    store.set(KEY, 'old')
+    store.set('azkar_theme_color', 'rose')
+    const mirror = await import('../../src/app/features/storage/preferencesMirror')
+    localStorage.setItem('azkar_theme_color', 'blue')
+    await mirror.replaceMirror([['azkar_theme_color', 'blue']])
+    expect(store.has(KEY)).toBe(false)
+    expect(store.get('azkar_theme_color')).toBe('blue')
+    expect(store.get('muslim_mirror_v1_done')).toBe('1')
+    // Simulated next start after import: the old key is not resurrected.
+    expect(await mirror.restorePreferencesMirror()).toBe(false)
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(localStorage.getItem('azkar_theme_color')).toBe('blue')
+  })
+})
