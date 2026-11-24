@@ -65,10 +65,19 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   const morning = categories.find(category => category.id === 'morning')
   const evening = categories.find(category => category.id === 'evening')
   const otherCategories = categories.filter(category => category.id !== 'morning' && category.id !== 'evening')
-  const allItems = useMemo(() => categories.flatMap(category => countedItems(category.items)), [categories])
-  const allKeys = useMemo(() => categories.flatMap(category => countedItems(category.items).map(item => favoriteKey(category, item))), [categories])
-  const completedToday = completedItemCount(allItems, allKeys, progress)
-  const todayPercent = completionPercent(completedToday, allItems.length)
+  // The realistic daily goal is the two timed wirds only; on-demand and situational
+  // sections are recited when needed and stay out of the daily goal and the day log.
+  const wirdCategories = useMemo(() => [morning, evening].filter((category): category is ZikrCategory => Boolean(category)), [morning, evening])
+  const wirdItems = useMemo(() => wirdCategories.flatMap(category => countedItems(category.items)), [wirdCategories])
+  const wirdKeys = useMemo(() => wirdCategories.flatMap(category => countedItems(category.items).map(item => favoriteKey(category, item))), [wirdCategories])
+  const wirdProgress = wirdCategories.map(category => {
+    const counted = countedItems(category.items)
+    const keys = counted.map(item => favoriteKey(category, item))
+    const completed = completedItemCount(counted, keys, progress)
+    return { category, completed, total: counted.length, percent: completionPercent(completed, counted.length) }
+  })
+  const completedToday = completedItemCount(wirdItems, wirdKeys, progress)
+  const todayPercent = completionPercent(completedToday, wirdItems.length)
   const currentCategory = categories.find(category => category.id === currentWird.id)
   const history = useMemo(() => Object.entries(readAzkarProgressDays()).sort(([a], [b]) => b.localeCompare(a)).slice(0, AZKAR_PROGRESS_RETENTION_DAYS), [progress])
   const searchResults = useMemo(() => {
@@ -183,15 +192,25 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-amiri text-[20px] font-bold text-azkar-ink">إنجازك اليوم</div>
-              <div className="mt-1 font-amiri text-[16px] text-azkar-teal-ink">{toArabicNumber(completedToday)} ذكرًا مكتملًا</div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={allItems.length} aria-valuenow={completedToday} aria-label={`تقدم الأذكار اليوم: ${completedToday} من ${allItems.length}`}> 
+              <div className="mt-1 font-amiri text-[16px] text-azkar-teal-ink">{toArabicNumber(completedToday)} ذكرًا مكتملًا من الوردين</div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={wirdItems.length} aria-valuenow={completedToday} aria-label={`تقدم الأذكار اليوم: ${completedToday} من ${wirdItems.length}`}>
                 <div className="h-full rounded-full bg-azkar-teal transition-all duration-500" style={{ width: `${todayPercent}%` }} />
               </div>
             </div>
           </div>
-          <div className="mt-3 border-t border-azkar-hairline pt-2 text-center text-[9px] text-azkar-ink-faint">
-            {arabicCount(allItems.length, ZIKR_COUNT_FORMS)} في مجموعتك اليومية
-          </div>
+          {wirdProgress.length > 0 && <div className="mt-3 space-y-2 border-t border-azkar-hairline pt-3" aria-label="أهداف الوردين">
+            {wirdProgress.map(({ category, completed, total, percent }) => (
+              <div key={category.id} className="flex items-center justify-between gap-3 text-[10px]">
+                <span className="font-bold text-azkar-teal-ink">{category.label}</span>
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-1.5 w-16 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={completed} aria-label={`تقدم ${category.label}: ${completed} من ${total}`}>
+                    <span className="block h-full rounded-full bg-azkar-teal" style={{ width: `${percent}%` }} />
+                  </span>
+                  <span className="shrink-0 font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(total)}</span>
+                </span>
+              </div>
+            ))}
+          </div>}
         </section>
       </section>
 
@@ -266,13 +285,13 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
             {history.length === 0
               ? <div className="py-5 text-center text-[10px] text-azkar-ink-faint">لا يوجد سجل سابق بعد</div>
               : history.slice(0, 14).map(([dateKey, dayProgress]) => {
-                const completed = completedItemCount(allItems, allKeys, dayProgress)
-                const percent = completionPercent(completed, allItems.length)
+                const completed = completedItemCount(wirdItems, wirdKeys, dayProgress)
+                const percent = completionPercent(completed, wirdItems.length)
                 const [year, month, day] = dateKey.split("-").map(Number)
                 const label = year && month && day ? new Intl.DateTimeFormat("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(year, month - 1, day)) : dateKey
                 return <div key={dateKey} className="flex items-center justify-between gap-3 border-b border-azkar-hairline py-2.5 last:border-0">
                   <span className="text-[11px] text-azkar-ink">{label}</span>
-                  <span className="shrink-0 text-[10px] font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(allItems.length)} · {toArabicNumber(percent)}٪</span>
+                  <span className="shrink-0 text-[10px] font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(wirdItems.length)} · {toArabicNumber(percent)}٪</span>
                 </div>
               })}
           </div>}
