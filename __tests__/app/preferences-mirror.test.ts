@@ -104,3 +104,36 @@ describe('preferences mirror: reset and import wait for native storage', () => {
     expect(localStorage.getItem('azkar_theme_color')).toBe('blue')
   })
 })
+
+describe('preferences mirror: ordering and failure', () => {
+  beforeEach(() => {
+    store.clear()
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.resetModules()
+  })
+
+  it('an in-flight sync cannot write an old value after a reset removal', async () => {
+    const mirror = await import('../../src/app/features/storage/preferencesMirror')
+    localStorage.setItem(KEY, 'old')
+    const syncing = mirror.syncPreferencesMirror() // starts writing KEY=old
+    localStorage.removeItem(KEY)
+    const removed = mirror.removeFromMirror([KEY])
+    await Promise.all([syncing, removed])
+    expect(store.has(KEY)).toBe(false)
+  })
+
+  it('removeFromMirror and replaceMirror resolve false when native storage fails', async () => {
+    const mirror = await import('../../src/app/features/storage/preferencesMirror')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    store.set(KEY, 'x')
+    const prefs = (await import('@capacitor/preferences')).Preferences
+    const removeSpy = vi.spyOn(prefs, 'remove').mockRejectedValueOnce(new Error('boom'))
+    expect(await mirror.removeFromMirror([KEY])).toBe(false)
+    removeSpy.mockRestore()
+    const setSpy = vi.spyOn(prefs, 'set').mockRejectedValueOnce(new Error('boom'))
+    expect(await mirror.replaceMirror([[KEY, 'y']])).toBe(false)
+    setSpy.mockRestore()
+    expect(await mirror.removeFromMirror([KEY])).toBe(true)
+  })
+})
