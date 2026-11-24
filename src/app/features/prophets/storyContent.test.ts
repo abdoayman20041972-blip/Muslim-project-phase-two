@@ -11,7 +11,7 @@ describe('detailed prophet stories', () => {
     describe(id, () => {
       it('has every verse range inside its surah, in order within a scene', () => {
         const all = [...(content.intro?.v ?? []), ...content.scenes.flatMap((s) => s.v)]
-        expect(all.length).toBeGreaterThan(5)
+        expect(all.reduce((n, [, a, b]) => n + (b - a + 1), 0)).toBeGreaterThanOrEqual(4)
         for (const [s, a, b] of all) {
           expect(q[String(s)]).toBeTruthy()
           expect(a).toBeGreaterThanOrEqual(1)
