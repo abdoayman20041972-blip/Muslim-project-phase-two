@@ -62,29 +62,29 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
 
 
   return <div className="azkar-favorites-redesign">
-    <div className="azkar-favorites-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">المفضلة</div><div className="text-[11px] text-azkar-ink-faint mt-0.5">{favorites.length ? `${toArabicNumber(favorites.length)} ${favorites.length === 1 ? 'ذكر محفوظ' : 'أذكار محفوظة'}` : 'أذكارك المحفوظة'}</div></div></div>
+    <div className="azkar-favorites-header flex items-center gap-3 mb-2"><BackButton onClick={onBack}/><div className="flex-1"><div className="font-amiri font-bold text-2xl text-azkar-teal-ink">المفضلة</div><div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5">{favorites.length ? `${toArabicNumber(favorites.length)} ${favorites.length === 1 ? 'ذكر محفوظ' : 'أذكار محفوظة'}` : 'أذكارك المحفوظة'}</div></div></div>
 
     {favorites.length === 0
       ? <div className="mt-10 rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-6 py-10 text-center u-shadow-1">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-azkar-gold-tint text-azkar-gold"><StarIcon className="h-7 w-7"/></div>
           <div className="font-amiri font-bold text-xl text-azkar-ink">لا توجد أذكار محفوظة بعد</div>
-          <p className="mt-2 mx-auto max-w-[16rem] text-[12.5px] leading-6 text-azkar-ink-soft">اضغط النجمة بجوار أي ذكر ليظهر هنا لسهولة الرجوع إليه</p>
+          <p className="mt-2 mx-auto max-w-[16rem] text-[0.7812rem] leading-6 text-azkar-ink-soft">اضغط النجمة بجوار أي ذكر ليظهر هنا لسهولة الرجوع إليه</p>
         </div>
       : <>
           <div className="mt-5 rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card p-4 u-shadow-1">
-            <label htmlFor="favorites-search" className="mb-2 block text-[11px] font-bold text-azkar-ink">بحث في المفضلة</label>
-            <input id="favorites-search" value={search} onChange={event => setSearch(event.target.value)} placeholder="ابحث داخل نص الذكر..." className="h-11 w-full rounded-xl border border-azkar-hairline bg-azkar-surface-1 px-3 text-[12px] text-azkar-ink outline-none focus:border-azkar-teal focus:ring-2 focus:ring-azkar-teal/15" />
-            <label htmlFor="favorites-category-filter" className="mb-2 mt-3 block text-[11px] font-bold text-azkar-ink">تصفية حسب القسم</label>
-            <select id="favorites-category-filter" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)} className="h-11 w-full rounded-xl border border-azkar-hairline bg-azkar-surface-1 px-3 text-[12px] text-azkar-ink outline-none focus:border-azkar-teal focus:ring-2 focus:ring-azkar-teal/15">
+            <label htmlFor="favorites-search" className="mb-2 block text-[0.6875rem] font-bold text-azkar-ink">بحث في المفضلة</label>
+            <input id="favorites-search" value={search} onChange={event => setSearch(event.target.value)} placeholder="ابحث داخل نص الذكر..." className="h-11 w-full rounded-xl border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.75rem] text-azkar-ink outline-none focus:border-azkar-teal focus:ring-2 focus:ring-azkar-teal/15" />
+            <label htmlFor="favorites-category-filter" className="mb-2 mt-3 block text-[0.6875rem] font-bold text-azkar-ink">تصفية حسب القسم</label>
+            <select id="favorites-category-filter" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)} className="h-11 w-full rounded-xl border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.75rem] text-azkar-ink outline-none focus:border-azkar-teal focus:ring-2 focus:ring-azkar-teal/15">
               <option value="all">كل الأقسام</option>
               {categoryOptions.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}
             </select>
-            <div className="mt-3 text-[10px] text-azkar-ink-faint" role="status">{toArabicNumber(visibleFavorites.length)} نتيجة</div>
+            <div className="mt-3 text-[0.625rem] text-azkar-ink-faint" role="status">{toArabicNumber(visibleFavorites.length)} نتيجة</div>
           </div>
 
           <div className="azkar-favorites-list mt-4 divide-y divide-azkar-hairline overflow-hidden rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card u-shadow-1">
             {visibleFavorites.length === 0
-              ? <div className="px-5 py-10 text-center"><div className="font-amiri text-[18px] font-bold text-azkar-ink">لا توجد نتائج</div><div className="mt-1 text-[10px] text-azkar-ink-faint">جرّب نصًا آخر أو اختر قسمًا مختلفًا.</div></div>
+              ? <div className="px-5 py-10 text-center"><div className="font-amiri text-[1.125rem] font-bold text-azkar-ink">لا توجد نتائج</div><div className="mt-1 text-[0.625rem] text-azkar-ink-faint">جرّب نصًا آخر أو اختر قسمًا مختلفًا.</div></div>
               : visibleFavorites.map(({ key, category, item }) => {
                   const counted = isCountedZikr(item)
                   const kindLabel = item.kind === 'fadl' ? 'فضل وخبر' : item.kind === 'guidance' ? 'إرشاد وآداب' : undefined
@@ -95,23 +95,23 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
                     <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full border border-azkar-teal/10" />
                     <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full border border-azkar-gold/10" />
                     <div className="relative mb-3 flex items-center justify-between gap-3">
-                      <span className="inline-flex items-center gap-1.5"><span className="rounded-full bg-azkar-teal-tint px-2.5 py-1 text-[10.5px] font-bold text-azkar-teal-ink">{category.label}</span>{kindLabel && <span className={'rounded-full border px-2.5 py-1 text-[10.5px] font-bold ' + (item.kind === 'fadl' ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span>}</span>
+                      <span className="inline-flex items-center gap-1.5"><span className="rounded-full bg-azkar-teal-tint px-2.5 py-1 text-[0.6562rem] font-bold text-azkar-teal-ink">{category.label}</span>{kindLabel && <span className={'rounded-full border px-2.5 py-1 text-[0.6562rem] font-bold ' + (item.kind === 'fadl' ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span>}</span>
                       <button onClick={() => onToggleFavorite(key)} aria-label="إزالة من المفضلة" className="u-pressable flex h-8 w-8 items-center justify-center rounded-full text-azkar-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><StarIcon filled/></button>
                     </div>
-                    <p className="relative u-reading-text text-[19px] text-azkar-ink whitespace-pre-line">{toArabicDigits(item.text)}</p>
+                    <p className="relative u-reading-text text-[1.1875rem] text-azkar-ink whitespace-pre-line">{toArabicDigits(item.text)}</p>
                     {counted && <div className="relative mt-4 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-2.5">
                       <div className="mb-2 flex items-center justify-between px-1">
-                        <span className="text-[9px] text-azkar-ink-faint">التقدم</span>
-                        <span className="text-[12px] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[9px] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span>
+                        <span className="text-[0.5625rem] text-azkar-ink-faint">التقدم</span>
+                        <span className="text-[0.75rem] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[0.5625rem] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span>
                       </div>
                       <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={`تقدم الذكر: ${current} من ${target}`}>
                         <div className={`h-full rounded-full transition-all duration-200 ${completed ? 'bg-azkar-gold' : 'bg-azkar-teal'}`} style={{ width: `${Math.min(100, current / target * 100)}%` }} />
                       </div>
                     </div>}
                     <div className="relative mt-4 flex items-center gap-2 border-t border-azkar-hairline pt-3">
-                      <button onClick={() => setView?.({ name: 'category', id: category.id })} aria-label={`فتح ${category.label}`} className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-teal/20 bg-azkar-teal-tint px-3 text-[11px] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">فتح في القسم</button>
-                      <button onClick={() => void copyText(item.text)} aria-label="نسخ الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[11px] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><CopyIcon/>نسخ</button>
-                      <button onClick={() => void shareText(item.text)} aria-label="مشاركة الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[11px] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><ShareIcon/>مشاركة</button>
+                      <button onClick={() => setView?.({ name: 'category', id: category.id })} aria-label={`فتح ${category.label}`} className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-teal/20 bg-azkar-teal-tint px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">فتح في القسم</button>
+                      <button onClick={() => void copyText(item.text)} aria-label="نسخ الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><CopyIcon/>نسخ</button>
+                      <button onClick={() => void shareText(item.text)} aria-label="مشاركة الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><ShareIcon/>مشاركة</button>
                     </div>
                   </article>
                 })}
