@@ -13,6 +13,14 @@ const RELOAD_GUARD = 'muslim_mirror_reloaded'
 const SYNC_INTERVAL_MS = 60_000
 
 let started = false
+// Every native write (periodic sync, reset, import) runs one after another, so
+// an in-flight sync can never write an old value after a reset or import.
+let chain: Promise<unknown> = Promise.resolve()
+function enqueue<T>(job: () => Promise<T>): Promise<T> {
+  const run = chain.then(job, job)
+  chain = run.catch(() => undefined)
+  return run
+}
 const lastMirrored = new Map<string, string>()
 
 function mirroredKeysInLocalStorage(): string[] {
@@ -30,8 +38,12 @@ async function loadPreferences() {
 }
 
 /** Copies changed keys to native storage and removes keys deleted during this session. */
-export async function syncPreferencesMirror(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
+export function syncPreferencesMirror(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return Promise.resolve()
+  return enqueue(syncNow)
+}
+
+async function syncNow(): Promise<void> {
   try {
     const Preferences = await loadPreferences()
     const present = new Set<string>()
@@ -56,45 +68,55 @@ export async function syncPreferencesMirror(): Promise<void> {
 /**
  * Reset: removes the given keys from native storage too and WAITS for it, so
  * the reload that follows cannot restore them from the mirror at startup.
- * Never throws; a native failure is logged and the caller still reloads.
+ * Resolves true when native storage is clean, false when a native call failed
+ * (the caller must then not present the reset as done). Runs after any
+ * pending sync.
  */
-export async function removeFromMirror(keys: string[]): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
-  try {
-    const Preferences = await loadPreferences()
-    for (const key of keys) {
-      if (key === MIGRATED_FLAG) continue
-      await Preferences.remove({ key })
-      lastMirrored.delete(key)
+export function removeFromMirror(keys: string[]): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return Promise.resolve(true)
+  return enqueue(async () => {
+    try {
+      const Preferences = await loadPreferences()
+      for (const key of keys) {
+        if (key === MIGRATED_FLAG) continue
+        await Preferences.remove({ key })
+        lastMirrored.delete(key)
+      }
+      return true
+    } catch (error) {
+      console.error('[storage] preferences mirror remove failed', error)
+      return false
     }
-  } catch (error) {
-    console.error('[storage] preferences mirror remove failed', error)
-  }
+  })
 }
 
 /**
  * Import: makes native storage match the imported entries exactly (removes
  * every other mirrored key, writes the imported ones) and WAITS for it before
- * the caller reloads, so no old value is restored at startup.
+ * the caller reloads. Resolves false when a native call failed.
  */
-export async function replaceMirror(entries: [string, string][]): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
-  try {
-    const Preferences = await loadPreferences()
-    const keep = new Set(entries.map(([key]) => key))
-    const { keys } = await Preferences.keys()
-    for (const key of keys) {
-      if (key === MIGRATED_FLAG || !isBackupKey(key) || keep.has(key)) continue
-      await Preferences.remove({ key })
-      lastMirrored.delete(key)
+export function replaceMirror(entries: [string, string][]): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return Promise.resolve(true)
+  return enqueue(async () => {
+    try {
+      const Preferences = await loadPreferences()
+      const keep = new Set(entries.map(([key]) => key))
+      const { keys } = await Preferences.keys()
+      for (const key of keys) {
+        if (key === MIGRATED_FLAG || !isBackupKey(key) || keep.has(key)) continue
+        await Preferences.remove({ key })
+        lastMirrored.delete(key)
+      }
+      for (const [key, value] of entries) {
+        await Preferences.set({ key, value })
+        lastMirrored.set(key, value)
+      }
+      return true
+    } catch (error) {
+      console.error('[storage] preferences mirror replace failed', error)
+      return false
     }
-    for (const [key, value] of entries) {
-      await Preferences.set({ key, value })
-      lastMirrored.set(key, value)
-    }
-  } catch (error) {
-    console.error('[storage] preferences mirror replace failed', error)
-  }
+  })
 }
 
 /**
