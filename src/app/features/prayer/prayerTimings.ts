@@ -125,6 +125,14 @@ export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortS
     return local
   }
 }
+// Synchronous read of today's cached timings for surfaces that render in one
+// pass (e.g. the azkar list picking «وردك الآن»). Returns null when nothing
+// valid is cached; callers then fall back and the async loaders fill the cache.
+export function readCachedTimings(coords:Coords,date:Date):Timings|null{
+  const c=normalizeCoords(coords);if(!c)return null
+  const cached=read(cacheKey(date,c,currentMethod(),currentSchool()))
+  return validTimings(cached)?cached:null
+}
 export function cleanupPrayerCache(){
   try{
     for(let i=localStorage.length-1;i>=0;i--){
