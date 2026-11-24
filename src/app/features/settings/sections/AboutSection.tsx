@@ -8,12 +8,12 @@ export function AboutSection() {
     <b className="font-amiri text-azkar-teal-ink">مسلم</b>
   </Row>
   <Row title="الإصدار">
-    <span className="text-[0.625rem]">{Capacitor.isNativePlatform() ? 'أندرويد 1.1.0' : 'Web / PWA'}</span>
+    <span className="text-[0.6875rem]">{Capacitor.isNativePlatform() ? 'أندرويد 1.1.0' : 'Web / PWA'}</span>
   </Row>
   <Row title="التواصل والملاحظات" last>
     <a
       href="mailto:feedback@muslim.app?subject=ملاحظات تطبيق مسلم"
-      className="rounded-xl border px-3 py-2 text-[0.625rem] font-bold"
+      className="rounded-xl border px-3 py-2 text-[0.6875rem] font-bold"
     >
       إرسال ملاحظات
     </a>
