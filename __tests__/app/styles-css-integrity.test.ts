@@ -32,4 +32,13 @@ describe('styles.css integrity', () => {
     expect(darkMeta).not.toBeNull()
     expect(darkMeta![0]).not.toContain('#000')
   })
+
+  it('lets the lit imam bead override the locked base rule (both use !important)', () => {
+    // Regression guard: the base .tasbih-imam-bead rule locks its background
+    // with !important, so without !important on .tasbih-imam-bead.is-lit the
+    // large bead (bead #34) could never appear lit.
+    const lit = /\.tasbih-imam-bead\.is-lit\{[^}]*\}/.exec(css)
+    expect(lit).not.toBeNull()
+    expect(lit![0]).toMatch(/background:[^;}]*!important/)
+  })
 })
