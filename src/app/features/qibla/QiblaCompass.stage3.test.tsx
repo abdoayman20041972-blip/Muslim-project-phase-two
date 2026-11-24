@@ -38,23 +38,23 @@ describe('QiblaCompass stage 3: cardinal ring and numeric readout', () => {
     localStorage.clear()
   })
 
-  it('shows the four Arabic cardinal letters at their static angles before any reading', () => {
+  it('shows the four full Arabic direction names at their static angles before any reading', () => {
     const { container } = render(<QiblaCompass coords={CAIRO} />)
-    expect(cardinalRotation(container, 'ش')).toBe(0)
-    expect(cardinalRotation(container, 'ق')).toBe(90)
-    expect(cardinalRotation(container, 'ج')).toBe(180)
-    expect(cardinalRotation(container, 'غ')).toBe(270)
+    expect(cardinalRotation(container, 'شمال')).toBe(0)
+    expect(cardinalRotation(container, 'شرق')).toBe(90)
+    expect(cardinalRotation(container, 'جنوب')).toBe(180)
+    expect(cardinalRotation(container, 'غرب')).toBe(270)
   })
 
   it('rotates the cardinal ring with the phone heading via dialLabelAngle', async () => {
     const { container } = render(<QiblaCompass coords={CAIRO} />)
-    // Flat pose, alpha 270 -> facing east (heading ~90): north letter moves to -90.
+    // Flat pose, alpha 270 -> facing east (heading ~90): north label moves to -90.
     await stream(steady(270))
     await waitFor(() => {
-      const a = cardinalRotation(container, 'ش')
+      const a = cardinalRotation(container, 'شمال')
       expect(a).not.toBeNull()
       expect(Math.abs((a as number) - dialLabelAngle(0, 90))).toBeLessThan(3)
-      expect(Math.abs((cardinalRotation(container, 'ق') as number) - dialLabelAngle(90, 90))).toBeLessThan(3)
+      expect(Math.abs((cardinalRotation(container, 'شرق') as number) - dialLabelAngle(90, 90))).toBeLessThan(3)
     })
   })
 
@@ -95,6 +95,9 @@ describe('QiblaCompass stage 3: alignment announcement and haptics', () => {
     await stream(steady(360 - BEARING), 14)
     const region = () => container.querySelector('[role="status"]')?.textContent ?? ''
     await waitFor(() => expect(region()).toBe('أنت الآن باتجاه القبلة'))
+    // Deliberately screen-reader-only: the needle and gold dial already show
+    // alignment visually; the live region exists so screen readers announce it.
+    expect(container.querySelector('[role="status"]')?.classList.contains('q2-sr-only')).toBe(true)
     expect(spy).toHaveBeenCalledWith([10, 18, 10])
     expect(spy).toHaveBeenCalledTimes(1)
 
