@@ -5,7 +5,7 @@ beforeEach(()=>localStorage.clear())
 
 describe('journeyPosition',()=>{
  it('reads a saved category position',()=>{localStorage.setItem('azkar_journey_position',JSON.stringify({'cat-a':1}));expect(readJourneyPosition('cat-a')).toBe(1)})
- it('saves a category position without removing other categories',()=>{localStorage.setItem('azkar_journey_position',JSON.stringify({'cat-a':1}));saveJourneyPosition('cat-b',2);expect(JSON.parse(localStorage.getItem('azkar_journey_position')!)).toEqual({'cat-a':1,'cat-b':2})})
+ it('saves a category position without removing other categories',()=>{localStorage.setItem('azkar_journey_position',JSON.stringify({'cat-a':1}));saveJourneyPosition('cat-b',2);const stored=JSON.parse(localStorage.getItem('azkar_journey_position')!);expect(stored['cat-a']).toBe(1);expect(stored['cat-b'].index).toBe(2);expect(typeof stored['cat-b'].day).toBe('string')})
  it('clears only the requested category position',()=>{localStorage.setItem('azkar_journey_position',JSON.stringify({'cat-a':1,'cat-b':2}));clearJourneyPosition('cat-a');expect(JSON.parse(localStorage.getItem('azkar_journey_position')!)).toEqual({'cat-b':2})})
  it.each([
   ['missing category',JSON.stringify({'cat-a':1}),'cat-b'],
