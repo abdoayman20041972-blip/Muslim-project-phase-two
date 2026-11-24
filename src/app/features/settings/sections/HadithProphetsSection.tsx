@@ -11,10 +11,12 @@ function ReadingToggles({
   fontKey,
   noteKey,
   fontLabel,
+  preview,
 }: {
   fontKey: string
   noteKey?: string
   fontLabel: string
+  preview?: string
 }) {
   const [font, setFont] = useState(() => readSetting(fontKey, 'md'))
   const [note, setNote] = useState(() => (noteKey ? readSetting(noteKey, '1') !== '0' : true))
@@ -44,6 +46,14 @@ function ReadingToggles({
           }}
           labels={{ sm: 'صغير', md: 'متوسط', lg: 'كبير' }}
         />
+        {preview && (
+          <p
+            data-testid="font-preview"
+            className={`font-amiri mt-3 rounded-xl border border-azkar-hairline px-3 py-2 leading-loose text-azkar-ink ${font === 'sm' ? 'text-[13px]' : font === 'lg' ? 'text-[19px]' : 'text-[16px]'}`}
+          >
+            {preview}
+          </p>
+        )}
       </Row>
       {noteKey && (
         <Row title="ملاحظات وشرح" description="إظهار فائدة مختصرة أسفل كل نص." last>
@@ -67,7 +77,7 @@ function ReadingToggles({
 export function HadithSection() {
   return (
     <Section title="تفضيلات الأحاديث">
-      <ReadingToggles fontKey={HADITH_FONT_KEY} noteKey={HADITH_NOTE_KEY} fontLabel="حجم خط الحديث" />
+      <ReadingToggles fontKey={HADITH_FONT_KEY} noteKey={HADITH_NOTE_KEY} fontLabel="حجم خط الحديث" preview="«إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى»" />
     </Section>
   )
 }
