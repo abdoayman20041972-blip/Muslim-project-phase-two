@@ -48,6 +48,11 @@ export function clearAzkarProgressDay(date = new Date()): boolean {
   }
 }
 
+export type ZikrKindLike = { kind?: 'zikr' | 'fadl' | 'guidance' }
+// Counted dhikr only: virtue reports (fadl) and guidance cards carry no counter.
+export function isCountedZikr(item: ZikrKindLike): boolean { return (item.kind ?? 'zikr') === 'zikr' }
+export function countedItems<T extends ZikrKindLike>(items: readonly T[]): T[] { return items.filter(isCountedZikr) }
+
 export function itemTarget(repeat?: number): number { return Math.max(1, Number(repeat || 1)) }
 export function itemCount(progress: Record<string, number>, key: string, repeat?: number): number { return Math.min(Number(progress[key] || 0), itemTarget(repeat)) }
 export function completedItemCount(items: readonly { repeat?: number }[], keys: readonly string[], progress: Record<string, number>): number {
