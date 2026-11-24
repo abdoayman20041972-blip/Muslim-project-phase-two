@@ -539,6 +539,7 @@ export function App() {
             category={selectedCategory}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
+            highlightItem={view.name === "category" ? view.item : undefined}
             onBack={
               quickOrigin
                 ? () => setView({ name: "home" })
@@ -547,7 +548,7 @@ export function App() {
           />
         </div>
       ) : null,
-    [selectedCategory, favorites, toggleFavorite, quickOrigin],
+    [selectedCategory, favorites, toggleFavorite, quickOrigin, view],
   );
   const mushafListScreen = useMemo(
     () => (
