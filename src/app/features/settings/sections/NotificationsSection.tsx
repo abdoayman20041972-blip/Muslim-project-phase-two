@@ -12,6 +12,8 @@ import { readAdhanSoundMode, readMutedPrayers } from '../../notifications/native
 import { checkExactAlarm, openExactAlarmSettings } from '../../notifications/nativeNotifications'
 import { NotificationDiagnostics } from './NotificationDiagnostics'
 import { openSystemSettings } from '../../permissions/systemSettings'
+import { useLocationCoords } from '../../location/coords'
+import { FALLBACK_MORNING_TIME, FALLBACK_EVENING_TIME } from '../../notifications/notificationPlan'
 
 type NotificationsSectionProps = {
   notificationStatus: NotificationPermissionState
@@ -57,6 +59,10 @@ export function NotificationsSection({
     if (!value && readSetting(key, '0') !== '1') setDenied(true)
   }
   const [ayahTime,setAyahTime] = useState(() => readSetting(APP_SETTINGS_KEYS.dailyAyahTime, '09:00'))
+  // Custom wird times: an empty value means "follow the Sunrise/Sunset anchor".
+  const [azkarMorningTime,setAzkarMorningTime] = useState(() => readSetting(APP_SETTINGS_KEYS.azkarMorningTime, ''))
+  const [azkarEveningTime,setAzkarEveningTime] = useState(() => readSetting(APP_SETTINGS_KEYS.azkarEveningTime, ''))
+  const coords = useLocationCoords()
   // One-time battery hint: some phone makers stop background alarms unless the app is exempt.
   const BATTERY_HINT_KEY = 'muslim_battery_hint_seen'
   const [batteryHintSeen,setBatteryHintSeen] = useState(() => { try { return localStorage.getItem(BATTERY_HINT_KEY) === '1' } catch (error) { console.error('[notifications] battery hint flag unreadable', error); return true } })
@@ -186,12 +192,33 @@ export function NotificationsSection({
           {kahf && <input aria-label="وقت تذكير سورة الكهف" type="time" value={kahfTime} onChange={(event) => { const value=event.target.value; if (!value) return; setKahfTime(value); writeSetting(APP_SETTINGS_KEYS.kahfReminderTime,value); emitSettingsChanged() }} className="min-w-[7rem] rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[13px]" />}
         </div>
       </Row>
-      <Row title="أذكار الصباح" description="عند وقت الشروق وفق مواقيت الصلاة المحفوظة">
-        <Toggle checked={azkarMorning} onChange={() => void guarded(APP_SETTINGS_KEYS.azkarMorning,setAzkarMorning,azkarMorning)} label="أذكار الصباح"/>
+      <Row title="أذكار الصباح" description={azkarMorningTime ? 'يوميًا في الوقت الذي حددته.' : 'عند وقت الشروق وفق مواقيت الصلاة المحفوظة، أو حدد وقتًا ثابتًا.'}>
+        <div className="flex flex-col items-end gap-2">
+          <Toggle checked={azkarMorning} onChange={() => void guarded(APP_SETTINGS_KEYS.azkarMorning,setAzkarMorning,azkarMorning)} label="أذكار الصباح"/>
+          {azkarMorning && (
+            <div className="flex items-center gap-2">
+              <input aria-label="وقت تذكير أذكار الصباح" type="time" value={azkarMorningTime} onChange={(event) => { const value=event.target.value; if (!value) return; setAzkarMorningTime(value); writeSetting(APP_SETTINGS_KEYS.azkarMorningTime,value); emitSettingsChanged() }} className="min-w-[7rem] rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[13px]" />
+              {azkarMorningTime && <button type="button" onClick={() => { setAzkarMorningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarMorningTime,''); emitSettingsChanged() }} className="text-[11px] text-azkar-gold">تلقائي</button>}
+            </div>
+          )}
+        </div>
       </Row>
-      <Row title="أذكار المساء" description="عند وقت الغروب وفق مواقيت الصلاة المحفوظة" last>
-        <Toggle checked={azkarEvening} onChange={() => void guarded(APP_SETTINGS_KEYS.azkarEvening,setAzkarEvening,azkarEvening)} label="أذكار المساء"/>
+      <Row title="أذكار المساء" description={azkarEveningTime ? 'يوميًا في الوقت الذي حددته.' : 'عند وقت الغروب وفق مواقيت الصلاة المحفوظة، أو حدد وقتًا ثابتًا.'} last={!((azkarMorning || azkarEvening) && !coords)}>
+        <div className="flex flex-col items-end gap-2">
+          <Toggle checked={azkarEvening} onChange={() => void guarded(APP_SETTINGS_KEYS.azkarEvening,setAzkarEvening,azkarEvening)} label="أذكار المساء"/>
+          {azkarEvening && (
+            <div className="flex items-center gap-2">
+              <input aria-label="وقت تذكير أذكار المساء" type="time" value={azkarEveningTime} onChange={(event) => { const value=event.target.value; if (!value) return; setAzkarEveningTime(value); writeSetting(APP_SETTINGS_KEYS.azkarEveningTime,value); emitSettingsChanged() }} className="min-w-[7rem] rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[13px]" />
+              {azkarEveningTime && <button type="button" onClick={() => { setAzkarEveningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarEveningTime,''); emitSettingsChanged() }} className="text-[11px] text-azkar-gold">تلقائي</button>}
+            </div>
+          )}
+        </div>
       </Row>
+      {(azkarMorning || azkarEvening) && !coords && (
+        <p className="rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[12px] leading-6 text-azkar-muted">
+          الموقع غير متاح حاليًا، لذا تصل الأذكار في توقيت ثابت{!azkarMorningTime && azkarMorning ? ` (الصباح ${FALLBACK_MORNING_TIME})` : ''}{!azkarEveningTime && azkarEvening ? ` (المساء ${FALLBACK_EVENING_TIME})` : ''} حتى يتوفر الموقع، أو حدد وقتًا ثابتًا بنفسك أعلاه.
+        </p>
+      )}
     </Section>
     {native && <NotificationDiagnostics />}
     </>
