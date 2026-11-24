@@ -4,7 +4,7 @@ import { formatLocalizedDate, toArabicNumber } from '../../constants'
 import { formatCountdown, formatPrayerTime, PRAYER_LABELS, useNextPrayer, usePrayerCoords } from '../prayer/prayerTimes'
 import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
 import { dailyAyahDateKey, dailyAyahFor, dailyAyahIndex } from '../../../daily-ayahs'
-import { timeBasedAzkar } from '../azkar/azkarProgress'
+import { wirdForPrayerTimes } from '../azkar/azkarProgress'
 
 const HOME_HERO_IMAGE = '/img/home-mosque-hero.jpg'
 
@@ -161,9 +161,9 @@ export function HomeView({
   const hijriDate = readSetting(APP_SETTINGS_KEYS.hijriCalendar, '1') !== '0'
     ? formatLocalizedDate(dateTick, { day: 'numeric', month: 'long', year: 'numeric' }, 'ar-SA-u-ca-islamic-umalqura')
     : ''
-  const timedAzkar = timeBasedAzkar(dateTick)
   const coords = usePrayerCoords()
   const { next, remainingMs, timings, loading: prayerLoading, error: prayerError } = useNextPrayer(coords)
+  const timedAzkar = wirdForPrayerTimes(timings, dateTick)
   const locationLabel = getNearestCityLabel(coords)
 
   return (
