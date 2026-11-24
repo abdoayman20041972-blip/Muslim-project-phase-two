@@ -73,7 +73,7 @@ export function QuranMiniPlayer() {
       <select aria-label="القارئ في المشغل المصغر" value={reciter}
         onChange={(event) => { void setReciter(event.target.value as QuranAudioReciter) }}
         onPointerDown={(event) => event.stopPropagation()}
-        className="h-9 max-w-[125px] shrink-0 rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-[0.625rem] font-bold text-azkar-teal-ink">
+        className="h-9 max-w-[125px] shrink-0 rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-[0.6875rem] font-bold text-azkar-teal-ink">
         {QURAN_AUDIO_RECITERS.map((id) => <option key={id} value={id}>{QURAN_AUDIO_RECITER_LABELS[id]}</option>)}
       </select>
       <button type="button" onClick={togglePlayback}
