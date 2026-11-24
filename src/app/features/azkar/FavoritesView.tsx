@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { copyText, shareText } from './shareActions'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
@@ -21,7 +21,16 @@ function ShareIcon() {
 export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: Props) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
-  const [progress] = useState<Record<string, number>>(() => readAzkarProgress())
+  const [progress, setProgress] = useState<Record<string, number>>(() => readAzkarProgress())
+  useEffect(() => {
+    const refresh = () => setProgress(readAzkarProgress())
+    window.addEventListener('azkar-progress-changed', refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.removeEventListener('azkar-progress-changed', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [])
 
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>()
