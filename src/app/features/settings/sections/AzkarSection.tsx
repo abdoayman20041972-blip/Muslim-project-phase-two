@@ -104,6 +104,7 @@ export function AzkarSection({
                 if (!(await confirm({ message: 'مسح تقدم أذكار اليوم؟', danger: true }))) return
                 if (clearAzkarProgressDay()) {
                   emitSettingsChanged()
+                  window.dispatchEvent(new Event('azkar-progress-changed'))
                   await alert({ message: 'تم مسح تقدم اليوم.' })
                 } else {
                   await alert({ message: 'تعذر مسح تقدم اليوم.' })
