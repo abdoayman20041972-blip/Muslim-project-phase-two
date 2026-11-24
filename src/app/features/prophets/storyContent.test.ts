@@ -6,12 +6,22 @@ import { storyAyahReference, storySurahs } from './StoryBody'
 
 const q = quran as Record<string, Array<{ numberInSurah: number; text: string }>>
 
+// Prophets with the least source material in the Quran (a few ayahs only).
+const SCARCE_SOURCE = new Set(['idris', 'dhu-al-kifl', 'al-yasa'])
+
 describe('detailed prophet stories', () => {
   for (const [id, content] of Object.entries(DETAILED_STORIES)) {
     describe(id, () => {
       it('has every verse range inside its surah, in order within a scene', () => {
         const all = [...(content.intro?.v ?? []), ...content.scenes.flatMap((s) => s.v)]
-        expect(all.reduce((n, [, a, b]) => n + (b - a + 1), 0)).toBeGreaterThanOrEqual(4)
+        if (SCARCE_SOURCE.has(id)) {
+          // The Quran says very little about these prophets. They are kept short on purpose
+          // instead of repeating the same passage: the rule is unique ayahs, not ranges.
+          const unique = new Set(all.flatMap(([s, a, b]) => Array.from({ length: b - a + 1 }, (_, i) => `${s}:${a + i}`)))
+          expect(unique.size).toBeGreaterThanOrEqual(4)
+        } else {
+          expect(all.length).toBeGreaterThan(5)
+        }
         for (const [s, a, b] of all) {
           expect(q[String(s)]).toBeTruthy()
           expect(a).toBeGreaterThanOrEqual(1)
