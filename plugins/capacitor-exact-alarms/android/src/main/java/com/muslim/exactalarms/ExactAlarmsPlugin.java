@@ -5,6 +5,8 @@ import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.PowerManager;
+import androidx.core.app.NotificationManagerCompat;
 import android.os.Bundle;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -20,12 +22,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Arms notifications with {@link AlarmManager#setAlarmClock} — the only alarm
- * API Android never defers: the system treats these as the user's own alarm
- * clocks and leaves Doze/Battery Saver to deliver them at the exact instant.
- * (The stock @capacitor/local-notifications plugin uses
- * setExactAndAllowWhileIdle, which Battery Saver and OEM battery managers
- * still postpone — the reason adhan notifications used to arrive late.)
+ * Arms notifications with {@link AlarmManager#setAlarmClock}. Android's
+ * documentation says alarms set this way keep firing in Doze (the system exits
+ * Doze shortly before them) and that revoking the exact-alarm permission
+ * deletes them. Vendor battery managers are outside that documentation and can
+ * still stop an app's alarms, which is why the fire log below exists.
  *
  * Notification channels, the POST_NOTIFICATIONS permission and tap actions
  * remain owned by @capacitor/local-notifications; this plugin only owns TIME.
@@ -100,6 +101,8 @@ public class ExactAlarmsPlugin extends Plugin {
             }
         }
         storage.save(stored);
+        storage.setPlanTimeZoneId(java.util.TimeZone.getDefault().getID());
+        storage.setNeedsReplan(false);
 
         int armed = 0;
         for (AlarmEntry entry : stored) {
@@ -203,6 +206,47 @@ public class ExactAlarmsPlugin extends Plugin {
         }
         JSObject result = new JSObject();
         result.put("exactAlarm", exact ? "granted" : "denied");
+        call.resolve(result);
+    }
+
+    /** The native receivers' own record of fired alarms and clock/boot events, newest last. */
+    @PluginMethod
+    public void fireLog(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("items", new FireLog(getContext()).read());
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void clearFireLog(PluginCall call) {
+        new FireLog(getContext()).clear();
+        call.resolve();
+    }
+
+    /**
+     * Facts the native side can read without the WebView: whether the OS lets
+     * the app skip battery optimization, whether notifications are enabled at
+     * all, and whether a timezone change left the plan needing a rebuild.
+     */
+    @PluginMethod
+    public void status(PluginCall call) {
+        Context context = getContext();
+        boolean ignoring = false;
+        try {
+            PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (power != null) {
+                ignoring = power.isIgnoringBatteryOptimizations(context.getPackageName());
+            }
+        } catch (RuntimeException unavailable) {
+            // Leave false: the UI then only suggests checking the setting.
+        }
+        boolean enabled = NotificationManagerCompat.from(context).areNotificationsEnabled();
+        AlarmStorage storage = new AlarmStorage(context);
+        JSObject result = new JSObject();
+        result.put("ignoringBatteryOptimizations", ignoring);
+        result.put("notificationsEnabled", enabled);
+        result.put("needsReplan", storage.needsReplan());
+        result.put("storedAlarms", storage.list().size());
         call.resolve(result);
     }
 
