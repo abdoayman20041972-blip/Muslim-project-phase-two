@@ -9,21 +9,16 @@ import java.util.concurrent.Executors;
 /**
  * setAlarmClock alarms do not survive a reboot, so after BOOT_COMPLETED (and
  * the vendor QUICKBOOT variant) every stored alarm inside the 48-hour armed
- * window is re-armed — without the WebView, straight from this receiver.
+ * window is re-armed, without the WebView, straight from this receiver.
  * (The app's own re-arm on open remains the primary path.)
  *
- * v1.2.7 additions:
- *   - MY_PACKAGE_REPLACED: right after an app update the freshly created
- *     process has not run yet; re-arming here guarantees no prayer is missed
- *     between the update and the next time the app is opened.
- *   - TIME_CHANGED / TIMEZONE_CHANGED: every stored instant is absolute epoch
- *     time. After a manual clock change or a timezone change the whole plan is
- *     wrong, so the alarms are cancelled and the storage wiped rather than
- *     firing at wrong times; the next app open rebuilds the plan from settings.
- *   - goAsync() + a background thread: arming alarms is binder work, and a
- *     receiver that blocks the main thread at boot gets killed (ANR) — which
- *     used to mean NO notifications at all after a reboot on slow phones,
- *     because the old code re-armed all ~420 alarms synchronously.
+ * Other triggers: MY_PACKAGE_REPLACED re-arms right after an update. TIME_SET
+ * and TIMEZONE_CHANGED keep the plan; {@link ClockSync} converts fixed
+ * local-clock reminders only if the zone really changed (see its comment).
+ * Earlier builds cleared the whole plan on either broadcast, which left no
+ * notifications at all until the app was opened.
+ * goAsync() + a background thread: arming alarms is binder work, and a
+ * receiver that blocks the main thread at boot can be killed (ANR).
  */
 public class BootReceiver extends BroadcastReceiver {
 
@@ -35,22 +30,26 @@ public class BootReceiver extends BroadcastReceiver {
         boolean boot = Intent.ACTION_BOOT_COMPLETED.equals(action)
             || "android.intent.action.QUICKBOOT_POWERON".equals(action);
         boolean replaced = Intent.ACTION_MY_PACKAGE_REPLACED.equals(action);
-        boolean clockChanged = Intent.ACTION_TIME_CHANGED.equals(action)
-            || Intent.ACTION_TIMEZONE_CHANGED.equals(action);
-        if (!boot && !replaced && !clockChanged) return;
+        boolean timeSet = Intent.ACTION_TIME_CHANGED.equals(action);
+        boolean zoneChanged = Intent.ACTION_TIMEZONE_CHANGED.equals(action);
+        if (!boot && !replaced && !timeSet && !zoneChanged) return;
 
         final PendingResult result = goAsync();
         EXECUTOR.execute(() -> {
+            FireLog log = new FireLog(context);
             try {
                 AlarmStorage storage = new AlarmStorage(context);
-                if (clockChanged) {
-                    AlarmScheduler.cancelAll(context, storage.listIds());
-                    storage.clear();
-                    return;
+                boolean changed = ClockSync.reconcile(context, storage, log);
+                if (!changed) {
+                    if (boot) log.add(0, "", 0L, "boot", "re-armed from stored plan");
+                    else if (replaced) log.add(0, "", 0L, "package_replaced", "re-armed from stored plan");
+                    else if (timeSet) log.add(0, "", 0L, "time_set", "clock changed or synced, plan kept");
+                    else log.add(0, "", 0L, "timezone_event", "broadcast received, zone unchanged, plan kept");
                 }
-                long now = System.currentTimeMillis();
-                storage.pruneBefore(now - 24L * 3600_000);
+                storage.pruneBefore(System.currentTimeMillis() - 24L * 3600_000);
                 AlarmScheduler.armWindow(context, storage.list(), AlarmScheduler.ARM_WINDOW_MS);
+            } catch (RuntimeException unexpected) {
+                log.add(0, "", 0L, "error", String.valueOf(unexpected.getMessage()));
             } finally {
                 result.finish();
             }
