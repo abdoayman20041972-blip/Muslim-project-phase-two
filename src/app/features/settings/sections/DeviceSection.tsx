@@ -5,13 +5,13 @@ import { openSystemSettings } from '../../permissions/systemSettings'
 import { Geolocation } from '@capacitor/geolocation'
 import { acquireLocation, isLocationPermissionGranted, locationFailureMessage } from '../../location/acquireLocation'
 import { saveCoords } from '../../location/coords'
-import { LocalNotifications } from '@capacitor/local-notifications'
 import { Row, Section } from '../settingsPrimitives'
 
 // Device permissions: lets the user review and re-request the native
-// permissions the app depends on (notifications, location, motion/compass).
+// permissions the app depends on (location, motion/compass). Notification
+// permission, exact alarms, battery and delivery checks live together in the
+// notifications section, not here.
 export function DeviceSection() {
-  const [notifState, setNotifState] = useState<string>('')
   const [locState, setLocState] = useState<string>('')
   const [locMessage, setLocMessage] = useState('')
   const [busy, setBusy] = useState<string>('')
@@ -19,11 +19,6 @@ export function DeviceSection() {
   useEffect(() => {
     const load = async () => {
       if (Capacitor.isNativePlatform()) {
-        try {
-          setNotifState((await LocalNotifications.checkPermissions()).display)
-        } catch {
-          setNotifState('unknown')
-        }
         try {
           {
           const permission = await Geolocation.checkPermissions()
@@ -33,7 +28,6 @@ export function DeviceSection() {
           setLocState('unknown')
         }
       } else {
-        setNotifState(typeof Notification !== 'undefined' ? Notification.permission : 'unknown')
         setLocState('geolocation' in navigator ? 'prompt' : 'unavailable')
       }
     }
@@ -58,14 +52,6 @@ export function DeviceSection() {
 
   return (
     <Section title="الأذونات والجهاز">
-      <Row title="إشعارات التطبيق" description="لتنبيهات الصلاة والأذكار والتنبيهات اليومية.">
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-[0.5625rem] text-azkar-ink-soft">{label(notifState)}</span>
-          {notifState !== 'granted' && (
-            <span className="max-w-[9rem] text-left text-[0.5625rem] text-azkar-ink-soft">يُطلب ويُدار من «الإشعارات»</span>
-          )}
-        </div>
-      </Row>
       <Row title="الموقع" description="لحساب مواقيت الصلاة واتجاه القبلة تلقائيًا.">
         <div className="flex flex-col items-end gap-1">
           <span className="max-w-[12rem] text-left text-[0.5625rem] text-azkar-ink-soft">{locMessage || label(locState)}</span>
