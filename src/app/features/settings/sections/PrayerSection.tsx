@@ -33,7 +33,7 @@ export function PrayerSection({
           labels={{ '24': '٢٤ ساعة', '12': '١٢ ساعة' }} />
       </Row>
       <Row title="إعدادات الإشعارات" description="يمكنك التحكم في تذكير الصلاة والتذكير قبلها من خانة الإشعارات في الإعدادات." last>
-        <span className="text-[0.625rem] text-azkar-ink-soft">منفصلة عن مواقيت الصلاة</span>
+        <span className="text-[0.6875rem] text-azkar-ink-soft">منفصلة عن مواقيت الصلاة</span>
       </Row>
     </Section>
   )
