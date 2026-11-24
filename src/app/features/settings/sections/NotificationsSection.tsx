@@ -156,7 +156,7 @@ export function NotificationsSection({
           current={adhanSound}
           onChange={(v) => {
             setAdhanSound(v as typeof adhanSound)
-            writeSetting('adhan_sound', v)
+            writeSetting(APP_SETTINGS_KEYS.adhanSound, v)
             emitSettingsChanged()
           }}
           labels={{ adhan: 'صوت الأذان', default: 'نغمة النظام', silent: 'صامت' }}
