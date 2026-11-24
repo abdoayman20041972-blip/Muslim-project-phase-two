@@ -61,6 +61,14 @@ export function readAdhanSoundMode(): AdhanSoundMode {
   return v === 'default' || v === 'silent' ? v : 'adhan'
 }
 
+const KNOWN_PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']
+/** Prayers the user switched off, stored as a comma list; unknown names are ignored. */
+export function readMutedPrayers(): string[] {
+  return readSetting(APP_SETTINGS_KEYS.mutedPrayers, '')
+    .split(',')
+    .filter((name) => KNOWN_PRAYERS.includes(name))
+}
+
 const LEGACY_CHANNELS = ['muslim-adhan', 'muslim-prayer', 'muslim-reminders']
 const PRAYER_CHANNEL = 'muslim-prayer-v2'
 const REMINDER_CHANNEL = 'muslim-reminders-v2'
@@ -255,6 +263,9 @@ async function run(force: boolean) {
   const morningEnabled = readSetting(APP_SETTINGS_KEYS.azkarMorning, '0') === '1'
   const eveningEnabled = readSetting(APP_SETTINGS_KEYS.azkarEvening, '0') === '1'
   const quranTime = readSetting(APP_SETTINGS_KEYS.quranReminderTime, '20:00')
+  const kahfEnabled = readSetting(APP_SETTINGS_KEYS.kahfReminder, '0') === '1'
+  const kahfTime = readSetting(APP_SETTINGS_KEYS.kahfReminderTime, '10:00')
+  const mutedPrayers = readMutedPrayers()
   const lead = Number(readSetting(APP_SETTINGS_KEYS.prayerReminderLead, '5')) || 5
   const sound = readAdhanSoundMode()
   const coords = readPrayerCoords()
@@ -282,6 +293,9 @@ async function run(force: boolean) {
     quranTime,
     morningEnabled,
     eveningEnabled,
+    kahfEnabled,
+    kahfTime,
+    mutedPrayers.join(','),
     lead,
     sound,
     dateKey(now),
@@ -321,6 +335,9 @@ async function run(force: boolean) {
       quranTime,
       morningEnabled,
       eveningEnabled,
+      kahfEnabled,
+      kahfTime,
+      mutedPrayers,
       lead,
       channels: { adhan: adhanChannelId(sound), prayer: PRAYER_CHANNEL, reminder: REMINDER_CHANNEL },
     }),
