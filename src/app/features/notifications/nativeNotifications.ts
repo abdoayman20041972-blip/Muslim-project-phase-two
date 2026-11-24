@@ -303,6 +303,38 @@ function cachePrayerEntries(entries: PlannedNotification[]) {
 }
 
 const prayerKindOf = (id: number) => Math.floor((id - ID_BASE) / 1000)
+const prayerSlotOf = (id: number) => (id - ID_BASE) % 10
+const prayerDayOf = (id: number) => Math.floor(((id - ID_BASE) % 1000) / 10)
+
+/** Ids/at from the cache or the native pending list must pass sanity bounds. */
+const isValidPrayerRef = (id: unknown, at: unknown): id is number =>
+  typeof id === 'number' && Number.isInteger(id) && id >= ID_BASE && id < ID_BASE + ID_RANGE &&
+  isPrayerId(id) && prayerSlotOf(id) < PRAYERS.length &&
+  typeof at === 'number' && Number.isFinite(at)
+
+/**
+ * Brings carried entries in line with the CURRENT settings: the adhan channel
+ * follows the current sound mode (a user who picked silent must not hear a
+ * cached audible adhan), and the pre-reminder is re-derived from its adhan
+ * anchor with the current lead when that anchor is recoverable. Without an
+ * anchor the armed instant is kept and the body quotes no count.
+ */
+function normalizeCarried(entries: PlannedNotification[], lead: number, sound: AdhanSoundMode): PlannedNotification[] {
+  const anchors = new Map<string, number>()
+  for (const entry of entries) {
+    if (prayerKindOf(entry.id) === KIND.at) anchors.set(prayerDayOf(entry.id) + ':' + prayerSlotOf(entry.id), entry.at.getTime())
+  }
+  return entries.map((entry) => {
+    if (prayerKindOf(entry.id) === KIND.at) {
+      return { ...entry, channel: adhanChannelId(sound), body: 'حي على الصلاة، حي على الفلاح' }
+    }
+    const anchor = anchors.get(prayerDayOf(entry.id) + ':' + prayerSlotOf(entry.id))
+    if (anchor !== undefined) {
+      return { ...entry, at: new Date(anchor - lead * 60_000), body: 'تبقى ' + lead + (lead <= 10 ? ' دقائق' : ' دقيقة') + ' على الأذان', ttl: Math.max(TTL.before, lead * 60_000) }
+    }
+    return { ...entry, body: 'استعد للصلاة.' }
+  })
+}
 const isPrayerId = (id: number) => prayerKindOf(id) === KIND.at || prayerKindOf(id) === KIND.before
 
 /** Rebuilds a full plan entry from a still-armed native alarm (id/at/title only). */
@@ -323,14 +355,10 @@ function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[], at
     const muted = new Set(mutedPrayers)
     const parsed = JSON.parse(raw) as Array<Omit<PlannedNotification, 'at'> & { at: number }>
     return parsed
-      .filter((entry) => entry.at > nowMs)
+      .filter((entry) => isValidPrayerRef(entry.id, entry.at) && entry.at > nowMs)
       // Only the kinds the user still has on may come back.
       .filter((entry) => (prayerKindOf(entry.id) === KIND.at ? atTimeEnabled : beforeEnabled))
-      .filter((entry) => {
-        // makeId: BASE + kind * 1000 + dayIndex * 10 + slot, slot = PRAYERS index
-        const slot = (entry.id - ID_BASE) % 10
-        return !(slot >= 0 && slot < PRAYERS.length && muted.has(PRAYERS[slot]))
-      })
+      .filter((entry) => !muted.has(PRAYERS[prayerSlotOf(entry.id)] ?? ''))
       .map((entry) => ({ ...entry, at: new Date(entry.at) }))
   } catch (error) {
     console.debug('[notifications] prayer plan cache unreadable', error)
@@ -463,12 +491,13 @@ async function run(force: boolean, askPermission: boolean) {
     }
     const mutedSet = new Set(mutedPrayers)
     const reconstructed = (pendingNow?.items ?? [])
-      .filter((item) => isPrayerId(item.id) && item.at > nowMs && !carriedIds.has(item.id))
+      .filter((item) => isValidPrayerRef(item.id, item.at) && item.at > nowMs && !carriedIds.has(item.id))
       // Only the kinds the user still has on may come back.
       .filter((item) => (prayerKindOf(item.id) === KIND.at ? atTimeEnabled : beforeEnabled))
-      .filter((item) => !mutedSet.has(PRAYERS[(item.id - ID_BASE) % 10] ?? ''))
+      .filter((item) => !mutedSet.has(PRAYERS[prayerSlotOf(item.id)] ?? ''))
       .map((item) => reconstructPrayerEntry(item, lead, sound))
-    entries = [...carried, ...withTimeInBody(reconstructed), ...planned]
+    const merged = normalizeCarried([...carried, ...reconstructed], lead, sound).filter((entry) => entry.at.getTime() > nowMs)
+    entries = [...withTimeInBody(merged), ...planned]
   }
 
   await cancelLegacyStockAlarms()
