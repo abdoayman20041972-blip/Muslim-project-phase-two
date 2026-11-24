@@ -3,6 +3,7 @@ import { Toggle } from '../../../components/app-chrome'
 import { useConfirmDialog } from '../../../components/confirm-dialog'
 import { APP_SETTINGS_KEYS, emitSettingsChanged } from '../../../settings'
 import { clearAzkarProgressDay } from '../../azkar/azkarProgress'
+import { clearAllJourneyPositions } from '../../azkar/journeyPosition'
 import { Row, Section } from '../settingsPrimitives'
 
 type AzkarSectionProps = {
@@ -103,6 +104,7 @@ export function AzkarSection({
               onClick={async () => {
                 if (!(await confirm({ message: 'مسح تقدم أذكار اليوم؟', danger: true }))) return
                 if (clearAzkarProgressDay()) {
+                  clearAllJourneyPositions()
                   emitSettingsChanged()
                   window.dispatchEvent(new Event('azkar-progress-changed'))
                   await alert({ message: 'تم مسح تقدم اليوم.' })
