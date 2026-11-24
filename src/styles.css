@@ -1772,3 +1772,25 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 /* Phase 5: visual distinction between counted dhikr and non-counted cards. */
 .azkar-fadl-card{background:linear-gradient(160deg,hsl(var(--azkar-gold-tint)/.55),hsl(var(--azkar-card)) 60%);border-inline-start:3px solid hsl(var(--azkar-gold)/.55)}
 .azkar-guidance-card{background:hsl(var(--azkar-teal-tint)/.35);border-inline-start:3px solid hsl(var(--azkar-teal)/.4)}
+
+.home-reference-ayah .home-ayah-ornament{top:.7rem;transform:rotate(180deg);font-size:1.7rem}
+
+/* Home v4: photographic prayer card, progress cards, "other sections". Colors reuse the existing app palette. */
+.home-v4{background:linear-gradient(180deg,#f4f0e6 0%,#ebe7dc 100%)}
+.dark .home-v4{background:linear-gradient(180deg,#0d211c 0%,#091713 100%)}
+.home-v4-round{display:flex;height:2.75rem;width:2.75rem;align-items:center;justify-content:center;border-radius:999px;background:rgba(255,255,255,.88);color:#173c35;box-shadow:0 6px 16px rgba(18,48,40,.14)}
+.dark .home-v4-round{background:rgba(20,39,34,.91);color:#e9eee7}
+.home-prayer-photo{position:relative;overflow:hidden;border-radius:1.6rem;min-height:15rem;background:#0b1815;color:#fff;box-shadow:0 14px 32px rgba(12,48,40,.22);display:flex;flex-direction:column;justify-content:space-between}
+.home-prayer-photo-img{position:absolute;inset:0;background-size:cover;background-position:center}
+.home-prayer-photo-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,22,18,.55) 0%,rgba(7,22,18,.12) 40%,rgba(7,22,18,.62) 78%,rgba(7,22,18,.82) 100%)}
+.home-tile-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(0,0,0,.26) 0%,rgba(0,0,0,.12) 45%,rgba(0,0,0,0) 75%)}
+.home-v4 .home-prayer-photo{text-shadow:0 1px 3px rgba(0,0,0,.55)}
+.home-prayer-chips{background:rgba(5,16,14,.62);backdrop-filter:blur(6px)}
+.home-prayer-chip-active{background:#fff;color:#173c35;box-shadow:inset 0 0 0 1px rgba(233,200,117,.5)}
+.home-progress-card{background:rgba(255,255,255,.64);box-shadow:0 7px 18px rgba(30,54,46,.07);min-height:7.2rem}
+.dark .home-progress-card{background:rgba(24,43,37,.72);border-color:rgba(255,255,255,.08)}
+.home-progress-ring{display:block;height:2.6rem;width:2.6rem;border-radius:999px;background:conic-gradient(rgba(233,200,117,1) var(--pct,0%),rgba(233,200,117,.28) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px))}
+.home-progress-icon{height:2.6rem;width:2.6rem;color:#76a493}
+.home-more-link{background:rgba(255,255,255,.64);border:1px solid rgba(255,255,255,.6)}
+.dark .home-more-link{background:rgba(24,43,37,.72);border-color:rgba(255,255,255,.08)}
+.home-v4 .home-reference-ayah{margin-top:0}
