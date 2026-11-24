@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { magneticDeclination } from './declination'
 import {
   createHeadingFilter,
@@ -22,10 +23,6 @@ export function qiblaBearing(lat: number, lng: number) {
     Math.cos(rad(lat)) * Math.sin(rad(KAABA.lat)) -
     Math.sin(rad(lat)) * Math.cos(rad(KAABA.lat)) * Math.cos(dl)
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360
-}
-
-export function angularDiff(a: number, b: number) {
-  return ((a - b + 540) % 360) - 180
 }
 
 export function dialLabelAngle(cardinalDeg: number, heading: number | null) {
@@ -62,6 +59,21 @@ const STATUS_TEXT_NATIVE: Partial<Record<Status, string>> = {
 
 const TICKS = Array.from({ length: 72 }, (_, i) => i * 5)
 const RIVETS = [0, 45, 90, 135, 180, 225, 270, 315]
+// Arabic cardinal abbreviations: ش شمال 0°, ق شرق 90° (ش taken by شمال), ج جنوب 180°, غ غرب 270°.
+const CARDINALS: { deg: number; label: string }[] = [
+  { deg: 0, label: 'ش' },
+  { deg: 90, label: 'ق' },
+  { deg: 180, label: 'ج' },
+  { deg: 270, label: 'غ' },
+]
+
+// Jitter detection on the Android Euler path: the residual left after removing
+// the consistent-rotation part of the raw heading stream. A smooth deliberate
+// turn cancels out; sensor noise (rapid sign flips) does not.
+const JITTER_WINDOW_MS = 2500
+const JITTER_MIN_SAMPLES = 12
+const JITTER_ON_DEG = 6
+const JITTER_OFF_DEG = 3
 
 export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } }) {
   const [heading, setHeading] = useState<number | null>(null)
@@ -69,8 +81,14 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const [lowAccuracy, setLowAccuracy] = useState(false)
   const [invalidPose, setInvalidPose] = useState(false)
   const [declinationUnknown, setDeclinationUnknown] = useState(false)
+  const [fluctuating, setFluctuating] = useState(false)
+  const [calibrationHint, setCalibrationHint] = useState(false)
+  const [alignedAnnounce, setAlignedAnnounce] = useState('')
   const stopRef = useRef<(() => void) | null>(null)
   const filterRef = useRef(createHeadingFilter(140))
+  const jitterRef = useRef<{ t: number; h: number }[]>([])
+  const calibrationTimerRef = useRef(0)
+  const alignedRef = useRef(false)
 
   const bearing = qiblaBearing(coords.lat, coords.lng)
   // Magnetic declination at the user's location (true = magnetic + declination).
@@ -93,9 +111,11 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     stop()
     const filter = filterRef.current
     filter.reset()
+    jitterRef.current = []
     setHeading(null)
     setInvalidPose(false)
     setDeclinationUnknown(false)
+    setFluctuating(false)
     setStatus('waiting')
 
     let raf = 0
@@ -158,6 +178,26 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       }
       nullStreak = 0
       setInvalidPose(false)
+
+      // Android accuracy alert: flag a wildly oscillating raw stream so the user
+      // calibrates instead of trusting a trembling needle.
+      const now = performance.now()
+      const buf = jitterRef.current
+      buf.push({ t: now, h })
+      while (buf.length > 40 || (buf.length > 1 && now - buf[0].t > JITTER_WINDOW_MS)) buf.shift()
+      if (buf.length >= JITTER_MIN_SAMPLES) {
+        let sumAbs = 0
+        let sum = 0
+        for (let i = 1; i < buf.length; i++) {
+          const d = shortestDelta(buf[i].h, buf[i - 1].h)
+          sumAbs += Math.abs(d)
+          sum += d
+        }
+        const n = buf.length - 1
+        const jitter = sumAbs / n - Math.abs(sum / n)
+        setFluctuating((prev) => (jitter > JITTER_ON_DEG ? true : jitter < JITTER_OFF_DEG ? false : prev))
+      }
+
       publish(h)
     }
 
@@ -221,12 +261,17 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       start()
     }
     return () => {
+      window.clearTimeout(calibrationTimerRef.current)
       stop()
     }
   }, [start, stop])
 
   const onCalibrate = () => {
-    // The OS owns magnetometer calibration; this just restarts the reading.
+    // The OS owns magnetometer calibration; this restarts the reading and
+    // shows the figure-eight guidance while the sensor settles again.
+    setCalibrationHint(true)
+    window.clearTimeout(calibrationTimerRef.current)
+    calibrationTimerRef.current = window.setTimeout(() => setCalibrationHint(false), 8000)
     void enable()
   }
 
@@ -234,15 +279,39 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const rotation = active ? needleRotation(bearing, heading) : 0
   const aligned = active && Math.abs(shortestDelta(bearing, normalize360(heading))) <= 4
 
+  // Accessibility + haptics on alignment: announce entering the qibla direction
+  // once per entry, and give a short vibration only when the app's vibration
+  // setting (shared with the tasbih) is on.
+  useEffect(() => {
+    if (aligned === alignedRef.current) return
+    alignedRef.current = aligned
+    setAlignedAnnounce(aligned ? 'أنت الآن باتجاه القبلة' : '')
+    if (
+      aligned &&
+      readSetting(APP_SETTINGS_KEYS.vibration, '1') !== '0' &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function'
+    ) {
+      navigator.vibrate([10, 18, 10])
+    }
+  }, [aligned])
+
   const statusText = Capacitor.isNativePlatform() ? STATUS_TEXT_NATIVE : STATUS_TEXT_WEB
   let message = statusText[status] ?? ''
   if (declinationUnknown) message = 'لا يمكن حساب اتجاه القبلة بدقة في موقعك الحالي'
   else if (status === 'active' && invalidPose) message = 'الهاتف مقلوب على وجهه أو في وضع لا تظهر فيه الشاشة، أدره حتى تتضح القراءة'
+  else if (status === 'active' && calibrationHint) message = 'حرّك الهاتف في الهواء على شكل الرقم 8 عدة مرات لمعايرة البوصلة'
+  else if (status === 'active' && fluctuating) message = 'قراءات البوصلة غير مستقرة، ابتعد عن المعادن والمغناطيس وعاير الهاتف بتحريكه على شكل الرقم 8'
   else if (status === 'active' && lowAccuracy) message = 'دقة البوصلة منخفضة، ابتعد عن المعادن والمغناطيس'
+
+  const dialLabel =
+    heading === null
+      ? 'بوصلة القبلة'
+      : `بوصلة القبلة، اتجاهك الحالي ${Math.round(normalize360(heading))} درجة من الشمال، وزاوية القبلة ${Math.round(bearing)} درجة`
 
   return (
     <div className="q2-compass-shell">
-      <div className={'q2-dial' + (aligned ? ' is-aligned' : '')} role="img" aria-label="بوصلة القبلة">
+      <div className={'q2-dial' + (aligned ? ' is-aligned' : '')} role="img" aria-label={dialLabel}>
         <svg className="q2-dial-face" viewBox="0 0 240 240" aria-hidden="true">
           <defs>
             <linearGradient id="qd-brass" x1="0" y1="0" x2="1" y2="1">
@@ -300,6 +369,19 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
           <ellipse cx="120" cy="66" rx="78" ry="44" fill="url(#qd-glass)" />
         </svg>
 
+        <svg className="q2-cardinals" viewBox="0 0 240 240" aria-hidden="true">
+          {CARDINALS.map(({ deg, label }) => {
+            const a = dialLabelAngle(deg, heading)
+            return (
+              <g key={deg} transform={`rotate(${a} 120 120)`}>
+                <text x="120" y="46" className={'q2-cardinal' + (deg === 0 ? ' q2-cardinal-n' : '')} textAnchor="middle" dominantBaseline="central" transform={`rotate(${-a} 120 46)`}>
+                  {label}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+
         <div className={'q2-needle-layer' + (active ? ' is-on' : '')} style={{ transform: `rotate(${rotation}deg)` }} aria-hidden="true">
           <svg viewBox="0 0 240 240" className={'q2-needle' + (aligned ? ' is-aligned' : '')}>
             <defs>
@@ -324,7 +406,13 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         <span className="q2-hub" aria-hidden="true" />
       </div>
 
+      <p className="q2-bearing">
+        زاوية القبلة {Math.round(bearing)}° من الشمال
+        {heading !== null ? ` · اتجاهك ${Math.round(normalize360(heading))}°` : ''}
+      </p>
+
       <p className="q2-status" aria-live="polite">{message}</p>
+      <span className="q2-sr-only" role="status">{alignedAnnounce}</span>
 
       <button type="button" onClick={onCalibrate} aria-label={status === 'needs-permission' ? 'تفعيل البوصلة' : status === 'active' || status === 'waiting' ? 'معايرة البوصلة' : 'إعادة المحاولة'} className="q2-calibrate u-pressable">
         <RotateCcw className="h-4 w-4" aria-hidden="true" />
