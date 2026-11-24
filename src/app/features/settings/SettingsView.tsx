@@ -259,7 +259,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
           </button>
           <div>
             <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
-            <div className="text-[0.625rem] text-azkar-ink-faint">كل التفضيلات في مكان واحد</div>
+            <div className="text-[0.6875rem] text-azkar-ink-faint">كل التفضيلات في مكان واحد</div>
           </div>
         </div>
 
@@ -277,7 +277,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
                     <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
                   <b className="font-amiri text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
-                  <span className="text-[0.5625rem] leading-4 text-azkar-ink-soft">{d}</span>
+                  <span className="text-[0.6875rem] leading-4 text-azkar-ink-soft">{d}</span>
                 </button>
               ))}
             </div>
