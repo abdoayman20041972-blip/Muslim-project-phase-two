@@ -6,7 +6,7 @@ import { useConfirmDialog } from '../../components/confirm-dialog'
 import { favoriteKey, legacyFavoriteKey } from './useFavorites'
 import { toArabicDigits, toArabicNumber } from '../../constants'
 import { APP_SETTINGS_KEYS,emitSettingsChanged,readSetting,writeSetting } from '../../settings'
-import { AZKAR_PROGRESS_KEY, completedItemCount, completionPercent, saveAzkarProgress, todayKey, migrateLegacyProgress, isCountedZikr, countedItems } from './azkarProgress'
+import { AZKAR_PROGRESS_KEY, completedItemCount, completionPercent, readAzkarProgress, saveAzkarProgress, todayKey, migrateLegacyProgress, isCountedZikr, countedItems, isOccasionalCategory, readOccasionProgress, resetOccasionProgress, saveOccasionProgress } from './azkarProgress'
 import { AzkarJourney } from './AzkarJourney'
 import { parseReference } from './zikrReference'
 
@@ -33,7 +33,7 @@ function ShareIcon() {
   return <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="2.3" stroke="currentColor" strokeWidth="1.7"/><circle cx="6" cy="12" r="2.3" stroke="currentColor" strokeWidth="1.7"/><circle cx="18" cy="19" r="2.3" stroke="currentColor" strokeWidth="1.7"/><path d="m8 11 7.7-4.5M8 13l7.7 4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
 }
 
-const filterLabels: Record<Filter, string> = { all: 'الكل', incomplete: 'غير المكتمل اليوم', complete: 'المكتمل', favorites: 'المفضلة' }
+const filterLabelsFor = (occasional: boolean): Record<Filter, string> => ({ all: 'الكل', incomplete: occasional ? 'غير المكتمل' : 'غير المكتمل اليوم', complete: 'المكتمل', favorites: 'المفضلة' })
 const fadlOnlyFilters: Filter[] = ['all', 'favorites']
 
 function CornerOrnament() {
@@ -47,7 +47,14 @@ function CornerOrnament() {
 
 export function CategoryView({ category, favorites, onToggleFavorite, onBack, highlightItem }: Props) {
   const { confirm } = useConfirmDialog()
-  const [progress, setProgress] = useState<Record<string,number>>({})
+  const occasional = isOccasionalCategory(category.id)
+  const filterLabels = filterLabelsFor(occasional)
+  // Initialize from storage so the first paint shows saved progress (no zero flash).
+  const [progress, setProgress] = useState<Record<string,number>>(() => {
+    if (typeof localStorage === 'undefined') return {}
+    return occasional ? { ...readOccasionProgress(category.id).counts } : readAzkarProgress()
+  })
+  const [occasion, setOccasion] = useState(1)
   const [day, setDay] = useState(todayKey())
   const [dayChanged, setDayChanged] = useState(false)
   const [filter, setFilter] = useState<Filter>('all')
@@ -68,6 +75,13 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
   const loadCurrentDay = () => {
     const currentDay = todayKey()
     setDay(currentDay)
+    if (occasional) {
+      // Situational sections count per occasion, not per day, and stay out of the day log.
+      const state = readOccasionProgress(category.id)
+      setOccasion(state.occasion)
+      setProgress({ ...state.counts })
+      return
+    }
     try {
       migrateLegacyProgress()
       const stored = JSON.parse(localStorage.getItem(AZKAR_PROGRESS_KEY) || '{}') as { days?: Record<string, Record<string,number>> }
@@ -113,7 +127,8 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
 
   const saveProgress = (next: Record<string,number>) => {
     setProgress(next)
-    saveAzkarProgress(next, new Date())
+    if (occasional) saveOccasionProgress(category.id, { occasion, counts: next })
+    else saveAzkarProgress(next, new Date())
     window.dispatchEvent(new Event('azkar-progress-changed'))
   }
 
@@ -164,6 +179,14 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
     return true
   }), [category.items, category.id, progress, filter, favorites])
   const resetToday = async () => {
+    if (occasional) {
+      if (!(await confirm({ message: 'بدء موقف جديد؟ يُصفَّر عدّاد هذا القسم فقط.', danger: true }))) return
+      const nextOccasion = resetOccasionProgress(category.id)
+      setOccasion(nextOccasion.occasion)
+      setProgress({})
+      window.dispatchEvent(new Event('azkar-progress-changed'))
+      return
+    }
     if (!(await confirm({ message: 'مسح تقدم أذكار هذا القسم اليوم؟', danger: true }))) return
     // The confirmation promises to clear this section only, so remove just this category's keys.
     const next = { ...progress }
@@ -181,11 +204,11 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
 
     {dayChanged && <div role="status" className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-azkar-teal/15 bg-azkar-teal-tint px-3.5 py-2.5 text-[10px] text-azkar-teal-ink"><span>بدأ يوم جديد — تم عرض تقدم اليوم الجديد.</span><button onClick={() => setDayChanged(false)} className="font-bold underline underline-offset-2">إخفاء</button></div>}
 
-    {counterEnabled && countedTotal > 0 && <div className="mt-4 mb-4 rounded-[var(--r-lg)] border border-azkar-teal/15 bg-azkar-card p-4 u-shadow-1" aria-label="تقدم أذكار القسم اليوم">
+    {counterEnabled && countedTotal > 0 && <div className="mt-4 mb-4 rounded-[var(--r-lg)] border border-azkar-teal/15 bg-azkar-card p-4 u-shadow-1" aria-label={occasional ? 'تقدم أذكار الموقف الحالي' : 'تقدم أذكار القسم اليوم'}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[12px] font-bold text-azkar-ink">تقدم اليوم</div>
-          <div className="mt-0.5 text-[10px] text-azkar-ink-faint">{sectionComplete ? 'أكملت أذكار هذا القسم اليوم' : 'إكمال كل ذكر بالعدد المحدد يكمل القسم'}</div>
+          <div className="text-[12px] font-bold text-azkar-ink">{occasional ? 'تقدم الموقف الحالي' : 'تقدم اليوم'}</div>
+          <div className="mt-0.5 text-[10px] text-azkar-ink-faint">{sectionComplete ? (occasional ? 'أكملت أذكار هذا الموقف' : 'أكملت أذكار هذا القسم اليوم') : (occasional ? 'عدّاد لكل موقف ولا يُمسح يوميًا' : 'إكمال كل ذكر بالعدد المحدد يكمل القسم')}</div>
         </div>
         <div className="text-left" dir="rtl">
           <div className="text-[16px] font-bold text-azkar-teal-ink" aria-label={`${toArabicNumber(completedItems)} من ${toArabicNumber(countedTotal)} أذكار مكتملة`}>{toArabicNumber(completedItems)} <span className="text-[10px] text-azkar-ink-faint">/ {toArabicNumber(countedTotal)}</span></div>
@@ -197,7 +220,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="text-[9px] text-azkar-ink-faint">{toArabicNumber(countedTotal - completedItems)} متبقي</span>
-        <button onClick={resetToday} className="rounded-xl border border-red-200 px-3 py-2 text-[10px] font-bold text-red-600">مسح تقدم اليوم</button>
+        <button onClick={resetToday} className={occasional ? "rounded-xl border border-azkar-teal/25 bg-azkar-teal-tint px-3 py-2 text-[10px] font-bold text-azkar-teal-ink" : "rounded-xl border border-red-200 px-3 py-2 text-[10px] font-bold text-red-600"}>{occasional ? 'موقف جديد' : 'مسح تقدم اليوم'}</button>
       </div>
     </div>}
 
