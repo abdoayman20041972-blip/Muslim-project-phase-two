@@ -2,7 +2,7 @@ import { ArrowLeft, MapPin } from 'lucide-react'
 import { QiblaCompass } from './QiblaCompass'
 import { useLocationCoords } from '../location/coords'
 
-export function QiblaView({ onBack }: { onBack: () => void }) {
+export function QiblaView({ onBack, onOpenLocation }: { onBack: () => void; onOpenLocation: () => void }) {
   const coords = useLocationCoords()
 
   return (
@@ -28,6 +28,7 @@ export function QiblaView({ onBack }: { onBack: () => void }) {
         <div className="q2-empty">
           <MapPin className="h-6 w-6" />
           <span>حدد موقعك أولًا</span>
+          <button type="button" onClick={onOpenLocation} className="q2-empty-cta u-pressable">تحديد الموقع</button>
           <button type="button" onClick={onBack} aria-label="العودة" className="u-pressable">العودة</button>
         </div>
       )}
