@@ -24,7 +24,7 @@
   --azkar-bg: 100 12% 92%; --azkar-bg-alt: 100 10% 88%; --azkar-card: 60 25% 98%; --azkar-ink: 155 18% 14%; --azkar-ink-soft: 160 10% 34%; --azkar-teal: 164 32% 27%; --azkar-teal-deep: 165 34% 17%; --azkar-teal-ink: var(--azkar-teal-deep); --azkar-gold: 38 51% 48%; --azkar-gold-soft: 38 45% 71%; --azkar-gold-deep: 36 62% 34%; --azkar-ink-faint: 160 8% 52%; --azkar-surface-1: 60 25% 98%; --azkar-surface-2: 100 14% 95%; --azkar-hairline: 165 20% 17% / 0.09; --azkar-gold-tint: 38 55% 48% / 0.10; --azkar-teal-tint: 164 32% 27% / 0.08;
   --sp-1:.25rem;--sp-2:.5rem;--sp-3:.75rem;--sp-4:1rem;--sp-5:1.25rem;--sp-6:1.5rem;--sp-7:1.75rem;--sp-8:2rem;--sp-10:2.5rem;--sp-12:3rem;--r-sm:.75rem;--r-md:1.25rem;--r-lg:1.75rem;--r-full:999px;--shadow-1:0 1px 3px hsl(165 30% 15%/.05);--shadow-2:0 4px 14px hsl(165 30% 15%/.07);--shadow-3:0 10px 28px hsl(165 30% 15%/.10);
 }
-.dark {
+.dark{
   --background:0 0% 3.9%;--foreground:0 0% 98%;--card:0 0% 3.9%;--card-foreground:0 0% 98%;--popover:0 0% 3.9%;--popover-foreground:0 0% 63.9%;--primary:0 0% 98%;--primary-foreground:0 0% 9%;--secondary:0 0% 14.9%;--secondary-foreground:0 0% 98%;--muted:0 0% 63.9%;--muted-foreground:0 0% 63.9%;--accent:0 0% 14.9%;--accent-foreground:0 0% 98%;--destructive:0 62.8% 30.6%;--destructive-foreground:0 0% 98%;--border:0 0% 14.9%;--input:0 0% 14.9%;--ring:0 0% 83.1%;--azkar-bg:165 28% 9%;--azkar-bg-alt:165 24% 13%;--azkar-card:165 22% 15%;--azkar-ink:60 15% 93%;--azkar-ink-soft:100 8% 72%;--azkar-teal:164 30% 50%;--azkar-teal-deep:165 36% 34%;--azkar-teal-ink:164 30% 62%;--azkar-gold:38 58% 62%;--azkar-gold-soft:38 35% 38%;--azkar-gold-deep:36 70% 78%;--azkar-ink-faint:100 8% 55%;--azkar-surface-1:165 22% 15%;--azkar-surface-2:165 22% 18%;--azkar-hairline:60 15% 93%/.08;--azkar-gold-tint:38 58% 62%/.12;--azkar-teal-tint:164 30% 50%/.12;--shadow-1:0 1px 3px hsl(0 0% 0%/.2);--shadow-2:0 4px 14px hsl(0 0% 0%/.28);--shadow-3:0 10px 28px hsl(0 0% 0%/.36);
 }
 @theme inline {
@@ -292,8 +292,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 @media (prefers-reduced-motion:reduce){.muslim-splash-emblem::before{animation:none!important;opacity:.8}}
 
 /* Quran redesign — a calm, premium Mushaf experience. */
-.quran-list-redesign,
-.quran-reader-redesign{position:relative}
+.quran-list-redesign,.quran-reader-redesign{position:relative}
 .quran-list-redesign{padding-bottom:calc(5.4rem + env(safe-area-inset-bottom))}
 .quran-header-badge{display:flex;height:2.4rem;width:2.4rem;align-items:center;justify-content:center;border-radius:50%;color:hsl(var(--azkar-gold));background:hsl(var(--azkar-gold-tint));border:1px solid hsl(var(--azkar-gold-soft)/.6)}
 .quran-continue{position:relative;overflow:hidden;display:flex;width:100%;align-items:center;gap:.9rem;margin-bottom:.9rem;padding:.95rem 1.1rem;border-radius:1.4rem;color:hsl(60 25% 97%);border:1px solid hsl(var(--azkar-gold-soft)/.55);background:radial-gradient(circle at 12% 0%,hsl(var(--azkar-gold)/.22),transparent 45%),linear-gradient(135deg,hsl(165 38% 24%),hsl(165 40% 14%));box-shadow:0 10px 26px hsl(165 40% 10%/.22),inset 0 1px 0 hsl(0 0% 100%/.12);text-align:right;touch-action:manipulation}
@@ -530,8 +529,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 .quran-reading-active select{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
 }
-.quran-list-redesign .bg-azkar-teal-deep,
-.quran-reader-redesign .bg-azkar-teal-deep{
+.quran-list-redesign .bg-azkar-teal-deep,.quran-reader-redesign .bg-azkar-teal-deep{
   background:linear-gradient(135deg,#245f4e,#163f34)!important;
   box-shadow:0 10px 24px rgba(22,63,52,.15);
 }
@@ -652,11 +650,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
   .muslim-splash-footer{bottom:calc(.45rem + env(safe-area-inset-bottom));}
 }
 @media (prefers-reduced-motion:reduce){
-  .muslim-splash-emblem,.muslim-splash-copy,.muslim-splash-loader,.muslim-splash-dua,
-  .muslim-splash-ring,.muslim-splash-loader-track span,.muslim-splash-dua span,
-  .muslim-splash-star,.muslim-splash-orb,.muslim-splash-lantern,.muslim-splash-arch,
-  .muslim-splash-arch::after,.muslim-splash-emblem-core::before,.startup-loading-indicator,
-  .muslim-splash-emblem-image,.muslim-splash-emblem-fallback-svg{animation:none!important;}
+  .muslim-splash-emblem,.muslim-splash-copy,.muslim-splash-loader,.muslim-splash-dua,.muslim-splash-ring,.muslim-splash-loader-track span,.muslim-splash-dua span,.muslim-splash-star,.muslim-splash-orb,.muslim-splash-lantern,.muslim-splash-arch,.muslim-splash-arch::after,.muslim-splash-emblem-core::before,.startup-loading-indicator,.muslim-splash-emblem-image,.muslim-splash-emblem-fallback-svg{animation:none!important;}
   .muslim-splash-emblem,.muslim-splash-copy,.muslim-splash-loader,.muslim-splash-dua{opacity:1;transform:none;}
   .muslim-splash-loader-track span{transform:none;width:36%;}
   .muslim-splash-emblem-fallback-svg{transition:none;}
@@ -664,24 +658,6 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 
 /* Tasbih redesign */
 .tasbih-redesign{position:relative;padding:0 .1rem 1rem;color:hsl(var(--azkar-ink));}
-.tasbih-header{display:grid;grid-template-columns:2.75rem 1fr;align-items:center;gap:.65rem;margin-bottom:.8rem;min-height:3.35rem;}
-.tasbih-header>button:first-child{width:2.65rem;height:2.65rem;border-radius:50%;border:1px solid hsl(var(--azkar-gold)/.48)!important;background:transparent!important;color:hsl(var(--azkar-gold-deep))!important;box-shadow:none!important;}
-.tasbih-header-title{text-align:center;line-height:1;}
-.tasbih-header-subtitle{margin-top:.38rem;font-size:.62rem;color:hsl(var(--azkar-ink-faint));}
-.tasbih-micro-mark{font-size:.46rem;color:hsl(var(--azkar-gold));margin-bottom:.28rem;}
-.tasbih-icon-button{display:inline-flex;align-items:center;justify-content:center;width:2.65rem;height:2.65rem;border-radius:50%;border:1px solid hsl(var(--azkar-gold)/.48);background:transparent;color:hsl(var(--azkar-gold-deep));font-size:1.15rem;transition:transform .2s ease,background .2s ease;}
-.tasbih-icon-button:hover{background:hsl(var(--azkar-gold)/.08);transform:translateY(-1px);}
-.tasbih-icon-button:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:2px;}
-.tasbih-hero{position:relative;overflow:hidden;margin:0 -0.15rem;border:1px solid hsl(var(--azkar-gold)/.32);border-radius:2rem;padding:1.15rem .8rem 1rem;background:radial-gradient(circle at 50% 28%,hsl(var(--azkar-teal)/.28),transparent 42%),linear-gradient(150deg,hsl(var(--azkar-teal-deep)),hsl(165 28% 9%) 70%,hsl(160 31% 8%));box-shadow:0 18px 44px hsl(165 40% 10%/.16),inset 0 0 0 1px hsl(0 0% 100%/.025);}
-.tasbih-hero::before,.tasbih-hero::after{content:"";position:absolute;pointer-events:none;border:1px solid hsl(var(--azkar-gold)/.10);transform:rotate(45deg);}
-.tasbih-hero::before{width:10rem;height:10rem;top:-6rem;right:-5rem;box-shadow:0 0 0 1rem hsl(var(--azkar-gold)/.025),0 0 0 2rem hsl(var(--azkar-gold)/.02);}
-.tasbih-hero::after{width:8rem;height:8rem;bottom:-5rem;left:-4rem;}
-.tasbih-hero-glow{position:absolute;inset:12% 18% 20%;border-radius:50%;background:radial-gradient(circle,hsl(var(--azkar-gold)/.07),transparent 66%);filter:blur(10px);pointer-events:none;}
-.tasbih-hero-kicker{position:relative;text-align:center;color:hsl(42 50% 75%);font-size:.62rem;letter-spacing:.08em;opacity:.9;}
-.tasbih-word{position:relative;margin:.15rem 0 .15rem;text-align:center;font-family:Amiri,serif;font-size:1.55rem;font-weight:700;color:hsl(42 70% 88%);}
-.tasbih-divider{position:relative;display:flex;align-items:center;justify-content:center;gap:.55rem;margin:.25rem auto .15rem;width:7rem;color:hsl(var(--azkar-gold));font-size:.5rem;}
-.tasbih-divider::before,.tasbih-divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,hsl(var(--azkar-gold)/.55));}
-.tasbih-divider::after{transform:scaleX(-1);}
 .tasbih-bead-stage{position:relative;width:min(82vw,21rem);height:min(82vw,21rem);margin:1.25rem auto .65rem;display:grid;place-items:center;}
 .tasbih-outer-ring{position:absolute;inset:.45rem;border-radius:50%;border:1px solid hsl(var(--azkar-gold)/.17);box-shadow:0 0 0 1.15rem hsl(var(--azkar-gold)/.025),inset 0 0 1.8rem hsl(0 0% 0%/.14);}
 .tasbih-progress-ring{position:absolute;inset:2.05rem;border-radius:50%;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));filter:drop-shadow(0 0 4px hsl(var(--azkar-gold)/.16));transition:background .3s ease;z-index:1;pointer-events:none;}
@@ -698,44 +674,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 .tasbih-imam-bead{position:absolute;bottom:1.05rem;left:50%;width:1.7rem;height:1.7rem;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 35% 28%,hsl(42 86% 92%),hsl(var(--azkar-gold)) 55%,hsl(35 52% 31%));border:1px solid hsl(42 78% 85%);box-shadow:0 4px 10px hsl(0 0% 0%/.28),0 0 14px hsl(var(--azkar-gold)/.18);}
 .tasbih-tassel{position:absolute;bottom:-.45rem;left:50%;width:1.15rem;height:2.5rem;transform:translateX(-50%);border-radius:.3rem .3rem 1rem 1rem;background:repeating-linear-gradient(90deg,hsl(165 38% 15%) 0 .12rem,hsl(165 27% 27%) .12rem .2rem);box-shadow:0 6px 9px hsl(0 0% 0%/.24);clip-path:polygon(20% 0,80% 0,100% 100%,0 100%);}
 .tasbih-tassel span{position:absolute;top:-.38rem;left:50%;width:.5rem;height:.65rem;transform:translateX(-50%);border-radius:.15rem;background:hsl(var(--azkar-gold));}
-.tasbih-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin:1rem .55rem 0;border:1px solid hsl(var(--azkar-gold)/.28);border-radius:1.35rem;padding:.75rem .2rem;background:hsl(165 30% 8%/.58);}
-.tasbih-stat{display:flex;flex-direction:column;align-items:center;gap:.2rem;position:relative;min-width:0;}
-.tasbih-stat:not(:last-child)::after{content:"";position:absolute;right:0;top:12%;height:76%;width:1px;background:hsl(var(--azkar-gold)/.16);}
-.tasbih-stat-label{font-size:.58rem;color:hsl(42 20% 68%);}
-.tasbih-stat strong{font-family:Amiri,serif;font-size:1.28rem;line-height:1;color:hsl(42 72% 86%);}
-.tasbih-word-picker{margin:1rem .1rem 0;padding:.15rem 0;}
-.tasbih-section-label{margin-bottom:.45rem;padding-inline:.25rem;font-size:.62rem;color:hsl(var(--azkar-ink-faint));}
-.tasbih-word-scroller{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;padding:.15rem .1rem .35rem;}
-.tasbih-word-scroller::-webkit-scrollbar{display:none;}
-.tasbih-word-option{flex:none;min-height:2.5rem;padding:.35rem .95rem;border:1px solid hsl(var(--azkar-gold)/.28);border-radius:999px;background:transparent;color:hsl(var(--azkar-ink-soft));font-family:Amiri,serif;font-size:.83rem;white-space:nowrap;transition:color .2s ease,border-color .2s ease,background .2s ease;}
-.tasbih-word-option.is-active{color:hsl(var(--azkar-gold-deep));border-color:hsl(var(--azkar-gold)/.72);background:hsl(var(--azkar-gold)/.09);box-shadow:0 4px 14px hsl(var(--azkar-gold)/.07);}
-.tasbih-word-option:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:2px;}
-.tasbih-add-option{font-family:inherit;font-size:.68rem;}
-.tasbih-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin:.9rem .1rem .15rem;color:hsl(var(--azkar-ink-faint));font-size:.62rem;align-items:center;}
-.tasbih-action-button,.tasbih-inline-action{border:1px solid hsl(var(--azkar-gold)/.24);border-radius:999px;background:transparent;color:hsl(var(--azkar-ink-soft));padding:.58rem .7rem;font-size:.64rem;transition:background .2s ease,border-color .2s ease;min-width:0;}
-.tasbih-rounds-note{grid-column:1/-1;text-align:center;padding:.1rem .3rem 0;color:hsl(var(--azkar-ink-faint));}
-.tasbih-custom-add-button{width:100%;display:flex;align-items:center;justify-content:center;gap:.65rem;margin:.55rem .1rem 0;min-height:3rem;border:1px solid hsl(var(--azkar-gold)/.25);border-radius:1rem;background:linear-gradient(180deg,hsl(var(--azkar-teal)/.07),transparent);color:hsl(var(--azkar-teal-ink));font-family:Amiri,serif;font-size:.95rem;font-weight:700;transition:background .2s ease,border-color .2s ease,transform .15s ease;}
-.tasbih-custom-add-button span:first-child{display:grid;place-items:center;width:1.65rem;height:1.65rem;border-radius:50%;background:hsl(var(--azkar-gold)/.92);color:hsl(var(--azkar-teal-deep));font-family:inherit;font-size:1.25rem;line-height:1;}
-.tasbih-custom-add-button:hover{background:hsl(var(--azkar-gold)/.07);border-color:hsl(var(--azkar-gold)/.55);}
-.tasbih-custom-add-button:active{transform:scale(.99);}
-.tasbih-custom-add-button:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:2px;}
-.tasbih-action-button:hover,.tasbih-inline-action:hover{background:hsl(var(--azkar-gold)/.07);border-color:hsl(var(--azkar-gold)/.5);}
-.tasbih-action-button:focus-visible,.tasbih-inline-action:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:2px;}
-.tasbih-history,.tasbih-custom-section{margin-top:1rem;border:1px solid hsl(var(--azkar-gold)/.20);border-radius:1.4rem;background:hsl(var(--azkar-card)/.72);padding:.9rem;box-shadow:0 7px 22px hsl(165 30% 15%/.04);}
-.tasbih-section-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
-.tasbih-history-total{font-size:.62rem;color:hsl(var(--azkar-ink-faint));}
-.tasbih-chart{display:grid;grid-template-columns:repeat(7,1fr);align-items:end;gap:.5rem;margin-top:.8rem;min-height:7.2rem;}
-.tasbih-chart-day{display:flex;flex-direction:column;align-items:center;gap:.25rem;min-width:0;font-size:.52rem;color:hsl(var(--azkar-ink-faint));}
-.tasbih-chart-track{display:flex;align-items:flex-end;justify-content:center;width:100%;height:4.7rem;border-radius:999px;background:hsl(var(--azkar-teal)/.06);overflow:hidden;}
-.tasbih-chart-fill{width:55%;min-height:4px;border-radius:999px;background:hsl(var(--azkar-gold)/.58);transition:height .3s ease;}
-.tasbih-chart-fill.is-today{background:hsl(var(--azkar-gold));box-shadow:0 0 10px hsl(var(--azkar-gold)/.22);}
-.tasbih-custom-list{display:grid;gap:.45rem;margin-top:.7rem;}
-.tasbih-custom-row{display:flex;align-items:center;gap:.45rem;border-top:1px solid hsl(var(--azkar-gold)/.10);padding-top:.55rem;}
-.dark .tasbih-hero{background:radial-gradient(circle at 50% 28%,hsl(var(--azkar-teal)/.26),transparent 42%),linear-gradient(150deg,hsl(165 32% 11%),hsl(165 30% 7%) 72%,hsl(160 35% 6%));border-color:hsl(var(--azkar-gold)/.30);}
-.dark .tasbih-word-option,.dark .tasbih-action-button,.dark .tasbih-inline-action{color:hsl(var(--azkar-ink-soft));border-color:hsl(var(--azkar-gold)/.27);}
-.dark .tasbih-word-option.is-active{color:hsl(42 70% 84%);background:hsl(var(--azkar-gold)/.10);border-color:hsl(var(--azkar-gold)/.72);}
-.dark .tasbih-history,.dark .tasbih-custom-section{background:hsl(var(--azkar-card)/.72);border-color:hsl(var(--azkar-gold)/.18);}
-@media (max-width:380px){.tasbih-bead-stage{width:18rem;height:18rem}.tasbih-bead{width:1.28rem;height:1.28rem}.tasbih-count{font-size:2.35rem}.tasbih-stats{margin-inline:.2rem}.tasbih-word-option{padding-inline:.75rem;font-size:.78rem;}}
+@media (max-width:380px){.tasbih-bead-stage{width:18rem;height:18rem}.tasbih-bead{width:1.28rem;height:1.28rem}.tasbih-count{font-size:2.35rem}}
 @media (prefers-reduced-motion:reduce){.tasbih-bead,.tasbih-progress-ring,.tasbih-count-button{transition:none!important}.tasbih-count-button:active{transform:none;}}
 
 /* Adhkar home v2 reference-inspired design */\n/* Adhkar home — reference-inspired visual system */
@@ -1094,10 +1033,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tasbih-count-button:active{transform:scale(.965)!important;}
 .tasbih-count{font-size:2.55rem!important;}
 .tasbih-progress-copy{position:relative;display:flex;width:min(78%,18rem);justify-content:space-between;color:hsl(var(--azkar-ink-faint));font-size:.58rem;}
-.tasbih-compact-stats{position:relative;display:grid;width:min(92%,20rem);grid-template-columns:repeat(3,1fr);margin-top:.7rem;padding:.55rem .25rem;border-top:1px solid hsl(var(--azkar-teal)/.08);color:hsl(var(--azkar-ink-faint));text-align:center;font-size:.55rem;}
-.tasbih-compact-stats span{display:flex;flex-direction:column;gap:.12rem;}
-.tasbih-compact-stats b{font-family:Amiri,serif;font-size:.95rem;color:hsl(var(--azkar-teal-deep));}
-.tasbih-tap-hint{margin:.35rem 0 0;color:hsl(var(--azkar-ink-faint));font-size:.58rem;}
 .dark .tasbih-minimal-title .font-amiri{color:hsl(42 70% 88%);}
 .dark .tasbih-current-word,.dark .tasbih-word-menu{background:linear-gradient(145deg,hsl(var(--azkar-card)),hsl(var(--azkar-surface-2)));border-color:hsl(0 0% 100%/.08);}
 .dark .tasbih-current-word strong{color:hsl(42 70% 88%);}
@@ -1107,7 +1042,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
    specificity than the transparent redesign rule below, so dark mode kept
    painting a solid card over the night photo — exactly what users reported as
    «الكارد الذي يحجب الخلفية».) */
-.dark .tasbih-compact-stats b{color:hsl(42 70% 88%);}
 @media(max-width:380px){
   .tasbih-minimal{min-height:calc(100svh - 7rem);}
   .tasbih-minimal-title .font-amiri{font-size:1.55rem;}
@@ -1154,8 +1088,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   min-height:3.7rem;
   margin-bottom:.45rem;
 }
-.tasbih-minimal-header>button:first-child,
-.tasbih-settings-button{
+.tasbih-minimal-header>button:first-child{
   width:2.7rem!important;
   height:2.7rem!important;
   border:1px solid hsl(var(--azkar-teal)/.16)!important;
@@ -1163,22 +1096,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   color:hsl(var(--azkar-teal-deep))!important;
   box-shadow:0 7px 18px hsl(165 30% 15%/.08),inset 0 1px 0 hsl(0 0% 100%/.8)!important;
   backdrop-filter:blur(10px);
-}
-.tasbih-settings-button{
-  position:absolute;
-  inset-inline-end:0;
-  display:grid;
-  place-items:center;
-  border-radius:999px;
-}
-.tasbih-settings-button svg{
-  width:1.35rem;
-  height:1.35rem;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:1.55;
-  stroke-linecap:round;
-  stroke-linejoin:round;
 }
 .tasbih-minimal-title .font-amiri{
   font-size:1.9rem;
@@ -1240,8 +1157,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   height:min(92vw,23rem);
   margin:.15rem auto .45rem;
 }
-.tasbih-bead-stage::before,
-.tasbih-bead-stage::after{
+.tasbih-bead-stage::before,.tasbih-bead-stage::after{
   content:"";
   position:absolute;
   z-index:3;
@@ -1326,78 +1242,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   margin-inline-end:.7rem;
   color:hsl(var(--azkar-gold));
 }
-.tasbih-tap-hint{
-  margin-top:.35rem;
-  color:hsl(var(--azkar-teal-deep)/.72);
-  font-size:.6rem;
-  font-weight:700;
-}
-.tasbih-tap-hint span{
-  color:hsl(var(--azkar-gold-deep));
-  font-size:.55rem;
-}
 .tasbih-visible-actions{
   display:flex;
   justify-content:center;
   margin-top:.25rem;
 }
-.tasbih-reset-round{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:.4rem;
-  min-height:2.45rem;
-  padding:.45rem .9rem;
-  border:1px solid hsl(var(--azkar-gold)/.34);
-  border-radius:999px;
-  background:hsl(var(--azkar-card)/.76);
-  color:hsl(var(--azkar-teal-deep));
-  box-shadow:0 6px 16px hsl(165 30% 15%/.07),inset 0 1px 0 hsl(0 0% 100%/.72);
-  backdrop-filter:blur(8px);
-  font-size:.65rem;
-  font-weight:700;
-  transition:transform .16s ease,background .16s ease,border-color .16s ease;
-}
-.tasbih-reset-round span{
-  display:grid;
-  place-items:center;
-  width:1.2rem;
-  height:1.2rem;
-  border-radius:50%;
-  background:hsl(var(--azkar-gold)/.13);
-  color:hsl(var(--azkar-gold-deep));
-  font-size:.9rem;
-}
-.tasbih-reset-round:active{transform:scale(.97);}
-.tasbih-reset-round:hover{
-  background:hsl(var(--azkar-gold)/.1);
-  border-color:hsl(var(--azkar-gold)/.55);
-}
-.tasbih-reset-round:focus-visible{
-  outline:2px solid hsl(var(--azkar-gold));
-  outline-offset:2px;
-}
 
 /* Tasbih final visual pass: clear mosque photography + no pre-lit beads. */
-.tasbih-bead-stage::before,
-.tasbih-bead-stage::after{
+.tasbih-bead-stage::before,.tasbih-bead-stage::after{
   background:radial-gradient(circle at 30% 25%,hsl(165 40% 55%),hsl(165 34% 31%) 45%,hsl(165 35% 15%) 100%);
   border-color:hsl(var(--azkar-gold)/.22);
   box-shadow:inset 2px 2px 3px hsl(0 0% 100%/.22),inset -3px -4px 6px hsl(0 0% 0%/.24),0 3px 7px hsl(0 0% 0%/.16);
 }
-.tasbih-bead-stage::before,
-.tasbih-bead-stage::after{
+.tasbih-bead-stage::before,.tasbih-bead-stage::after{
   filter:none;
-}
-.dark .tasbih-reset-round{
-  background:hsl(220 24% 12%/.72);
-  color:hsl(42 76% 89%);
-  border-color:hsl(var(--azkar-gold)/.34);
 }
 .dark .tasbih-minimal-title .font-amiri{color:hsl(42 78% 91%);}
 .dark .tasbih-minimal-title span{color:hsl(42 30% 78%/.76);}
-.dark .tasbih-minimal-header>button:first-child,
-.dark .tasbih-settings-button{
+.dark .tasbih-minimal-header>button:first-child{
   background:hsl(220 24% 12%/.68)!important;
   border-color:hsl(var(--azkar-gold)/.3)!important;
   color:hsl(42 76% 88%)!important;
@@ -1411,7 +1273,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .dark .tasbih-current-word strong{color:hsl(42 76% 91%);}
 .dark .tasbih-counter-kicker{color:hsl(42 55% 82%/.7);}
 .dark .tasbih-session-meta{color:hsl(42 25% 76%/.7);}
-.dark .tasbih-tap-hint{color:hsl(42 45% 84%/.75);}
 @media(max-width:380px){
   .tasbih-minimal{margin-inline:-.2rem;padding-inline:.45rem;}
   .tasbih-minimal-title .font-amiri{font-size:1.7rem;}
@@ -1422,15 +1283,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 
 /* Final Tasbih geometry: prominent bead is #1. */
-.tasbih-bead-stage::before,
-.tasbih-bead-stage::after{
+.tasbih-bead-stage::before,.tasbih-bead-stage::after{
   display:none!important;
   content:none!important;
 }
+/* The locked base .tasbih-imam-bead rule below uses !important, so the lit
+   state must use !important too or the large bead can never appear lit. */
 .tasbih-imam-bead.is-lit{
-  background:radial-gradient(circle at 30% 20%,hsl(43 100% 98%),hsl(43 90% 82%) 25%,hsl(var(--azkar-gold)) 64%,hsl(36 58% 33%));
-  border-color:hsl(43 95% 88%);
-  box-shadow:0 0 0 3px hsl(var(--azkar-gold)/.09),0 0 18px hsl(var(--azkar-gold)/.34),inset 2px 2px 3px hsl(0 0% 100%/.58),inset -3px -4px 6px hsl(35 50% 20%/.34);
+  background:radial-gradient(circle at 30% 20%,hsl(43 100% 98%),hsl(43 90% 82%) 25%,hsl(var(--azkar-gold)) 64%,hsl(36 58% 33%))!important;
+  border-color:hsl(43 95% 88%)!important;
+  box-shadow:0 0 0 3px hsl(var(--azkar-gold)/.09),0 0 18px hsl(var(--azkar-gold)/.34),inset 2px 2px 3px hsl(0 0% 100%/.58),inset -3px -4px 6px hsl(35 50% 20%/.34)!important;
 }
 .tasbih-imam-bead:not(.is-lit){
   filter:saturate(.92);
@@ -1498,8 +1360,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   min-height:100dvh!important;
   background:transparent!important;
 }
-.tasbih-background-photo,
-.tasbih-background-photo-dark{
+.tasbih-background-photo,.tasbih-background-photo-dark{
   position:fixed!important;
   inset:0!important;
   z-index:0!important;
@@ -1527,15 +1388,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   pointer-events:none!important;
   background:linear-gradient(180deg,hsl(42 40% 98%/.22) 0%,hsl(150 28% 96%/.08) 48%,hsl(165 30% 10%/.22) 100%)!important;
 }
-.tasbih-minimal::before,
-.tasbih-minimal::after{
+.tasbih-minimal::before,.tasbih-minimal::after{
   display:none!important;
 }
 
 /* Tasbih background stays visually locked; foreground controls keep their normal interaction/motion. */
-.tasbih-background-photo,
-.tasbih-background-photo-dark,
-.tasbih-background-shade{
+.tasbih-background-photo,.tasbih-background-photo-dark,.tasbih-background-shade{
   position:fixed!important;
   inset:0!important;
   transform:none!important;
@@ -1790,10 +1648,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 /* Azkar screens (list, category, favorites, journey): no text-selection menu anywhere.
    Copy keeps working through the dedicated copy buttons. */
-.azkar-no-select,
-.azkar-no-select *,
-.azkar-journey-redesign,
-.azkar-journey-redesign *{
+.azkar-no-select,.azkar-no-select *,.azkar-journey-redesign,.azkar-journey-redesign *{
   -webkit-user-select:none;
   user-select:none;
   -webkit-touch-callout:none;
@@ -1801,16 +1656,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 /* Keyboard, switch-access and TalkBack focus must stay visible. Components that removed the
    default outline with outline-none get a ring only for :focus-visible; mouse/touch taps do not show it. */
-button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible,
-[role="tab"]:focus-visible,
-summary:focus-visible{
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:focus-visible,summary:focus-visible{
   outline:2px solid hsl(var(--azkar-teal-ink));
   outline-offset:2px;
 }
-.outline-none:focus-visible,
-.focus\:outline-none:focus-visible{
+.outline-none:focus-visible,.focus\:outline-none:focus-visible{
   outline:2px solid hsl(var(--azkar-teal-ink))!important;
   outline-offset:2px;
 }
@@ -1832,11 +1682,9 @@ summary:focus-visible{
       forever under the heaviest screens.
    ============================================================ */
 .tasbih-word-menu{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-.tasbih-minimal-header>button:first-child,.tasbih-settings-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(var(--azkar-card)/.96)!important}
+.tasbih-minimal-header>button:first-child{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(var(--azkar-card)/.96)!important}
 .tasbih-current-word{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(42 44% 98%/.95)!important}
 .dark .tasbih-current-word{background:hsl(165 22% 16%/.95)!important}
-.tasbih-reset-round{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(var(--azkar-card)/.95)!important}
-.dark .tasbih-reset-round{background:hsl(165 22% 16%/.95)!important}
 .tasbih-reset-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(42 36% 98%/.95)!important}
 .dark .tasbih-reset-button{background:hsl(165 22% 15%/.95)!important}
 .tasbih-counter-glow{filter:none!important;inset:14% 10% 20%!important;background:radial-gradient(circle,hsl(var(--azkar-gold)/.13),hsl(var(--azkar-gold)/.05) 42%,transparent 68%)!important}
