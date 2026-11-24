@@ -150,7 +150,7 @@ export function QuranSection({
           </div>
         </Row>
         <Row title="القارئ" description="يُستخدم في التلاوة الصوتية">
-          <select aria-label="قارئ المصحف" value={reciter} onChange={(e) => setReciter(e.target.value)} className="max-w-[10rem] rounded-xl border px-2 py-2 text-[0.625rem]">
+          <select aria-label="قارئ المصحف" value={reciter} onChange={(e) => setReciter(e.target.value)} className="max-w-[10rem] rounded-xl border px-2 py-2 text-[0.6875rem]">
             {QURAN_AUDIO_RECITERS.map((id) => <option key={id} value={id}>{QURAN_AUDIO_RECITER_LABELS[id]}</option>)}
           </select>
         </Row>
@@ -297,7 +297,7 @@ export function QuranSection({
                   </div>
                 )}
 
-                <button type="button" onClick={() => setOpenReciter(openReciter === id ? null : id)} className="mt-3 text-xs text-azkar-teal-ink underline">
+                <button type="button" onClick={() => setOpenReciter(openReciter === id ? null : id)} className="mt-1 inline-flex min-h-10 items-center text-xs text-azkar-teal-ink underline">
                   {openReciter === id ? 'إخفاء السور' : `عرض السور (${toArabicNumber(114)})`}
                 </button>
 
