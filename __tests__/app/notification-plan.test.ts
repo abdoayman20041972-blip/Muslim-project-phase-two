@@ -116,4 +116,27 @@ describe('planNotifications', () => {
     expect(TEST_NOTIFICATION_ID).toBeGreaterThanOrEqual(ID_BASE + ID_RANGE)
     expect(TEST_NOTIFICATION_ID).toBeLessThan(2 ** 31 - 1)
   })
+
+  it('skips muted prayers for both the adhan and the reminder', () => {
+    const plan = planNotifications({ ...base, atTimeEnabled: true, beforeEnabled: true, mutedPrayers: ['Fajr', 'Isha'] })
+    const slots = new Set(plan.map((n) => (n.id - ID_BASE) % 10))
+    expect([...slots].sort()).toEqual([1, 2, 3])
+  })
+
+  it('plans the Friday Kahf reminder only on Fridays and only when enabled', () => {
+    expect(planNotifications({ ...base, days: Array.from({ length: 14 }, (_, i) => new Date(2026, 9, 26 + i)), timingsByDay: Array.from({ length: 14 }, () => ({ ...timings })) })).toEqual([])
+    const fourteen = Array.from({ length: 14 }, (_, i) => new Date(2026, 9, 26 + i))
+    const plan = planNotifications({ ...base, days: fourteen, timingsByDay: fourteen.map(() => ({ ...timings })), kahfEnabled: true, kahfTime: '10:30' })
+    expect(plan).toHaveLength(2)
+    expect(plan.every((n) => n.at.getDay() === 5 && n.target === 'kahf' && n.at.getHours() === 10 && n.at.getMinutes() === 30)).toBe(true)
+  })
+
+  it('opens the morning and evening azkar directly and keeps a long reminder alive until prayer', () => {
+    const plan = planNotifications({ ...base, morningEnabled: true, eveningEnabled: true, beforeEnabled: true, lead: 30 })
+    expect(plan.find((n) => kindOf(n.id) === KIND.morning)!.target).toBe('azkar-morning')
+    expect(plan.find((n) => kindOf(n.id) === KIND.evening)!.target).toBe('azkar-evening')
+    const before = plan.find((n) => kindOf(n.id) === KIND.before)!
+    expect(before.ttl).toBe(30 * 60_000)
+    expect(before.body).toContain('30 دقيقة')
+  })
 })
