@@ -24,7 +24,7 @@ const formatTime = (iso: string | null) => {
 }
 
 const buttonClass =
-  'rounded-xl border border-azkar-gold-soft px-3 py-2 text-[11px] font-bold text-azkar-teal-ink disabled:opacity-60'
+  'rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.6875rem] font-bold text-azkar-teal-ink disabled:opacity-60'
 
 // Native-only card that shows what the last scheduling run really did, so a
 // missing notification can be explained instead of failing silently.
@@ -86,7 +86,7 @@ export function NotificationDiagnostics() {
         <Row title="المنبّهات الدقيقة غير مفعّلة" description="قد يتأخر الأذان والتذكيرات عن وقتها. فعّلها من إعدادات النظام.">
           <button
             type="button"
-            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[10px] font-bold text-azkar-card"
+            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card"
             onClick={() =>
               void run('exact', async () => {
                 await openExactAlarmSettings()
@@ -100,14 +100,14 @@ export function NotificationDiagnostics() {
       )}
       {diag.locationMissing && (
         <Row title="الموقع غير محدد" description="حدّد موقعك من صفحة مواقيت الصلاة ليعمل الأذان والتذكيرات المرتبطة بالصلاة.">
-          <span className="text-[11px] font-bold text-azkar-ink">!</span>
+          <span className="text-[0.6875rem] font-bold text-azkar-ink">!</span>
         </Row>
       )}
       {nativeWarnings(status)
         .filter((warning) => warning.key !== 'battery')
         .map((warning) => (
           <Row key={warning.key} title={warning.title} description={warning.description}>
-            <span className="text-[11px] font-bold text-azkar-ink">!</span>
+            <span className="text-[0.6875rem] font-bold text-azkar-ink">!</span>
           </Row>
         ))}
       <Row
@@ -120,12 +120,12 @@ export function NotificationDiagnostics() {
             : 'إن تأخرت الإشعارات فاسمح للتطبيق بالعمل دون قيود البطارية.'
         }
       >
-        <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[10px] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
+        <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.625rem] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
           فتح الإعدادات
         </button>
       </Row>
       <Row title="آخر جدولة" description={formatTime(diag.ranAt)}>
-        <span className="text-[11px] font-bold text-azkar-ink">{toArabicNumber(diag.scheduled)}</span>
+        <span className="text-[0.6875rem] font-bold text-azkar-ink">{toArabicNumber(diag.scheduled)}</span>
       </Row>
       {diag.testScheduledAt && (
         <Row
@@ -136,11 +136,11 @@ export function NotificationDiagnostics() {
               : 'مجدول عبر المنبّه الأصلي للنظام'
           }
         >
-          <span className="text-[11px] font-bold text-azkar-ink">{formatTime(diag.testScheduledAt)}</span>
+          <span className="text-[0.6875rem] font-bold text-azkar-ink">{formatTime(diag.testScheduledAt)}</span>
         </Row>
       )}
       <Row title="إذن الإشعارات" description={'المنبّه الدقيق: ' + permissionLabel(diag.exactAlarm)}>
-        <span className="text-[11px] font-bold text-azkar-ink">{permissionLabel(diag.permission)}</span>
+        <span className="text-[0.6875rem] font-bold text-azkar-ink">{permissionLabel(diag.permission)}</span>
       </Row>
       <Row
         title="خطة التنبيهات المحفوظة"
@@ -153,7 +153,7 @@ export function NotificationDiagnostics() {
             : 'خطة ثلاثين يوماً، منها ' + toArabicNumber(diag.armed) + ' منبّهاً مسلّحاً خلال ٤٨ ساعة (الباقي يُسلّح تلقائياً)')
         }
       >
-        <span className="text-[11px] font-bold text-azkar-ink">{diag.pending === null ? '—' : toArabicNumber(diag.pending)}</span>
+        <span className="text-[0.6875rem] font-bold text-azkar-ink">{diag.pending === null ? '—' : toArabicNumber(diag.pending)}</span>
       </Row>
       {diag.lastError && <Row title="آخر خطأ" description={diag.lastError + ' (' + formatTime(diag.lastErrorAt) + ')'}><span /></Row>}
       <div className="flex flex-wrap gap-2 border-t border-azkar-gold-soft/50 px-4 py-3">
@@ -191,13 +191,13 @@ export function NotificationDiagnostics() {
           عرض المجدول
         </button>
       </div>
-      <div className="border-t border-azkar-gold-soft/50 px-4 py-3 text-[10px] text-azkar-ink-soft">
+      <div className="border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.625rem] text-azkar-ink-soft">
         <div className="mb-1 flex items-center justify-between gap-2">
           <span className="font-bold text-azkar-ink">سجل التسليم (آخر ما فعله النظام)</span>
           {fireLog && fireLog.length > 0 && (
             <button
               type="button"
-              className="text-[10px] font-bold text-azkar-teal-ink"
+              className="text-[0.625rem] font-bold text-azkar-teal-ink"
               onClick={() => void run('clear-log', async () => { await ExactAlarms.clearFireLog() })}
             >
               مسح
@@ -221,9 +221,9 @@ export function NotificationDiagnostics() {
           })
         )}
       </div>
-      {message && <div className="px-4 pb-3 text-[10px] text-azkar-ink-soft">{message}</div>}
+      {message && <div className="px-4 pb-3 text-[0.625rem] text-azkar-ink-soft">{message}</div>}
       {items && (
-        <div className="max-h-56 overflow-y-auto border-t border-azkar-gold-soft/50 px-4 py-3 text-[10px] text-azkar-ink-soft">
+        <div className="max-h-56 overflow-y-auto border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.625rem] text-azkar-ink-soft">
           {items.length === 0 ? (
             <div>لا توجد إشعارات مجدولة.</div>
           ) : (
