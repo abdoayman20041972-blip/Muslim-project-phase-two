@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Row, Section, Choice } from '../settingsPrimitives'
-import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting } from '../../../settings'
+import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting, writeSetting } from '../../../settings'
 
 export const HADITH_FONT_KEY = APP_SETTINGS_KEYS.hadithFont
 export const HADITH_NOTE_KEY = APP_SETTINGS_KEYS.hadithShowNote
-export const PROPHET_FONT_KEY = 'prophet_font'
+export const PROPHET_FONT_KEY = APP_SETTINGS_KEYS.prophetFont
 export const PROPHET_QUESTION_KEY = APP_SETTINGS_KEYS.prophetShowQuestion
 
 function ReadingToggles({
@@ -31,7 +31,7 @@ function ReadingToggles({
   }, [fontKey, noteKey])
 
   const save = (k: string, v: string) => {
-    localStorage.setItem(k, v)
+    writeSetting(k, v)
     emitSettingsChanged()
   }
 
