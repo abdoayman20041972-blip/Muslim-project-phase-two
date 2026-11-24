@@ -1,38 +1,78 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BookOpen, Search, Sparkles, X } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, Copy, ExternalLink, Search, Share2, Sparkles, X } from 'lucide-react'
 import {
   API_EDITIONS,
   HADITH_COLLECTION,
   loadApiEdition,
-  type ApiHadith,
   type EditionOrigin,
+  type HadithGrade,
 } from './hadithData'
+import { HADITH_SOURCE_URLS } from './hadithSources'
+import { highlightParts, matches } from './hadithSearch'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits, toArabicNumber } from '../../constants'
 
-type Tab = 'curated' | 'nawawi' | 'qudsi' | 'dehlawi'
+type GroupKey = 'curated' | 'nawawi' | 'qudsi' | 'dehlawi'
 
-function editionOf(tab: Tab) {
-  return API_EDITIONS.find((entry) => entry.key === tab)
+type Item = {
+  key: string
+  group: GroupKey
+  number: string
+  label: string
+  text: string
+  source?: string
+  sourceUrl?: string
+  note?: string
+  excerpt?: boolean
+  grade?: HadithGrade
+}
+
+type EditionState = { state: 'loading' | 'ready' | 'error'; items: Item[]; origin: EditionOrigin; error: string }
+
+const GROUPS: { key: GroupKey; name: string; blurb: string }[] = [
+  { key: 'curated', name: 'مختارات', blurb: 'أحاديث مختارة بمصدر كل حديث وملاحظة مختصرة، مضمّنة في التطبيق.' },
+  ...API_EDITIONS.map((edition) => ({ key: edition.key as GroupKey, name: edition.name, blurb: edition.blurb })),
+]
+
+const curatedItems: Item[] = HADITH_COLLECTION.map((hadith, index) => ({
+  key: hadith.id,
+  group: 'curated',
+  number: String(index + 1),
+  label: 'حديث مختار',
+  text: hadith.text,
+  source: hadith.source,
+  sourceUrl: HADITH_SOURCE_URLS[hadith.id],
+  note: hadith.note,
+  excerpt: hadith.excerpt,
+  grade: hadith.grade,
+}))
+
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  return (
+    <>
+      {highlightParts(text, query).map((part, i) =>
+        part.match ? <mark key={i} className="hadith-mark-hit" data-testid="hadith-hit">{part.text}</mark> : <span key={i}>{part.text}</span>,
+      )}
+    </>
+  )
 }
 
 export function HadithView({ onBack }: { onBack: () => void }) {
-  const [tab, setTab] = useState<Tab>('curated')
+  const [openGroup, setOpenGroup] = useState<GroupKey | null>(null)
+  const [index, setIndex] = useState(0)
   const [query, setQuery] = useState('')
-  const [apiState, setApiState] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [apiHadiths, setApiHadiths] = useState<ApiHadith[]>([])
-  const [origin, setOrigin] = useState<EditionOrigin>('bundled')
-  const [error, setError] = useState('')
-  const [, setNumberTick] = useState(0)
+  const [editions, setEditions] = useState<Record<string, EditionState>>({})
   const [attempt, setAttempt] = useState(0)
   const [font, setFont] = useState(() => readSetting(APP_SETTINGS_KEYS.hadithFont, 'md'))
-  const [showNote, setShowNote] = useState(() => readSetting('azkar_hadith_show_note', '1') !== '0')
+  const [showNote, setShowNote] = useState(() => readSetting(APP_SETTINGS_KEYS.hadithShowNote, '1') !== '0')
+  const [, setNumberTick] = useState(0)
+  const [status, setStatus] = useState('')
 
   useEffect(() => {
     const refresh = () => {
       setNumberTick((n) => n + 1)
       setFont(readSetting(APP_SETTINGS_KEYS.hadithFont, 'md'))
-      setShowNote(readSetting('azkar_hadith_show_note', '1') !== '0')
+      setShowNote(readSetting(APP_SETTINGS_KEYS.hadithShowNote, '1') !== '0')
     }
     window.addEventListener('azkar-settings-changed', refresh)
     return () => window.removeEventListener('azkar-settings-changed', refresh)
@@ -40,173 +80,214 @@ export function HadithView({ onBack }: { onBack: () => void }) {
 
   const fontClass = font === 'sm' ? 'text-[13px]' : font === 'lg' ? 'text-[19px]' : 'text-[16px]'
 
-  const activeEdition = editionOf(tab)
-
-  const activeEditionId = activeEdition?.edition
   useEffect(() => {
-    if (!activeEditionId) return
     let cancelled = false
-    setApiState('loading')
-    setError('')
-    setApiHadiths([])
-    loadApiEdition(activeEditionId)
-      .then((data) => {
-        if (cancelled) return
-        setApiHadiths(data.hadiths)
-        setOrigin(data.origin)
-        setApiState('ready')
-      })
-      .catch((cause: unknown) => {
-        if (cancelled) return
-        console.error('[hadith] could not load edition', activeEditionId, cause)
-        setError(cause instanceof Error ? cause.message : 'تعذّر الاتصال بالشبكة')
-        setApiState('error')
-      })
+    API_EDITIONS.forEach((edition) => {
+      setEditions((prev) => (prev[edition.key]?.state === 'ready' ? prev : { ...prev, [edition.key]: { state: 'loading', items: [], origin: 'bundled', error: '' } }))
+      loadApiEdition(edition.edition)
+        .then((data) => {
+          if (cancelled) return
+          const items: Item[] = data.hadiths.map((hadith) => ({
+            key: `${edition.key}-${hadith.hadithnumber}`,
+            group: edition.key as GroupKey,
+            number: String(hadith.hadithnumber),
+            label: `حديث ${hadith.hadithnumber}`,
+            text: String(hadith.text),
+          }))
+          setEditions((prev) => ({ ...prev, [edition.key]: { state: 'ready', items, origin: data.origin, error: '' } }))
+        })
+        .catch((cause: unknown) => {
+          if (cancelled) return
+          console.error('[hadith] could not load edition', edition.edition, cause)
+          const error = cause instanceof Error ? cause.message : 'تعذّر الاتصال بالشبكة'
+          setEditions((prev) => ({ ...prev, [edition.key]: { state: 'error', items: [], origin: 'bundled', error } }))
+        })
+    })
     return () => {
       cancelled = true
     }
-  }, [activeEditionId, attempt])
+  }, [attempt])
 
-  const curated = useMemo(() => {
-    const clean = query.trim()
-    if (!clean) return HADITH_COLLECTION
-    return HADITH_COLLECTION.filter(
-      (hadith) => hadith.text.includes(clean) || hadith.source.includes(clean) || hadith.note.includes(clean),
-    )
-  }, [query])
+  const itemsOf = (key: GroupKey): Item[] => (key === 'curated' ? curatedItems : editions[key]?.items ?? [])
+  const countText = (key: GroupKey) => {
+    if (key === 'curated') return `${toArabicNumber(curatedItems.length)} حديثًا`
+    const edition = editions[key]
+    if (!edition || edition.state === 'loading') return 'جارٍ التحميل'
+    if (edition.state === 'error') return 'تعذّر التحميل'
+    return `${toArabicNumber(edition.items.length)} حديثًا`
+  }
 
-  const apiFiltered = useMemo(() => {
-    const clean = query.trim()
-    if (!clean) return apiHadiths
-    return apiHadiths.filter((hadith) => String(hadith.text).includes(clean))
-  }, [query, apiHadiths])
+  const results = useMemo(() => {
+    if (!query.trim()) return []
+    return GROUPS.map((group) => ({
+      group,
+      hits: (group.key === 'curated' ? curatedItems : editions[group.key]?.items ?? []).filter(
+        (item) => matches(item.text, query) || (item.source ? matches(item.source, query) : false) || (item.note ? matches(item.note, query) : false),
+      ),
+    })).filter((entry) => entry.hits.length)
+  }, [query, editions])
 
-  return (
-    <section dir="rtl" className="hadith-screen">
-      <header className="hadith-header">
-        <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable hadith-icon-button">←</button>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">الأحاديث</h1>
-          <p className="mt-0.5 text-[10px] text-azkar-ink-faint">من النبي ﷺ: كلماتٌ تُصلح القلب والعمل</p>
-        </div>
-        <span className="hadith-mark" aria-hidden="true"><Sparkles className="h-4 w-4" /></span>
-      </header>
+  const open = (key: GroupKey, at = 0) => {
+    setOpenGroup(key)
+    setIndex(at)
+    setStatus('')
+  }
 
-      <div className="hadith-tabs" role="tablist" aria-label="تصنيف الأحاديث">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'curated'}
-          className={`u-pressable hadith-tab ${tab === 'curated' ? 'is-active' : ''}`}
-          onClick={() => setTab('curated')}
-        >
-          مختارات
-        </button>
-        {API_EDITIONS.map((edition) => (
-          <button
-            key={edition.key}
-            type="button"
-            role="tab"
-            aria-selected={tab === edition.key}
-            className={`u-pressable hadith-tab ${tab === edition.key ? 'is-active' : ''}`}
-            onClick={() => setTab(edition.key as Tab)}
-          >
-            {edition.name}
-          </button>
-        ))}
+  const searchBox = (
+    <div className="hadith-search-wrap">
+      <Search className="h-4 w-4 shrink-0 text-azkar-ink-faint" aria-hidden="true" />
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        aria-label="البحث في الأحاديث"
+        placeholder="ابحث في نص الحديث أو المصدر..."
+        className="min-w-0 flex-1 bg-transparent text-xs text-azkar-ink outline-none placeholder:text-azkar-ink-faint"
+      />
+      {query && <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" className="u-pressable text-azkar-ink-faint"><X className="h-4 w-4" /></button>}
+    </div>
+  )
+
+  const header = (title: string, subtitle: string, back: () => void) => (
+    <header className="hadith-header">
+      <button type="button" onClick={back} aria-label="رجوع" className="u-pressable hadith-icon-button">←</button>
+      <div className="min-w-0 flex-1">
+        <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{title}</h1>
+        <p className="mt-0.5 text-[10px] text-azkar-ink-faint">{subtitle}</p>
       </div>
+      <span className="hadith-mark" aria-hidden="true"><Sparkles className="h-4 w-4" /></span>
+    </header>
+  )
 
-      <div className="hadith-search-wrap">
-        <Search className="h-4 w-4 shrink-0 text-azkar-ink-faint" aria-hidden="true" />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          aria-label="البحث في الأحاديث"
-          placeholder="ابحث في نص الحديث أو المصدر..."
-          className="min-w-0 flex-1 bg-transparent text-xs text-azkar-ink outline-none placeholder:text-azkar-ink-faint"
-        />
-        {query && <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" className="u-pressable text-azkar-ink-faint"><X className="h-4 w-4" /></button>}
-      </div>
-
-      {tab === 'curated' ? (
-        <div className="grid gap-3">
-          <div className="mb-1 flex items-center justify-between px-1">
-            <span className="font-amiri text-base font-bold text-azkar-teal-ink">مختارات يعمل دون إنترنت</span>
-            <span className="text-[9px] text-azkar-ink-faint">{toArabicNumber(curated.length)} حديثًا</span>
+  // ---- Reading screen ----
+  if (openGroup) {
+    const group = GROUPS.find((entry) => entry.key === openGroup)!
+    const edition = openGroup === 'curated' ? null : editions[openGroup]
+    const items = itemsOf(openGroup)
+    const item = items[Math.min(index, Math.max(items.length - 1, 0))]
+    const shareText = item ? `«${item.text}»${item.source ? `\n${toArabicDigits(item.source)}` : ''}` : ''
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(shareText)
+        setStatus('تم نسخ الحديث')
+      } catch {
+        setStatus('تعذّر النسخ على هذا الجهاز')
+      }
+    }
+    const share = async () => {
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ text: shareText })
+          return
+        } catch {
+          // cancelled or failed: fall back to copy
+        }
+      }
+      await copy()
+    }
+    return (
+      <section dir="rtl" className="hadith-screen" data-testid="hadith-reader">
+        {header(group.name, edition?.state === 'ready' ? (edition.origin === 'bundled' ? 'من ملف مضمّن، يعمل دون إنترنت' : 'حُمّل من الإنترنت لتعذر الملف المضمّن') : group.blurb, () => setOpenGroup(null))}
+        {edition?.state === 'loading' && <div className="hadith-empty">جارٍ تحميل الأحاديث...</div>}
+        {edition?.state === 'error' && (
+          <div className="hadith-empty">
+            <BookOpen className="mx-auto mb-2 h-5 w-5 text-azkar-gold-deep" aria-hidden="true" />
+            <p className="text-xs text-azkar-ink-soft">{edition.error}</p>
+            <p className="mt-1 text-[10px] text-azkar-ink-faint">تبويب «مختارات» مضمّن في التطبيق ويعمل دون إنترنت.</p>
+            <button type="button" className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[11px] font-bold text-azkar-teal-ink" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
           </div>
-          {curated.map((hadith) => (
-            <article key={hadith.id} className="hadith-card">
+        )}
+        {item && (
+          <>
+            <article key={item.key} className="hadith-card">
               <div className="hadith-card-top">
                 <span>
-                  حديث مختار
-                  {hadith.excerpt && (
-                    <span
-                      className="mr-2 rounded-full border border-azkar-hairline px-2 py-0.5 text-[9px] font-normal text-azkar-ink-soft"
-                      title="جزء من الحديث الوارد في المصدر"
-                      data-testid="hadith-excerpt-badge"
-                    >
-                      مقتطف
-                    </span>
+                  {item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}
+                  {item.excerpt && (
+                    <span className="mr-2 rounded-full border border-azkar-hairline px-2 py-0.5 text-[9px] font-normal text-azkar-ink-soft" title="جزء من الحديث الوارد في المصدر" data-testid="hadith-excerpt-badge">مقتطف</span>
                   )}
                 </span>
-                <span className="hadith-source">{toArabicDigits(hadith.source)}</span>
+                {item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}
               </div>
-              <p className={"hadith-text font-amiri " + fontClass}>«{hadith.text}»</p>
-              {showNote && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[11px] leading-relaxed text-azkar-ink-soft">{hadith.note}</p>}
+              <p className={'hadith-text font-amiri ' + fontClass}>{item.group === 'curated' ? `«${item.text}»` : item.text}</p>
+              {item.grade && (
+                <p className="mt-2 text-[11px] text-azkar-ink-soft" data-testid="hadith-grade">
+                  الدرجة: {item.grade.label} · {item.grade.by}{' '}
+                  <a href={item.grade.url} target="_blank" rel="noreferrer" className="underline">المصدر</a>
+                </p>
+              )}
+              {item.group === 'curated' && (
+                item.sourceUrl ? (
+                  <a href={item.sourceUrl} target="_blank" rel="noreferrer" data-testid="hadith-source-link" className="u-pressable mt-2 inline-flex min-h-11 items-center gap-1 text-[11px] font-bold text-azkar-teal-ink">
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> عرض المصدر على sunnah.com
+                  </a>
+                ) : (
+                  <p className="mt-2 text-[10px] text-azkar-ink-faint" data-testid="hadith-source-pending">رابط المصدر غير معروض: المرجع قيد المراجعة.</p>
+                )
+              )}
+              {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[11px] leading-relaxed text-azkar-ink-soft">{item.note}</p>}
+              <div className="mt-3 flex gap-2 border-t border-azkar-hairline pt-3">
+                <button type="button" onClick={copy} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[11px] font-bold text-azkar-teal-ink"><Copy className="h-3.5 w-3.5" aria-hidden="true" /> نسخ</button>
+                <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[11px] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
+              </div>
+              <p role="status" className="mt-1 min-h-4 text-center text-[10px] text-azkar-ink-faint">{status}</p>
             </article>
-          ))}
-          {!curated.length && (
-            <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-10 text-center text-xs text-azkar-ink-soft">
-              لا يوجد حديث يطابق بحثك.
+            <nav className="mt-3 flex items-center justify-between gap-2" aria-label="التنقل بين الأحاديث">
+              <button type="button" onClick={() => { setIndex(index - 1); setStatus('') }} disabled={index <= 0} aria-label="الحديث السابق" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
+              <span className="text-[11px] font-bold text-azkar-ink-soft" data-testid="hadith-position">حديث {toArabicNumber(index + 1)} من {toArabicNumber(items.length)}</span>
+              <button type="button" onClick={() => { setIndex(index + 1); setStatus('') }} disabled={index >= items.length - 1} aria-label="الحديث التالي" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
+            </nav>
+          </>
+        )}
+      </section>
+    )
+  }
+
+  // ---- Groups + search screen ----
+  return (
+    <section dir="rtl" className="hadith-screen">
+      {header('الأحاديث', 'من النبي ﷺ: كلماتٌ تُصلح القلب والعمل', onBack)}
+      {searchBox}
+      {query.trim() ? (
+        <div className="grid gap-4" data-testid="hadith-results">
+          {results.map(({ group, hits }) => (
+            <div key={group.key} className="grid gap-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="font-amiri text-base font-bold text-azkar-teal-ink">{group.name}</span>
+                <span className="text-[9px] text-azkar-ink-faint">{toArabicNumber(hits.length)} نتيجة</span>
+              </div>
+              {hits.slice(0, 20).map((item) => (
+                <button key={item.key} type="button" onClick={() => open(group.key, itemsOf(group.key).findIndex((entry) => entry.key === item.key))} className="hadith-card u-pressable text-right" data-testid="hadith-result">
+                  <div className="hadith-card-top"><span>{item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}</span>{item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}</div>
+                  <p className={'hadith-text font-amiri line-clamp-3 ' + fontClass}><HighlightedText text={item.text} query={query} /></p>
+                </button>
+              ))}
+              {hits.length > 20 && <p className="px-1 text-[10px] text-azkar-ink-faint">يظهر أول {toArabicNumber(20)} نتيجة. دقّق البحث لتضييق النتائج.</p>}
             </div>
-          )}
+          ))}
+          {!results.length && <div className="hadith-empty">لا يوجد حديث يطابق بحثك.</div>}
         </div>
       ) : (
-        <div className="grid gap-3" data-state={apiState} aria-busy={apiState === 'loading'}>
-          {activeEdition && (
-            <div className="mb-1 flex items-center justify-between px-1">
-              <span className="font-amiri text-base font-bold text-azkar-teal-ink">{activeEdition.name}</span>
-              <span className="text-[9px] text-azkar-ink-faint">
-                {apiState === 'ready'
-                  ? `${toArabicNumber(apiFiltered.length)} حديثًا · ${origin === 'bundled' ? 'من ملف مضمّن، يعمل دون إنترنت' : 'حُمّل من الإنترنت لتعذر الملف المضمّن'}`
-                  : apiState === 'loading' ? 'جارٍ التحميل' : 'تعذّر التحميل'}
-              </span>
-            </div>
-          )}
-          {activeEdition && <p className="px-1 pb-1 text-[11px] leading-relaxed text-azkar-ink-soft">{activeEdition.blurb}</p>}
-          {apiState === 'loading' && (
-            <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-10 text-center text-xs text-azkar-ink-soft">
-              جارٍ تحميل الأحاديث...
-            </div>
-          )}
-          {apiState === 'error' && (
-            <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-8 text-center">
-              <BookOpen className="mx-auto mb-2 h-5 w-5 text-azkar-gold-deep" aria-hidden="true" />
-              <p className="text-xs text-azkar-ink-soft">{error || 'تعذّر الاتصال بالشبكة'}</p>
-              <p className="mt-1 text-[10px] text-azkar-ink-faint">تبويب «مختارات» مضمّن في التطبيق ويعمل دون إنترنت.</p>
-              <button
-                type="button"
-                className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[11px] font-bold text-azkar-teal-ink"
-                onClick={() => setAttempt((n) => n + 1)}
-              >
-                إعادة المحاولة
-              </button>
-            </div>
-          )}
-          {apiState === 'ready' && apiFiltered.map((hadith) => (
-            <article key={String(hadith.hadithnumber)} className="hadith-card">
-              <div className="hadith-card-top">
-                <span>حديث {toArabicDigits(String(hadith.hadithnumber))}</span>
-                <span className="hadith-source">{activeEdition?.name}</span>
+        <div className="grid gap-3" data-testid="hadith-groups">
+          {GROUPS.map((group) => {
+            const edition = group.key === 'curated' ? null : editions[group.key]
+            return (
+              <div key={group.key} className="hadith-card">
+                <button type="button" onClick={() => open(group.key)} disabled={edition?.state === 'loading'} className="u-pressable block w-full text-right" data-testid={`hadith-group-${group.key}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-amiri text-lg font-bold text-azkar-teal-ink">{group.name}</span>
+                    <span className="text-[10px] font-bold text-azkar-gold-deep" data-testid={`hadith-count-${group.key}`}>{countText(group.key)}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-azkar-ink-soft">{group.blurb}</p>
+                </button>
+                {edition?.state === 'error' && (
+                  <div className="mt-2 text-[11px] text-azkar-ink-soft">
+                    {edition.error}{' '}
+                    <button type="button" className="u-pressable font-bold text-azkar-teal-ink underline" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
+                  </div>
+                )}
               </div>
-              <p className={"hadith-text font-amiri " + fontClass}>{hadith.text}</p>
-            </article>
-          ))}
-          {apiState === 'ready' && !apiFiltered.length && (
-            <div className="rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card px-5 py-10 text-center text-xs text-azkar-ink-soft">
-              لا يوجد حديث يطابق بحثك.
-            </div>
-          )}
+            )
+          })}
         </div>
       )}
     </section>
