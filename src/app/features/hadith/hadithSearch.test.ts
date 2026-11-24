@@ -25,6 +25,13 @@ describe('hadith search normalisation', () => {
     expect(parts.filter((p) => p.match).map((p) => p.text)).toEqual(['الْأَعْمَالُ'])
     expect(parts.map((p) => p.text).join('')).toBe('إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ')
   })
+  it('highlights matches across repeated whitespace', () => {
+    const text = '  الأعمال  \n بالنيات'
+    expect(matches(text, 'الاعمال بالنيات')).toBe(true)
+    const parts = highlightParts(text, 'الاعمال بالنيات')
+    expect(parts.some((part) => part.match)).toBe(true)
+    expect(parts.map((part) => part.text).join('')).toBe(text)
+  })
   it('highlights every occurrence', () => {
     const parts = highlightParts('الله أكبر الله', 'الله')
     expect(parts.filter((p) => p.match)).toHaveLength(2)
