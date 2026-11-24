@@ -124,10 +124,10 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
         </div>
         <div className="relative mt-1">
           <div className="font-amiri text-[1.1875rem] font-bold leading-tight">{category.label}</div>
-          <div className="mt-1 text-[0.625rem] opacity-75">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</div>
+          <div className="mt-1 text-[0.6875rem] opacity-75">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</div>
         </div>
         {stats.countedTotal > 0 && <div className="relative mt-4">
-          <div className="mb-1.5 flex items-center justify-between text-[0.5625rem] opacity-80">
+          <div className="mb-1.5 flex items-center justify-between text-[0.6875rem] opacity-80">
             <span>{toArabicNumber(stats.completed)} / {toArabicNumber(stats.countedTotal)}</span>
             <span>{toArabicNumber(stats.percent)}٪</span>
           </div>
@@ -177,7 +177,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
               {search.trim() && (
                 <div className="mt-2 max-h-56 space-y-1.5 overflow-y-auto">
                   {searchResults.length === 0
-                    ? <div className="py-4 text-center text-[0.625rem] text-azkar-ink-faint">لا توجد نتائج مطابقة.</div>
+                    ? <div className="py-4 text-center text-[0.6875rem] text-azkar-ink-faint">لا توجد نتائج مطابقة.</div>
                     : searchResults.map(({ category, item }) => (
                       <button key={`${category.id}:${item.id ?? item.text}`} type="button" aria-label={`فتح ${category.label}: ${item.text}`} onClick={() => openCategory(category, item.id)} className="u-pressable flex w-full items-center gap-2 rounded-xl bg-azkar-surface-1 px-3 py-2.5 text-right">
                         <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-azkar-ink">{item.text}</span>
@@ -205,7 +205,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
           </div>
           {wirdProgress.length > 0 && <div className="mt-3 space-y-2 border-t border-azkar-hairline pt-3" aria-label="أهداف الوردين">
             {wirdProgress.map(({ category, completed, total, percent }) => (
-              <div key={category.id} className="flex items-center justify-between gap-3 text-[0.625rem]">
+              <div key={category.id} className="flex items-center justify-between gap-3 text-[0.6875rem]">
                 <span className="font-bold text-azkar-teal-ink">{category.label}</span>
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-1.5 w-16 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={completed} aria-label={`تقدم ${category.label}: ${completed} من ${total}`}>
@@ -228,7 +228,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
       <section className="mt-6 px-1">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-amiri text-[1.25rem] font-bold text-azkar-ink">الفئات الأخرى</h2>
-          <span className="text-[0.5625rem] text-azkar-ink-faint">{arabicCount(otherCategories.length, CATEGORY_COUNT_FORMS)}</span>
+          <span className="text-[0.6875rem] text-azkar-ink-faint">{arabicCount(otherCategories.length, CATEGORY_COUNT_FORMS)}</span>
         </div>
         <div className="azkar-category-grid-v2 grid grid-cols-2 gap-2.5">
           {otherCategories.map(category => {
@@ -247,7 +247,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
                   <ChevronIcon />
                 </div>
                 <div className="relative mt-3 font-amiri text-[1rem] font-bold leading-tight text-azkar-ink">{category.label}</div>
-                <div className="relative mt-1 text-[0.5625rem] text-azkar-ink-faint">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</div>
+                <div className="relative mt-1 text-[0.6875rem] text-azkar-ink-faint">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</div>
               </button>
             )
           })}
@@ -281,14 +281,14 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-azkar-teal-tint text-azkar-teal-ink"><HistoryIcon /></span>
               <span>
                 <span className="block font-amiri text-[1rem] font-bold text-azkar-ink">سجل الأيام</span>
-                <span className="mt-0.5 block text-[0.5625rem] text-azkar-ink-faint">إنجازك في الأيام السابقة</span>
+                <span className="mt-0.5 block text-[0.6875rem] text-azkar-ink-faint">إنجازك في الأيام السابقة</span>
               </span>
             </span>
             <span className={"text-azkar-ink-faint transition-transform duration-200 " + (historyOpen ? "rotate-90" : "")}><ChevronIcon /></span>
           </button>
           {historyOpen && <div id="azkar-days-log" className="border-t border-azkar-hairline px-4 py-1.5">
             {history.length === 0
-              ? <div className="py-5 text-center text-[0.625rem] text-azkar-ink-faint">لا يوجد سجل سابق بعد</div>
+              ? <div className="py-5 text-center text-[0.6875rem] text-azkar-ink-faint">لا يوجد سجل سابق بعد</div>
               : history.slice(0, 14).map(([dateKey, dayProgress]) => {
                 const completed = completedItemCount(wirdItems, wirdKeys, dayProgress)
                 const percent = completionPercent(completed, wirdItems.length)
@@ -296,7 +296,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
                 const label = year && month && day ? new Intl.DateTimeFormat("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(year, month - 1, day)) : dateKey
                 return <div key={dateKey} className="flex items-center justify-between gap-3 border-b border-azkar-hairline py-2.5 last:border-0">
                   <span className="text-[0.6875rem] text-azkar-ink">{label}</span>
-                  <span className="shrink-0 text-[0.625rem] font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(wirdItems.length)} · {toArabicNumber(percent)}٪</span>
+                  <span className="shrink-0 text-[0.6875rem] font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(wirdItems.length)} · {toArabicNumber(percent)}٪</span>
                 </div>
               })}
           </div>}
