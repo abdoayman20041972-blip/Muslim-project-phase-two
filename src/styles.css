@@ -1221,11 +1221,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   height:2.7rem;
   background:repeating-linear-gradient(90deg,hsl(165 38% 13%) 0 .13rem,hsl(165 27% 28%) .13rem .21rem);
 }
+/* Readability pass: the progress line sits on its own pill surface instead of
+   floating tiny text over the photo. */
 .tasbih-progress-copy{
   width:min(78%,18rem);
-  padding-inline:.3rem;
-  color:hsl(var(--azkar-ink-soft));
-  font-weight:600;
+  padding:.42rem .95rem;
+  border:1px solid hsl(var(--azkar-gold)/.24);
+  border-radius:999px;
+  background:hsl(42 42% 98%/.82);
+  color:hsl(var(--azkar-teal-deep));
+  font-size:.84rem;
+  font-weight:800;
+  box-shadow:0 4px 12px hsl(165 30% 12%/.10);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
 }
 .tasbih-session-meta{
   display:flex;
@@ -1237,10 +1246,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   color:hsl(var(--azkar-ink-faint));
   font-size:.53rem;
 }
+/* Stats are separate chips now: no bullet separators. */
 .tasbih-session-meta span+span::before{
-  content:"•";
-  margin-inline-end:.7rem;
-  color:hsl(var(--azkar-gold));
+  content:none;
 }
 .tasbih-visible-actions{
   display:flex;
@@ -1386,7 +1394,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   width:100vw!important;
   height:100dvh!important;
   pointer-events:none!important;
-  background:linear-gradient(180deg,hsl(42 40% 98%/.22) 0%,hsl(150 28% 96%/.08) 48%,hsl(165 30% 10%/.22) 100%)!important;
+  background:linear-gradient(180deg,hsl(42 40% 98%/.36) 0%,hsl(150 28% 96%/.16) 48%,hsl(165 30% 10%/.30) 100%)!important;
 }
 .tasbih-minimal::before,.tasbih-minimal::after{
   display:none!important;
@@ -1422,9 +1430,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .dark .tasbih-background-shade{
   /* A barely-there contrast veil only where the counter card sits (bottom),
      so the dark artwork itself carries the look. */
-  background:linear-gradient(180deg,hsl(220 30% 4%/.06) 0%,hsl(165 30% 4%/.03) 48%,hsl(165 35% 3%/.34) 100%)!important;
+  background:linear-gradient(180deg,hsl(220 30% 4%/.14) 0%,hsl(165 30% 4%/.07) 48%,hsl(165 35% 3%/.44) 100%)!important;
 }
-.dark .tasbih-progress-copy{color:hsl(42 50% 92%);text-shadow:0 1px 3px hsl(0 0% 0%/.6);}
+.dark .tasbih-progress-copy{background:hsl(220 24% 10%/.74);border-color:hsl(var(--azkar-gold)/.3);color:hsl(42 60% 93%);text-shadow:none;}
 
 /* Tasbih is a locked single-screen surface: nothing scrolls vertically, while controls remain interactive. */
 .tasbih-minimal{
@@ -1513,22 +1521,39 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   width:min(78%,18rem)!important;
   line-height:1!important;
 }
+/* Readability pass: the stats row is three calm chips, each with a clear
+   number over a small label, instead of one crowded bold line over the photo. */
 .tasbih-session-meta{
   flex:0 0 auto!important;
   margin-top:.35rem!important;
   line-height:1.2!important;
   width:100%!important;
-  font-size:.9rem!important;
-  font-weight:700!important;
-  letter-spacing:.01em!important;
-  color:#000!important;
-  -webkit-text-fill-color:#000!important;
-  text-shadow:0 1px 2px hsl(0 0% 100%/.72)!important;
+  gap:.45rem!important;
 }
-.tasbih-session-meta span{
-  font-weight:700!important;
-  color:#000!important;
-  -webkit-text-fill-color:#000!important;
+.tasbih-stat{
+  display:flex;
+  flex:1 1 0;
+  flex-direction:column;
+  align-items:center;
+  gap:.08rem;
+  padding:.45rem .3rem .4rem;
+  border:1px solid hsl(var(--azkar-gold)/.24);
+  border-radius:.95rem;
+  background:hsl(42 42% 98%/.82);
+  box-shadow:0 4px 12px hsl(165 30% 12%/.08);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.tasbih-stat strong{
+  font-size:1.02rem;
+  font-weight:800;
+  line-height:1.15;
+  color:hsl(var(--azkar-teal-deep));
+}
+.tasbih-stat small{
+  font-size:.6rem;
+  font-weight:700;
+  color:hsl(var(--azkar-ink-soft));
 }
 .tasbih-visible-actions{
   display:flex!important;
@@ -1552,15 +1577,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   backdrop-filter:blur(8px)!important;
 }
 .dark .tasbih-session-meta{
-  /* Over the dark night-mosque photo the stats must be light, not the light
-     mode's black-on-bright-photo treatment. */
-  color:hsl(42 50% 92%)!important;
-  -webkit-text-fill-color:hsl(42 50% 92%)!important;
-  text-shadow:0 1px 3px hsl(0 0% 0%/.65)!important;
+  /* Chips carry their own dark surfaces; the row itself adds no text color
+     (and never the light-mode black-on-photo treatment). */
+  color:inherit;
 }
-.dark .tasbih-session-meta span{
-  color:hsl(42 50% 92%)!important;
-  -webkit-text-fill-color:hsl(42 50% 92%)!important;
+.dark .tasbih-stat{
+  background:hsl(220 24% 10%/.74);
+  border-color:hsl(var(--azkar-gold)/.3);
+  box-shadow:0 4px 14px hsl(0 0% 0%/.32);
+}
+.dark .tasbih-stat strong{
+  color:hsl(42 62% 93%);
+}
+.dark .tasbih-stat small{
+  color:hsl(42 32% 80%/.88);
 }
 .dark .tasbih-reset-button{
   background:hsl(165 28% 12%/.82)!important;
@@ -1687,7 +1717,10 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .dark .tasbih-current-word{background:hsl(165 22% 16%/.95)!important}
 .tasbih-reset-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:hsl(42 36% 98%/.95)!important}
 .dark .tasbih-reset-button{background:hsl(165 22% 15%/.95)!important}
-.tasbih-counter-glow{filter:none!important;inset:14% 10% 20%!important;background:radial-gradient(circle,hsl(var(--azkar-gold)/.13),hsl(var(--azkar-gold)/.05) 42%,transparent 68%)!important}
+/* Readability pass: a soft veil behind the bead stage calms the busy photo
+   without hiding it (no hard card edges, the mosque stays visible). */
+.tasbih-counter-glow{filter:blur(14px)!important;inset:6% -2% 24%!important;background:radial-gradient(circle,hsl(42 55% 97%/.60) 0%,hsl(42 45% 96%/.30) 52%,transparent 72%)!important}
+.dark .tasbih-counter-glow{background:radial-gradient(circle,hsl(220 32% 7%/.62) 0%,hsl(220 30% 8%/.34) 52%,transparent 72%)!important}
 
 /* Idle indicator motion is a home-tab delight, not a permanent tax. */
 .dashboard-nav-indicator,.dashboard-nav-indicator::before{animation:none!important}
