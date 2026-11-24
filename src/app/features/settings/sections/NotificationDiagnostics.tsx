@@ -86,7 +86,7 @@ export function NotificationDiagnostics() {
         <Row title="المنبّهات الدقيقة غير مفعّلة" description="قد يتأخر الأذان والتذكيرات عن وقتها. فعّلها من إعدادات النظام.">
           <button
             type="button"
-            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card"
+            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card"
             onClick={() =>
               void run('exact', async () => {
                 await openExactAlarmSettings()
@@ -120,7 +120,7 @@ export function NotificationDiagnostics() {
             : 'إن تأخرت الإشعارات فاسمح للتطبيق بالعمل دون قيود البطارية.'
         }
       >
-        <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.625rem] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
+        <button type="button" className="shrink-0 rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.6875rem] font-bold text-azkar-teal-ink" onClick={() => void openSystemSettings('battery')}>
           فتح الإعدادات
         </button>
       </Row>
@@ -191,13 +191,13 @@ export function NotificationDiagnostics() {
           عرض المجدول
         </button>
       </div>
-      <div className="border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.625rem] text-azkar-ink-soft">
+      <div className="border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.6875rem] text-azkar-ink-soft">
         <div className="mb-1 flex items-center justify-between gap-2">
           <span className="font-bold text-azkar-ink">سجل التسليم (آخر ما فعله النظام)</span>
           {fireLog && fireLog.length > 0 && (
             <button
               type="button"
-              className="text-[0.625rem] font-bold text-azkar-teal-ink"
+              className="text-[0.6875rem] font-bold text-azkar-teal-ink"
               onClick={() => void run('clear-log', async () => { await ExactAlarms.clearFireLog() })}
             >
               مسح
@@ -221,9 +221,9 @@ export function NotificationDiagnostics() {
           })
         )}
       </div>
-      {message && <div className="px-4 pb-3 text-[0.625rem] text-azkar-ink-soft">{message}</div>}
+      {message && <div className="px-4 pb-3 text-[0.6875rem] text-azkar-ink-soft">{message}</div>}
       {items && (
-        <div className="max-h-56 overflow-y-auto border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.625rem] text-azkar-ink-soft">
+        <div className="max-h-56 overflow-y-auto border-t border-azkar-gold-soft/50 px-4 py-3 text-[0.6875rem] text-azkar-ink-soft">
           {items.length === 0 ? (
             <div>لا توجد إشعارات مجدولة.</div>
           ) : (
