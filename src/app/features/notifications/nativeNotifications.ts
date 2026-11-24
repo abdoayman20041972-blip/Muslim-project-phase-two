@@ -294,7 +294,14 @@ async function run(force: boolean, askPermission: boolean) {
   // cancel the previously armed prayer plan and store a prayer-less one.
   // Skip instead — the armed alarms stay correct, the diagnostics explain why,
   // and the next trigger (resume/settings/coords arrival) retries.
-  if (!coords && prayerDependent) return
+  if (!coords && prayerDependent) {
+    // Still record the permission state (read only, never a prompt) so the
+    // diagnostics card does not show "unknown" just because the location is missing.
+    await resolvePermission(false)
+      .then((permission) => patchDiagnostics({ permission }))
+      .catch((error) => recordError('permission-check', error))
+    return
+  }
 
   const now = new Date()
   // The fingerprint includes the calendar day AND the timezone offset, so a
