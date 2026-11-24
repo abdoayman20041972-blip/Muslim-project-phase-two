@@ -57,6 +57,19 @@ export const TTL = {
   test: 0,
 } as const
 
+/** Fixed fallbacks when the sun anchors cannot be computed (no stored location). */
+export const FALLBACK_MORNING_TIME = '06:00'
+export const FALLBACK_EVENING_TIME = '18:00'
+
+/** A Date on the given day at HH:MM, or null for an invalid string. */
+function clockAt(date: Date, hhmm: string): Date | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm)
+  if (!m) return null
+  const at = new Date(date)
+  at.setHours(Number(m[1]), Number(m[2]), 0, 0)
+  return at
+}
+
 function midnightOf(date: Date) {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
@@ -93,6 +106,10 @@ export type PlanInput = {
   quranTime: string
   morningEnabled: boolean
   eveningEnabled: boolean
+  /** Optional fixed HH:MM for the morning wird; empty/undefined follows Sunrise. */
+  morningTime?: string
+  /** Optional fixed HH:MM for the evening wird; empty/undefined follows Sunset/Maghrib. */
+  eveningTime?: string
   /** Opt-in Friday reminder to read Surat Al-Kahf (default off). */
   kahfEnabled?: boolean
   kahfTime?: string
@@ -143,13 +160,24 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
           })
         }
       })
-      const sunrise = parsePrayerTime(timings.Sunrise, date)
-      const sunset = parsePrayerTime(timings.Sunset ?? timings.Maghrib, date)
-      if (morningEnabled && sunrise) {
-        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: channels.reminder, target: 'azkar-morning', ttl: TTL.morning })
+    }
+    const sunrise = timings ? parsePrayerTime(timings.Sunrise, date) : null
+    const sunset = timings ? parsePrayerTime(timings.Sunset ?? timings.Maghrib, date) : null
+    // A custom time wins over the sun anchor; with neither (no stored
+    // location) the wird still fires at a fixed fallback time instead of
+    // being dropped silently.
+    if (morningEnabled) {
+      const custom = input.morningTime ? clockAt(date, input.morningTime) : null
+      const at = custom ?? sunrise ?? clockAt(date, FALLBACK_MORNING_TIME)
+      if (at) {
+        push({ id: makeId(KIND.morning, dayIndex, 0), at, title: 'أذكار الصباح', body: sunrise && !custom ? 'حان وقت أذكار الصباح مع الشروق.' : 'حان وقت أذكار الصباح.', channel: channels.reminder, target: 'azkar-morning', ttl: TTL.morning })
       }
-      if (eveningEnabled && sunset) {
-        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: channels.reminder, target: 'azkar-evening', ttl: TTL.evening })
+    }
+    if (eveningEnabled) {
+      const custom = input.eveningTime ? clockAt(date, input.eveningTime) : null
+      const at = custom ?? sunset ?? clockAt(date, FALLBACK_EVENING_TIME)
+      if (at) {
+        push({ id: makeId(KIND.evening, dayIndex, 0), at, title: 'أذكار المساء', body: sunset && !custom ? 'حان وقت أذكار المساء مع الغروب.' : 'حان وقت أذكار المساء.', channel: channels.reminder, target: 'azkar-evening', ttl: TTL.evening })
       }
     }
     if (ayahEnabled) {
