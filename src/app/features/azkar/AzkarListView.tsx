@@ -3,7 +3,8 @@ import { arabicCount, CATEGORY_COUNT_FORMS, toArabicNumber, ZIKR_COUNT_FORMS } f
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton, CategoryIcon } from '../../components/app-chrome'
 import type { View } from '../../constants'
-import { AZKAR_PROGRESS_RETENTION_DAYS, completedItemCount, completionPercent, countedItems, readAzkarProgress, readAzkarProgressDays, timeBasedAzkar } from './azkarProgress'
+import { AZKAR_PROGRESS_RETENTION_DAYS, completedItemCount, completionPercent, countedItems, readAzkarProgress, readAzkarProgressDays, wirdForPrayerTimes } from './azkarProgress'
+import { usePrayerCoords, usePrayerTimings } from '../prayer/prayerTimes'
 import { favoriteKey } from './useFavorites'
 
 type Props = {
@@ -51,7 +52,11 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
-  const currentWird = timeBasedAzkar()
+  // «وردك الآن» follows the computed prayer times when they load; until then
+  // (or without location) it falls back to the fixed-hour windows.
+  const prayerCoords = usePrayerCoords()
+  const { timings: todayTimings } = usePrayerTimings(prayerCoords)
+  const currentWird = wirdForPrayerTimes(todayTimings)
   const [progress, setProgress] = useState<Record<string, number>>(() => readAzkarProgress())
   useEffect(() => {
     const refresh = () => setProgress(readAzkarProgress())
