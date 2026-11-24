@@ -17,6 +17,7 @@ export type ProphetStory = {
 
 import { PROPHET_STORIES_EXTENDED } from './prophetsDataExtended'
 import { YUSUF_SCENES } from './yusufStory'
+import { DETAILED_STORIES } from './storyContent'
 
 const BASE_STORIES: ProphetStory[] = [
   {
@@ -33,7 +34,7 @@ const BASE_STORIES: ProphetStory[] = [
       { heading: 'السفينة والتنّور', text: 'أوحى الله إليه: اصنع السفينة بأعيننا ووحينا. فكان يصنع ويمرّ عليه المُلأ فيسخرون: صنعتم في نهاركم وملعبًا؟ فقال: سيأتيكم منها عذاب مهين. حتى إذا جاء أمرنا وفالتنّور فور قلنا: اسلك فيها من كل زوجين اثنين وأهلك إلا من سبق عليه القول، وهم قوم قليل آمنوا معه.' },
       { heading: 'الفوز للأؤمنين', text: 'فلما جاء أمرنا فار التنّور وجري الماء فورًا، وحمِل نوحٌ من كل شيء زوجين وأهلَه وأمنَ معه. ونادى ابنه كان في معزل: يا بُنيّ اركب معنا، فقال: سآوي إلى جبل يعصمني الماء. فقال: لا عاصم اليوم من أمر الله إلا من رحم. ومُحيت الدنيا، وقيل: يا أرض ابتلعي ماءك، ونجّى الله النبي والمؤمنين، وأصبح نوحًا يقول: الحمد لله الذي نجّانا من القوم الظالمين.' },
     ],
-    verse: { text: 'وَلَقَدْ أَرْسَلْنَا نُوحًا إِلَىٰ قَوْمِهِ فَلَبِثَ فِيهِمْ أَلْفَ سَنَةٍ إِلَّا خَمْسِينَ عَامًا فَأَخَذَهُمُ الطُّوفَانُ وَهُمْ ظَالِمُونَ', ref: 'العنكبوت: ١٤' },
+    verse: { text: 'وَلَقَدْ أَرْسَلْنَا نُوحًا إِلَىٰ قَوْمِهِۦ فَلَبِثَ فِيهِمْ أَلْفَ سَنَةٍ إِلَّا خَمْسِينَ عَامًۭا فَأَخَذَهُمُ ٱلطُّوفَانُ وَهُمْ ظَٰلِمُونَ', ref: 'العنكبوت: ١٤' },
     lessons: ['الصبر على الدعوة مهما طال الزمن وقلّ المؤيدون', 'النجاة بالعمل الصالح لا بالنسب ولا القرابة', 'لا عاصم اليوم من أمر الله إلا رحمة الله'],
     question: 'ما أطول شيءٍ صبرت عليه في حياتك؟ وماذا كان ثمرته؟',
   },
@@ -226,4 +227,17 @@ const BASE_STORIES: ProphetStory[] = [
   },
 ]
 
-export const PROPHET_STORIES: ProphetStory[] = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED]
+// A story with detailed content shows its scenes from there; the card text mirrors the narrative.
+const withDetail = (story: ProphetStory): ProphetStory => {
+  const detail = DETAILED_STORIES[story.id]
+  if (!detail) return story
+  return {
+    ...story,
+    scenes: detail.scenes.map((scene) => ({
+      heading: scene.h,
+      text: scene.p.filter((para) => para.k === 'n').map((para) => para.t).join(' '),
+    })),
+  }
+}
+
+export const PROPHET_STORIES: ProphetStory[] = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED].map(withDetail)
