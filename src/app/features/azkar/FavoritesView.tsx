@@ -79,12 +79,12 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
               <option value="all">كل الأقسام</option>
               {categoryOptions.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}
             </select>
-            <div className="mt-3 text-[0.625rem] text-azkar-ink-faint" role="status">{toArabicNumber(visibleFavorites.length)} نتيجة</div>
+            <div className="mt-3 text-[0.6875rem] text-azkar-ink-faint" role="status">{toArabicNumber(visibleFavorites.length)} نتيجة</div>
           </div>
 
           <div className="azkar-favorites-list mt-4 divide-y divide-azkar-hairline overflow-hidden rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card u-shadow-1">
             {visibleFavorites.length === 0
-              ? <div className="px-5 py-10 text-center"><div className="font-amiri text-[1.125rem] font-bold text-azkar-ink">لا توجد نتائج</div><div className="mt-1 text-[0.625rem] text-azkar-ink-faint">جرّب نصًا آخر أو اختر قسمًا مختلفًا.</div></div>
+              ? <div className="px-5 py-10 text-center"><div className="font-amiri text-[1.125rem] font-bold text-azkar-ink">لا توجد نتائج</div><div className="mt-1 text-[0.6875rem] text-azkar-ink-faint">جرّب نصًا آخر أو اختر قسمًا مختلفًا.</div></div>
               : visibleFavorites.map(({ key, category, item }) => {
                   const counted = isCountedZikr(item)
                   const kindLabel = item.kind === 'fadl' ? 'فضل وخبر' : item.kind === 'guidance' ? 'إرشاد وآداب' : undefined
@@ -95,14 +95,14 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
                     <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full border border-azkar-teal/10" />
                     <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full border border-azkar-gold/10" />
                     <div className="relative mb-3 flex items-center justify-between gap-3">
-                      <span className="inline-flex items-center gap-1.5"><span className="rounded-full bg-azkar-teal-tint px-2.5 py-1 text-[0.6562rem] font-bold text-azkar-teal-ink">{category.label}</span>{kindLabel && <span className={'rounded-full border px-2.5 py-1 text-[0.6562rem] font-bold ' + (item.kind === 'fadl' ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span>}</span>
+                      <span className="inline-flex items-center gap-1.5"><span className="rounded-full bg-azkar-teal-tint px-2.5 py-1 text-[0.6875rem] font-bold text-azkar-teal-ink">{category.label}</span>{kindLabel && <span className={'rounded-full border px-2.5 py-1 text-[0.6875rem] font-bold ' + (item.kind === 'fadl' ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span>}</span>
                       <button onClick={() => onToggleFavorite(key)} aria-label="إزالة من المفضلة" className="u-pressable flex h-8 w-8 items-center justify-center rounded-full text-azkar-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><StarIcon filled/></button>
                     </div>
                     <p className="relative u-reading-text text-[1.1875rem] text-azkar-ink whitespace-pre-line">{toArabicDigits(item.text)}</p>
                     {counted && <div className="relative mt-4 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-2.5">
                       <div className="mb-2 flex items-center justify-between px-1">
-                        <span className="text-[0.5625rem] text-azkar-ink-faint">التقدم</span>
-                        <span className="text-[0.75rem] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[0.5625rem] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span>
+                        <span className="text-[0.6875rem] text-azkar-ink-faint">التقدم</span>
+                        <span className="text-[0.75rem] font-bold text-azkar-teal-ink">{toArabicNumber(current)} <span className="text-[0.6875rem] text-azkar-ink-faint">من {toArabicNumber(target)}</span></span>
                       </div>
                       <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-azkar-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={`تقدم الذكر: ${current} من ${target}`}>
                         <div className={`h-full rounded-full transition-all duration-200 ${completed ? 'bg-azkar-gold' : 'bg-azkar-teal'}`} style={{ width: `${Math.min(100, current / target * 100)}%` }} />
