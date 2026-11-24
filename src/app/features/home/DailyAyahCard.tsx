@@ -14,7 +14,7 @@ function TafsirPanel({ ayah, surah, fullText }: { ayah: DailyAyah; surah: number
   }, [openTafsir, ayah.number, ayah.text, fullText])
   return (
     <div data-testid="daily-ayah-tafsir" className="mt-2.5 rounded-xl bg-azkar-teal-tint px-3 py-2.5 text-right">
-      <div className="text-[0.625rem] font-bold text-azkar-teal-ink">{tafsirLabel}</div>
+      <div className="text-[0.6875rem] font-bold text-azkar-teal-ink">{tafsirLabel}</div>
       {tafsirLoading ? (
         <div role="status" className="mt-1 text-[0.75rem] text-azkar-ink-soft">جارٍ تحميل التفسير…</div>
       ) : tafsirError || !tafsirText ? (
@@ -91,7 +91,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
   return (
     <div className="home-reference-ayah rounded-[1.5rem] border border-white/60 bg-white/85 px-5 py-3.5 text-center shadow-2xl backdrop-blur-md" data-testid="daily-ayah-card">
       <div className="home-ayah-ornament" aria-hidden="true">❧</div>
-      <div className="mb-1 text-[0.625rem] font-bold text-azkar-gold-deep">آية اليوم · مقتطف</div>
+      <div className="mb-1 text-[0.6875rem] font-bold text-azkar-gold-deep">آية اليوم · مقتطف</div>
       <div className="font-amiri text-[1.5rem] font-bold leading-[1.8] text-[#173c35]">{ayah.text}</div>
       <div className="mt-1 text-[0.6875rem] font-semibold text-azkar-ink-soft">{reference}</div>
 
@@ -117,7 +117,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       {surah && onOpenSurah && (
         <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-2 text-[0.6875rem] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
       )}
-      <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.625rem] font-semibold text-azkar-teal-ink">{notice}</div>
+      <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.6875rem] font-semibold text-azkar-teal-ink">{notice}</div>
       <div className="home-ayah-divider mt-1" aria-hidden="true" />
     </div>
   )
