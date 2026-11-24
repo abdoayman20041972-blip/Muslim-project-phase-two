@@ -28,7 +28,9 @@ export function readStoredCoords(): Coords | null {
 }
 
 export function useLocationCoords() {
-  const [coords, setCoords] = useState<Coords | null>(readStoredCoords)
+  // Start empty so the first client render matches the server HTML (which has no stored location);
+  // the saved location is read right after mount, before the next paint settles.
+  const [coords, setCoords] = useState<Coords | null>(null)
 
   useEffect(() => {
     const refresh = () => {
@@ -37,6 +39,7 @@ export function useLocationCoords() {
         return previous?.lat === next?.lat && previous?.lng === next?.lng ? previous : next
       })
     }
+    refresh()
     window.addEventListener('focus', refresh)
     window.addEventListener('azkar-prayer-settings-changed', refresh)
     return () => {
