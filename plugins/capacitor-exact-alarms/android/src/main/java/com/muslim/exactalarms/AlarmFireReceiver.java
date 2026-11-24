@@ -1,5 +1,6 @@
 package com.muslim.exactalarms;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -9,7 +10,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.content.pm.PackageManager;
 import android.os.Build;
+import androidx.core.content.ContextCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import java.util.concurrent.ExecutorService;
@@ -18,8 +21,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Fires when a setAlarmClock alarm goes off — exactly on the scheduled minute,
- * whatever the device's battery state is. Posts the notification (channel id,
+ * Fires when a setAlarmClock alarm goes off. Posts the notification (channel id,
  * icons and sound were configured once by the app through
  * @capacitor/local-notifications, so the adhan channel rings exactly like
  * before), prunes fired-long-ago entries, and then CHAIN-ADVANCES: re-arms
@@ -59,32 +61,100 @@ public class AlarmFireReceiver extends BroadcastReceiver {
         if (id == Integer.MIN_VALUE) return;
         final PendingResult result = goAsync();
         EXECUTOR.execute(() -> {
+            FireLog log = new FireLog(context);
             try {
                 AlarmStorage storage = new AlarmStorage(context);
                 AlarmEntry entry = storage.find(id);
-                if (entry != null) {
-                    try {
-                        postNotification(context, entry);
-                    } catch (RuntimeException postFailure) {
-                        // Never crash the app from a broadcast: the alarm is
-                        // consumed either way.
-                    }
+                if (entry == null) {
+                    log.add(id, "", 0L, "no_entry", "alarm fired but the stored plan has no entry for it");
+                } else {
+                    deliver(context, entry, log);
                 }
-                // Prune fired-long-ago entries, then chain-advance the armed
-                // window from the stored plan.
+                // Covers a missed timezone broadcast; does nothing when the zone is unchanged.
+                ClockSync.reconcile(context, storage, log);
                 long now = System.currentTimeMillis();
                 storage.pruneBefore(now - PRUNE_AFTER_MS);
                 AlarmScheduler.armWindow(context, storage.list(), AlarmScheduler.ARM_WINDOW_MS);
+            } catch (RuntimeException unexpected) {
+                log.add(id, "", 0L, "error", String.valueOf(unexpected.getMessage()));
             } finally {
                 result.finish();
             }
         });
     }
 
+    /**
+     * Posts the entry and records what happened. A failed post is retried once
+     * after a short pause; a skipped post (notifications disabled) is logged
+     * with its reason instead of vanishing.
+     */
+    private void deliver(Context context, AlarmEntry entry, FireLog log) {
+        long late = Math.max(0L, System.currentTimeMillis() - entry.at);
+        String lateNote = "fired " + (late / 1000) + "s after the planned time";
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            log.add(entry.id, entry.title, entry.at, "notifications_disabled", lateNote);
+            return;
+        }
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            try {
+                ensureChannel(context, entry.channelId);
+                postNotification(context, entry);
+                log.add(entry.id, entry.title, entry.at, "posted", lateNote + (attempt > 1 ? ", second attempt" : ""));
+                return;
+            } catch (RuntimeException postFailure) {
+                if (attempt == 2) {
+                    log.add(entry.id, entry.title, entry.at, "post_failed", String.valueOf(postFailure.getMessage()));
+                    return;
+                }
+                try {
+                    Thread.sleep(1500);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    log.add(entry.id, entry.title, entry.at, "post_failed", "interrupted before retry");
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * If the entry's channel is missing (for example the user deleted it in
+     * system settings while the plan survived), Android 8+ drops the post.
+     * Recreate a basic channel with the same id so the notification still shows.
+     * An existing channel is never touched, so the user's own settings stay.
+     */
+    private void ensureChannel(Context context, String channelId) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        android.app.NotificationManager manager =
+            (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null || manager.getNotificationChannel(channelId) != null) return;
+        boolean silent = channelId.endsWith("silent");
+        boolean adhan = channelId.contains("adhan") && !silent;
+        android.app.NotificationChannel channel = new android.app.NotificationChannel(
+            channelId,
+            adhan || silent ? "الأذان" : "التنبيهات",
+            silent
+                ? android.app.NotificationManager.IMPORTANCE_LOW
+                : adhan
+                    ? android.app.NotificationManager.IMPORTANCE_HIGH
+                    : android.app.NotificationManager.IMPORTANCE_DEFAULT
+        );
+        if (silent) {
+            channel.setSound(null, null);
+            channel.enableVibration(false);
+        } else if (channelId.endsWith("-adhan")) {
+            channel.setSound(
+                adhanSound(context),
+                new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                    .build()
+            );
+        }
+        manager.createNotificationChannel(channel);
+    }
+
     private void postNotification(Context context, AlarmEntry entry) {
         NotificationManagerCompat manager = NotificationManagerCompat.from(context);
-        if (!manager.areNotificationsEnabled()) return;
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, entry.channelId)
             .setSmallIcon(smallIcon(context))
             .setContentTitle(entry.title)
@@ -118,11 +188,26 @@ public class AlarmFireReceiver extends BroadcastReceiver {
             builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS);
         }
 
+        // Explicit runtime check: on Android 13+ a denied POST_NOTIFICATIONS
+        // must not reach notify(). ContextCompat maps this to
+        // areNotificationsEnabled() on older versions. The caller logs the
+        // SecurityException as a post failure.
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            throw new SecurityException("POST_NOTIFICATIONS is not granted");
+        }
+
         Notification notification = builder.build();
         manager.notify(entry.id, notification);
 
+        // The summary is cosmetic. It must never turn a delivered notification
+        // into a "failure" that the retry would then post (and sound) twice.
         if (entry.group.length() > 0) {
-            manager.notify(GROUP_SUMMARY_ID, groupSummary(context, entry));
+            try {
+                manager.notify(GROUP_SUMMARY_ID, groupSummary(context, entry));
+            } catch (RuntimeException summaryFailure) {
+                // Ignored on purpose.
+            }
         }
     }
 
