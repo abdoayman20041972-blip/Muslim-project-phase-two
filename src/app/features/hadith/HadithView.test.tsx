@@ -86,14 +86,14 @@ describe('reading screen', () => {
   })
   it('applies font size and hides notes live from settings', () => {
     openCurated()
-    expect(document.querySelector('.hadith-text')?.className).toContain('text-[16px]')
+    expect(document.querySelector('.hadith-text')?.className).toContain('text-[1rem]')
     expect(document.body.textContent).toContain(HADITH_COLLECTION[0].note)
     act(() => {
       localStorage.setItem(APP_SETTINGS_KEYS.hadithFont, 'lg')
       localStorage.setItem(APP_SETTINGS_KEYS.hadithShowNote, '0')
       window.dispatchEvent(new Event('azkar-settings-changed'))
     })
-    expect(document.querySelector('.hadith-text')?.className).toContain('text-[19px]')
+    expect(document.querySelector('.hadith-text')?.className).toContain('text-[1.1875rem]')
     expect(document.body.textContent).not.toContain(HADITH_COLLECTION[0].note)
   })
   it('shows the position indicator in the chosen number style', () => {
