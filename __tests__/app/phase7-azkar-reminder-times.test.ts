@@ -185,6 +185,45 @@ describe('phase 7: no-location run preserves armed prayer alarms', () => {
     expect(plan.some((a) => a.id === makeId(KIND.morning, 0, 0) || a.id === makeId(KIND.morning, 1, 0))).toBe(true)
   })
 
+  it('never resurrects a prayer kind the user turned off, from cache or pending', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    await scheduleNativeNotifications({ force: true })
+    // Turn the adhan off, keep the pre-reminder on, lose the location.
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerTime, '0')
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    let plan = (alarms.schedule.mock.calls[1]![0] as { alarms: Array<{ id: number }> }).alarms
+    // kind 0 (adhan at the prayer time) must be gone; kind 1 (pre-reminder) stays.
+    expect(plan.some((a) => a.id >= ID_BASE && a.id < ID_BASE + 1000)).toBe(false)
+    expect(plan.some((a) => a.id >= ID_BASE + 1000 && a.id < ID_BASE + 2000)).toBe(true)
+    // The cache was rewritten to the scheduled plan, so re-enabling the adhan
+    // (still without coords) cannot bring the old adhan alarms back.
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerTime, '1')
+    await scheduleNativeNotifications({ force: true })
+    plan = (alarms.schedule.mock.calls[2]![0] as { alarms: Array<{ id: number }> }).alarms
+    expect(plan.some((a) => a.id >= ID_BASE && a.id < ID_BASE + 1000)).toBe(false)
+  })
+
+  it('clears the cache when every prayer kind is off, so nothing resurrects later', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    await scheduleNativeNotifications({ force: true })
+    expect(localStorage.getItem('azkar_prayer_plan_cache_v1')).toBeTruthy()
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerTime, '0')
+    localStorage.setItem(APP_SETTINGS_KEYS.reminders, '0')
+    await scheduleNativeNotifications({ force: true })
+    expect(localStorage.getItem('azkar_prayer_plan_cache_v1')).toBeNull()
+  })
+
+  it('keeps the protective skip when recovery is impossible: no cache and pending() fails', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    // Fresh upgrade: no cache yet, native armed list unreadable.
+    alarms.pending.mockRejectedValue(new Error('native bridge down'))
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    // A replace here could silently drop armed prayer alarms: skip instead.
+    expect(alarms.schedule).not.toHaveBeenCalled()
+  })
+
   it('honors the muted-prayer filter for carried entries', async () => {
     const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
     await scheduleNativeNotifications({ force: true })
