@@ -1636,7 +1636,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .q2-compass-shell{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;}
 .q2-dial{position:relative;width:min(60vw,14rem,30dvh);aspect-ratio:1/1;flex:none;margin-top:clamp(2.6rem,13dvh,5.6rem);filter:drop-shadow(0 22px 34px rgba(2,12,10,.45));}
 .q2-dial::before{content:'';position:absolute;inset:-24%;border-radius:50%;z-index:-1;background:radial-gradient(circle,rgba(4,18,15,.62) 32%,rgba(4,18,15,.28) 56%,rgba(4,18,15,0) 72%);}
-.q2-dial-face,.q2-needle{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.q2-dial-face,.q2-needle,.q2-cardinals{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.q2-cardinals{pointer-events:none;}
+.q2-cardinal{fill:#efd9a7;font-size:13px;font-weight:700;opacity:.92;}
+.q2-cardinal-n{fill:#f8ecc0;font-size:15px;}
+.q2-bearing{margin:0;font-size:.85rem;font-weight:600;color:#e9d9a8;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+.q2-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 .q2-needle-layer{position:absolute;inset:0;opacity:0;will-change:transform;transition:opacity .25s ease;}
 .q2-needle-layer.is-on{opacity:1;}
 .q2-needle{filter:drop-shadow(0 3px 4px rgba(0,0,0,.55));}
