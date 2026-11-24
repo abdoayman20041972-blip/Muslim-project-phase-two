@@ -12,11 +12,15 @@ function ReadingToggles({
   noteKey,
   fontLabel,
   preview,
+  noteTitle = 'ملاحظات وشرح',
+  noteDescription = 'إظهار فائدة مختصرة أسفل كل نص.',
 }: {
   fontKey: string
   noteKey?: string
   fontLabel: string
   preview?: string
+  noteTitle?: string
+  noteDescription?: string
 }) {
   const [font, setFont] = useState(() => readSetting(fontKey, 'md'))
   const [note, setNote] = useState(() => (noteKey ? readSetting(noteKey, '1') !== '0' : true))
@@ -56,18 +60,16 @@ function ReadingToggles({
         )}
       </Row>
       {noteKey && (
-        <Row title="ملاحظات وشرح" description="إظهار فائدة مختصرة أسفل كل نص." last>
-          <button
-            onClick={() => {
-              const n = !note
+        <Row title={noteTitle} description={noteDescription} stacked last>
+          <Choice
+            current={note ? 'on' : 'off'}
+            onChange={(v) => {
+              const n = v === 'on'
               setNote(n)
               save(noteKey, n ? '1' : '0')
             }}
-            aria-pressed={note}
-            className={`min-h-11 rounded-xl border px-4 py-2 text-[0.625rem] font-bold ${note ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
-          >
-            {note ? 'ظاهرة' : 'مخفية'}
-          </button>
+            labels={{ on: 'ظاهرة', off: 'مخفية' }}
+          />
         </Row>
       )}
     </>
@@ -89,6 +91,8 @@ export function ProphetsSection() {
         fontKey={PROPHET_FONT_KEY}
         noteKey={PROPHET_QUESTION_KEY}
         fontLabel="حجم خط القصة"
+        noteTitle="التأمل بعد القصة"
+        noteDescription="إظهار سؤال التأمل في نهاية كل قصة."
       />
     </Section>
   )
