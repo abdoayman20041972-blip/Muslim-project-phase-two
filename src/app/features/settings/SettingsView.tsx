@@ -97,7 +97,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
       readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled, '1') !== '0',
     ),
     [journeyAutoAdvance, setJourneyAutoAdvance] = useState(
-      readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance, '0') === '1',
+      readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance, '1') === '1',
     )
   const [notificationStatus, setNotificationStatus] = useState(getNotificationPermission()),
     [calc, setCalc] = useState(readSetting(APP_SETTINGS_KEYS.prayerCalcMethod, '5')),
@@ -138,7 +138,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
       localStorage.removeItem('azkar_azkar_reminders')
     }
     setAzkarCounter(readSetting(APP_SETTINGS_KEYS.azkarCounterEnabled, '1') !== '0')
-    setJourneyAutoAdvance(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance, '0') === '1')
+    setJourneyAutoAdvance(readSetting(APP_SETTINGS_KEYS.journeyAutoAdvance, '1') === '1')
   }, [])
   const save = (k: string, v: string) => {
     writeSetting(k, v)
