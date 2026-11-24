@@ -122,6 +122,15 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     expect(alarms.schedule).not.toHaveBeenCalled()
   })
 
+  it('records the permission state even when the location is missing, without prompting', async () => {
+    ln.checkPermissions.mockResolvedValue({ display: 'denied' })
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    const { scheduleNativeNotifications } = await load()
+    await scheduleNativeNotifications({ force: true })
+    expect(ln.requestPermissions).not.toHaveBeenCalled()
+    expect(JSON.parse(localStorage.getItem('muslim_diag_notifications_v1')!).permission).toBe('denied')
+  })
+
   it('does not delete the adhan channels on every run (shade wipe fix)', async () => {
     // v1.2.7 root-cause fix: builds ≤ 1.2.6 deleted the adhan channels on
     // EVERY start, which removed that channel's notifications from the shade
