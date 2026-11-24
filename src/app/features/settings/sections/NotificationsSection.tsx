@@ -106,7 +106,7 @@ export function NotificationsSection({
     <>
     <Section title="مركز الإشعارات">
       <Row title="السماح بالإشعارات" description={native ? (nativeStatus === 'denied' ? 'الإشعارات مغلقة من النظام، فلن يصلك أي تنبيه حتى تسمح بها.' : 'تصل الإشعارات داخل التطبيق حتى بعد إغلاقه.') : undefined}>
-        <button onClick={() => void (native ? (nativeStatus === 'denied' ? openSystemSettings('notifications') : askNative()) : notify())} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card">
+        <button onClick={() => void (native ? (nativeStatus === 'denied' ? openSystemSettings('notifications') : askNative()) : notify())} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card">
           {(native ? nativeStatus : notificationStatus) === 'granted' ? 'مسموحة' : native && nativeStatus === 'denied' ? 'فتح الإعدادات' : 'السماح'}
         </button>
       </Row>
@@ -114,7 +114,7 @@ export function NotificationsSection({
         <Row title="تنبيهات في وقتها بالضبط" description="بدون «المنبّهات والتذكيرات» قد يؤذن التطبيق متأخرًا. فعّلها من إعدادات النظام ثم ارجع هنا.">
           <button
             type="button"
-            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card"
+            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card"
             onClick={() => {
               void openExactAlarmSettings().then((state) => setExactAlarm(state))
             }}
@@ -126,8 +126,8 @@ export function NotificationsSection({
       {native && nativeStatus === 'granted' && !batteryHintSeen && (
         <Row title="لضمان وصول الأذان في وقته" description="اسمح للتطبيق بالعمل دون قيود البطارية، فبعض الهواتف توقف التنبيهات في الخلفية.">
           <div className="flex shrink-0 flex-col gap-2">
-            <button type="button" className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card" onClick={() => { void openSystemSettings('battery'); dismissBatteryHint() }}>فتح الإعدادات</button>
-            <button type="button" className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.625rem] font-bold text-azkar-teal-ink" onClick={dismissBatteryHint}>لاحقًا</button>
+            <button type="button" className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card" onClick={() => { void openSystemSettings('battery'); dismissBatteryHint() }}>فتح الإعدادات</button>
+            <button type="button" className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.6875rem] font-bold text-azkar-teal-ink" onClick={dismissBatteryHint}>لاحقًا</button>
           </div>
         </Row>
       )}
@@ -136,7 +136,7 @@ export function NotificationsSection({
       </Row>
       {denied && (
         <Row title="لم يتم التفعيل" description="الإذن بالإشعارات مرفوض. اسمح بها من إعدادات النظام ثم فعّل التذكير مرة أخرى.">
-          <button type="button" className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card" onClick={() => void openSystemSettings('notifications')}>فتح الإعدادات</button>
+          <button type="button" className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card" onClick={() => void openSystemSettings('notifications')}>فتح الإعدادات</button>
         </Row>
       )}
       <Row title="الصلوات المفعّلة" description="أوقف أي صلاة لا تريد إشعارها، وتنطبق على الأذان والتذكير قبله." stacked>
