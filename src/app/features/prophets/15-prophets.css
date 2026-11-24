@@ -1,0 +1,24 @@
+.ys-body{display:flex;flex-direction:column;gap:.2rem}
+.ys-scenes{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}
+.ys-scene{padding:1rem 1.05rem;border:1px solid hsl(var(--azkar-teal)/.09);border-radius:var(--app-radius);background:var(--app-panel)}
+.ys-scene-head{display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem}
+.ys-scene-head h2{margin:0;font-size:1.02rem;font-weight:700;color:hsl(var(--azkar-teal-ink))}
+.ys-scene-no{flex:none;width:1.55rem;height:1.55rem;display:flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid hsl(var(--azkar-gold)/.5);background:hsl(var(--azkar-gold)/.12);color:hsl(var(--azkar-gold-deep));font-size:.72rem;font-weight:700}
+.ys-prose{margin:0 0 .7rem;line-height:2.05;color:hsl(var(--azkar-ink));text-align:right}
+.ys-tafsir{margin:.7rem 0;padding:.65rem .8rem;border-radius:.8rem;border:1px solid hsl(var(--azkar-teal)/.14);border-inline-start:3px solid hsl(var(--azkar-teal)/.55);background:hsl(var(--azkar-teal)/.05)}
+.ys-tafsir-who{margin-bottom:.25rem;font-size:.7rem;font-weight:700;color:hsl(var(--azkar-teal-deep))}
+.ys-tafsir-text{margin:0;line-height:2;color:hsl(var(--azkar-ink-soft))}
+.ys-verse{margin:.8rem 0;padding:.8rem .6rem;border-radius:.9rem;border:1px solid hsl(var(--azkar-gold)/.35);background:hsl(var(--azkar-gold)/.08);color:hsl(var(--azkar-gold-deep))}
+.ys-verse-label{margin-bottom:.4rem;text-align:center;font-size:.72rem;font-weight:700}
+.ys-verse-row{display:flex;align-items:center;gap:.2rem}
+.ys-orn{flex:none;width:1rem;height:2.75rem}
+.ys-orn-close{transform:scaleX(-1)}
+.ys-verse-text{flex:1;min-width:0;margin:0;text-align:center;font-size:1.2rem;line-height:2.3;color:hsl(var(--azkar-ink));overflow-wrap:anywhere}
+.ys-verse-wait{font-size:.8rem;color:hsl(var(--azkar-ink-faint))}
+.ys-ayah-no{display:inline-flex;align-items:center;justify-content:center;unicode-bidi:isolate;direction:rtl;min-width:1.7em;height:1.7em;box-sizing:border-box;padding:0 .2em;margin:0 .15em;border:1.5px solid currentColor;border-radius:999px;font-size:.62em;line-height:1;font-weight:700;vertical-align:middle;color:hsl(var(--azkar-gold-deep))}
+.ys-verse-ref{display:block;margin-top:.5rem;padding-top:.4rem;border-top:1px dashed hsl(var(--azkar-gold)/.35);font-style:normal;font-size:.7rem;color:hsl(var(--azkar-ink-faint));text-align:center}
+.ys-hadith{margin:.8rem 0;padding:.8rem .9rem;border-radius:.9rem;border:1px solid hsl(var(--azkar-teal)/.2);border-inline-start:3px solid hsl(var(--azkar-teal));background:hsl(var(--azkar-teal)/.06)}
+.ys-hadith-label{margin-bottom:.35rem;font-size:.72rem;font-weight:700;color:hsl(var(--azkar-teal-deep))}
+.ys-hadith-text{margin:0;line-height:2;color:hsl(var(--azkar-ink))}
+.dark .ys-scene{background:linear-gradient(145deg,hsl(var(--azkar-card)),hsl(var(--azkar-surface-2)))}
+@media(max-width:380px){.ys-scene{padding:.9rem}.ys-verse-text{font-size:1.08rem}}
