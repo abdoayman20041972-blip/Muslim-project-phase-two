@@ -35,7 +35,7 @@ describe('Yusuf story content', () => {
 
   it('cites a collection and number for every hadith', () => {
     for (const scene of YUSUF_SCENES) {
-      if (scene.hd) expect(scene.hd.s).toMatch(/^رواه البخاري \(/)
+      if (scene.hd) expect(scene.hd.s).toMatch(/^رواه (البخاري|مسلم) \(/)
     }
   })
 
