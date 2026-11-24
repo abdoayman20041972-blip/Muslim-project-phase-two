@@ -1768,3 +1768,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .tasbih-word-menu-option:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:-2px;background:hsl(var(--azkar-gold)/.09);}
 .hadith-empty{padding:2.2rem 1.2rem;border:1px solid hsl(var(--azkar-hairline));border-radius:var(--r-lg);background:hsl(var(--azkar-card));text-align:center;font-size:.75rem;color:hsl(var(--azkar-ink-soft));}
 .hadith-mark-hit{background:hsl(var(--azkar-gold)/.28);color:inherit;border-radius:.25rem;padding:0 .1rem;}
+
+/* Phase 5: visual distinction between counted dhikr and non-counted cards. */
+.azkar-fadl-card{background:linear-gradient(160deg,hsl(var(--azkar-gold-tint)/.55),hsl(var(--azkar-card)) 60%);border-inline-start:3px solid hsl(var(--azkar-gold)/.55)}
+.azkar-guidance-card{background:hsl(var(--azkar-teal-tint)/.35);border-inline-start:3px solid hsl(var(--azkar-teal)/.4)}
