@@ -240,6 +240,46 @@ describe('Quran offline download manager', () => {
     expect((await getDownloadStatus('ar.minshawi')).completed).toHaveLength(114)
   })
 
+  it('returns the live job when the same reciter download starts twice in quick succession', async () => {
+    const fetchMock = vi.mocked(fetch)
+    let calls = 0
+    fetchMock.mockImplementation(async () => {
+      calls += 1
+      return streamResponse([audioChunk(64 * 1024)])
+    })
+
+    // Both calls pass their first jobs.get check before either reaches startJob.
+    const [first, second] = await Promise.all([
+      downloadReciterAll('ar.minshawi'),
+      downloadReciterAll('ar.minshawi'),
+    ])
+
+    expect(first.status).toBe('completed')
+    expect(second.status).toBe('completed')
+    expect(calls).toBe(114)
+    expect((await getDownloadStatus('ar.minshawi')).completed).toHaveLength(114)
+  })
+
+  it('does not leave a surah stored when the library is deleted mid-download', async () => {
+    const fetchMock = vi.mocked(fetch)
+    let releaseFetch: ((value: Response) => void) | undefined
+    fetchMock.mockImplementation(
+      () => new Promise<Response>((resolve) => { releaseFetch = resolve }),
+    )
+
+    const jobPromise = downloadReciterAll('ar.minshawi')
+    await vi.waitFor(() => expect(releaseFetch).toBeDefined())
+
+    // Delete while the first surah's fetch is suspended; the blob arrives only
+    // after the delete has started.
+    const deletePromise = deleteReciterAll('ar.minshawi')
+    releaseFetch!(streamResponse([audioChunk(64 * 1024)]))
+    await Promise.all([jobPromise, deletePromise])
+
+    expect((await getDownloadStatus('ar.minshawi')).completed).toEqual([])
+    expect(await isSurahDownloaded('ar.minshawi', 1)).toBe(false)
+  })
+
   it('isolates a repeated network failure to one surah and summarizes it by name', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockImplementation(async (input) => {
