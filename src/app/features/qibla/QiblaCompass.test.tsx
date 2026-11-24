@@ -103,3 +103,26 @@ describe('QiblaCompass sensor stream', () => {
     await waitFor(() => expect(needleRotationDeg(container)).not.toBeNull())
   })
 })
+
+describe('QiblaCompass web failure messages', () => {
+  beforeEach(() => {
+    vi.stubGlobal('DeviceOrientationEvent', class extends Event {})
+  })
+
+  it('points to Chrome motion-sensor settings on the web when no sensor events arrive', async () => {
+    const { container } = render(<QiblaCompass coords={CAIRO} />)
+    await waitFor(
+      () => expect(container.querySelector('.q2-status')?.textContent).toContain('Chrome'),
+      { timeout: 4000 },
+    )
+  })
+
+  it('names the browser on the web when only relative events arrive', async () => {
+    const { container } = render(<QiblaCompass coords={CAIRO} />)
+    window.dispatchEvent(new Event('deviceorientation'))
+    await waitFor(
+      () => expect(container.querySelector('.q2-status')?.textContent).toContain('المتصفح لا يوفّر'),
+      { timeout: 4000 },
+    )
+  })
+})
