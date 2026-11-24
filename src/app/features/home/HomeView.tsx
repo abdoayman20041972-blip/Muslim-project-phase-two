@@ -239,9 +239,9 @@ export function HomeView({
           </div>
           <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[0.6875rem] text-white/75" dir="ltr">
             <span>Illustrative photo, not your location · </span>
-            <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.artist}</a>
+            <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="-my-2.5 inline-block py-2.5 underline">{photo.artist}</a>
             <span> / Wikimedia Commons / </span>
-            <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.license}</a>
+            <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="-my-2.5 inline-block py-2.5 underline">{photo.license}</a>
           </div>
           {!coords && <div className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
           {coords && prayerLoading && !timings && <div role="status" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">جارٍ حساب المواقيت…</div>}
