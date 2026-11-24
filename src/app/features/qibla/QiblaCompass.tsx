@@ -1,5 +1,6 @@
 import { RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { magneticDeclination } from './declination'
 import {
   createHeadingFilter,
   currentScreenAngle,
@@ -53,10 +54,18 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const [heading, setHeading] = useState<number | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [lowAccuracy, setLowAccuracy] = useState(false)
+  const [invalidPose, setInvalidPose] = useState(false)
   const stopRef = useRef<(() => void) | null>(null)
   const filterRef = useRef(createHeadingFilter(140))
 
   const bearing = qiblaBearing(coords.lat, coords.lng)
+  // Magnetic declination at the user's location (true = magnetic + declination).
+  // Applied ONLY on the iOS webkitCompassHeading path, which Apple documents as
+  // magnetic-north referenced. The Android deviceorientationabsolute path is left
+  // uncorrected on purpose: its north reference (magnetic vs true) is strongly
+  // indicated but not yet measured on the target WebView, so applying a blind
+  // correction could add the very error it means to remove. Verify on device first.
+  const declination = useMemo(() => magneticDeclination(coords.lat, coords.lng), [coords.lat, coords.lng])
 
   const stop = useCallback(() => {
     stopRef.current?.()
@@ -68,12 +77,14 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     const filter = filterRef.current
     filter.reset()
     setHeading(null)
+    setInvalidPose(false)
     setStatus('waiting')
 
     let raf = 0
     let pending: number | null = null
     let sawAnyEvent = false
     let absoluteEventSeen = false
+    let nullStreak = 0
 
     const flush = () => {
       raf = 0
@@ -95,7 +106,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       // 1) iOS: webkitCompassHeading is a ready-made magnetic heading of the device top.
       if (typeof e.webkitCompassHeading === 'number' && Number.isFinite(e.webkitCompassHeading) && e.webkitCompassHeading >= 0) {
         if (typeof e.webkitCompassAccuracy === 'number') setLowAccuracy(e.webkitCompassAccuracy < 0 || e.webkitCompassAccuracy > 25)
-        publish(normalize360(e.webkitCompassHeading + currentScreenAngle()))
+        publish(normalize360(e.webkitCompassHeading + declination + currentScreenAngle()))
         return
       }
 
@@ -105,7 +116,21 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       if (typeof e.alpha !== 'number' || typeof e.beta !== 'number' || typeof e.gamma !== 'number') return
       if (fromAbsoluteEvent) absoluteEventSeen = true
       const h = headingFromEuler(e.alpha, e.beta, e.gamma, currentScreenAngle())
-      if (h !== null && Number.isFinite(h)) publish(h)
+      if (h === null || !Number.isFinite(h)) {
+        // Face-down or degenerate pose: never keep showing a stale heading as
+        // valid. A short streak avoids flicker on single dropped/odd samples.
+        nullStreak += 1
+        if (nullStreak >= 3) {
+          filter.reset()
+          pending = null
+          setHeading(null)
+          setInvalidPose(true)
+        }
+        return
+      }
+      nullStreak = 0
+      setInvalidPose(false)
+      publish(h)
     }
 
     const onAbsolute = (event: Event) => handle(event, true)
@@ -126,7 +151,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       raf = 0
       pending = null
     }
-  }, [stop])
+  }, [stop, declination])
 
   const enable = useCallback(async () => {
     if (typeof window !== 'undefined' && !window.isSecureContext) {
@@ -182,7 +207,8 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const aligned = active && Math.abs(shortestDelta(bearing, normalize360(heading))) <= 4
 
   let message = STATUS_TEXT[status] ?? ''
-  if (status === 'active' && lowAccuracy) message = 'دقة البوصلة منخفضة، ابتعد عن المعادن والمغناطيس'
+  if (status === 'active' && invalidPose) message = 'الهاتف مقلوب على وجهه أو في وضع لا تظهر فيه الشاشة، أدره حتى تتضح القراءة'
+  else if (status === 'active' && lowAccuracy) message = 'دقة البوصلة منخفضة، ابتعد عن المعادن والمغناطيس'
 
   return (
     <div className="q2-compass-shell">
