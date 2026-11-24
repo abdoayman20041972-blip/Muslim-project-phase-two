@@ -44,10 +44,10 @@ describe('reading screen', () => {
   it('shows one hadith with its position and navigates', () => {
     openCurated()
     expect(screen.getByTestId('hadith-position').textContent).toBe(`حديث ${ar(1)} من ${ar(HADITH_COLLECTION.length)}`)
-    expect(document.querySelector('.hadith-text')?.textContent).toBe(`«${HADITH_COLLECTION[0].text}»`)
+    expect(document.querySelector('.hadith-text')?.textContent).toBe(HADITH_COLLECTION[0].text)
     next()
     expect(screen.getByTestId('hadith-position').textContent).toContain(ar(2))
-    expect(document.querySelector('.hadith-text')?.textContent).toBe(`«${HADITH_COLLECTION[1].text}»`)
+    expect(document.querySelector('.hadith-text')?.textContent).toBe(HADITH_COLLECTION[1].text)
     fireEvent.click(screen.getByRole('button', { name: 'الحديث السابق' }))
     expect(screen.getByTestId('hadith-position').textContent).toContain(ar(1))
     expect((screen.getByRole('button', { name: 'الحديث السابق' }) as HTMLButtonElement).disabled).toBe(true)
