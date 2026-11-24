@@ -218,9 +218,18 @@ export function TasbihView({
             </div>
 
             <div className="tasbih-session-meta" aria-label="إحصاءات السبحة">
-              <span>اليوم {toArabicNumber(dayTotal)}</span>
-              <span>{toArabicNumber(completedRounds)} جولات مكتملة</span>
-              <span>إجمالي الذكر {toArabicNumber(totalForWord)}</span>
+              <span className="tasbih-stat">
+                <strong>{toArabicNumber(dayTotal)}</strong>
+                <small>تسبيحات اليوم</small>
+              </span>
+              <span className="tasbih-stat">
+                <strong>{toArabicNumber(completedRounds)}</strong>
+                <small>جولات مكتملة</small>
+              </span>
+              <span className="tasbih-stat">
+                <strong>{toArabicNumber(totalForWord)}</strong>
+                <small>إجمالي الذكر</small>
+              </span>
             </div>
 
             <div className="tasbih-visible-actions">
