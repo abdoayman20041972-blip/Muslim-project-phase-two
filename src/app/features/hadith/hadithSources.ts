@@ -1,0 +1,30 @@
+// External source pages (sunnah.com, read 24 Nov 2026) for curated hadiths whose cited reference was
+// verified against the page. An entry without a link is shown with "reference under review".
+export const HADITH_SOURCE_URLS: Record<string, string> = {
+  "muslim-2626": "https://sunnah.com/muslim:2626",
+  "bukhari-1": "https://sunnah.com/bukhari:1",
+  "muslim-55a": "https://sunnah.com/muslim:55a",
+  "bukhari-10": "https://sunnah.com/bukhari:10",
+  "bukhari-13": "https://sunnah.com/bukhari:13",
+  "tirmidhi-2317": "https://sunnah.com/tirmidhi:2317",
+  "muslim-101": "https://sunnah.com/muslim:101",
+  "bukhari-52": "https://sunnah.com/bukhari:52",
+  "bukhari-6682": "https://sunnah.com/bukhari:6682",
+  "bukhari-6168": "https://sunnah.com/bukhari:6168",
+  "muslim-2664": "https://sunnah.com/muslim:2664",
+  "muslim-2699": "https://sunnah.com/muslim:2699",
+  "muslim-54": "https://sunnah.com/muslim:54",
+  "muslim-223": "https://sunnah.com/muslim:223",
+  "bukhari-69": "https://sunnah.com/bukhari:69",
+  "bukhari-6018": "https://sunnah.com/bukhari:6018",
+  "muslim-2578": "https://sunnah.com/muslim:2578",
+  "tirmidhi-3895": "https://sunnah.com/tirmidhi:3895",
+  "tirmidhi-1987": "https://sunnah.com/tirmidhi:1987",
+  "muslim-91": "https://sunnah.com/muslim:91",
+  "bukhari-6116": "https://sunnah.com/bukhari:6116",
+  "bukhari-5027": "https://sunnah.com/bukhari:5027",
+  "abudawud-4811": "https://sunnah.com/abudawud:4811",
+  "muslim-783": "https://sunnah.com/muslim:783b",
+  "tirmidhi-1956": "https://sunnah.com/tirmidhi:1956",
+  "bukhari-2989": "https://sunnah.com/bukhari:2989"
+}
