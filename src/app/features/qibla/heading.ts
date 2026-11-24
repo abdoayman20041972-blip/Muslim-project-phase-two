@@ -1,8 +1,8 @@
 const D2R = Math.PI / 180
 const R2D = 180 / Math.PI
 
-/** Phone is treated as "flat" when its screen normal is within ~53° of vertical. */
-const FLAT_THRESHOLD = 0.6
+/** Screen-normal vertical component at or below which the phone is treated as face-down. */
+const FACE_DOWN_GUARD = -0.65
 
 export const normalize360 = (deg: number) => ((deg % 360) + 360) % 360
 
@@ -23,12 +23,27 @@ export function currentScreenAngle(): number {
  * from W3C Z-X'-Y'' Euler angles that are relative to magnetic north
  * (i.e. from `deviceorientationabsolute` or an event with `absolute === true`).
  *
- * - Phone flat (screen facing up): heading of the top of the screen (UI-up), which
- *   already accounts for screen rotation via `screenDeg` — apply it only here, once.
- * - Phone upright: heading of the rear camera direction (-Z axis), which does not
- *   depend on screen rotation, so no extra compensation is applied.
+ * One continuous facing reference for every pose, so no threshold crossing can
+ * flip the needle:
+ * - Primary: horizontal projection of the on-screen "up" vector (device axes
+ *   combined via `screenDeg` — the rotation compensation is applied only here,
+ *   once). This is the familiar "top of the screen" heading when the phone is
+ *   held flat(-ish).
+ * - As that projection degenerates near upright poses, the rear camera axis
+ *   (-Z) takes over, weighted by how much of the primary projection remains.
+ *   The camera axis is sign-chosen by the vertical component of the on-screen
+ *   "up" vector: -Z when the screen faces the user (top above the horizon),
+ *   +Z when it faces away (upside-down vertical), which is the unique choice
+ *   that stays continuous with the flat-side heading on both tilt directions.
+ *   The sign flips only where the primary projection is already full-weight,
+ *   so the flip itself is invisible.
  *
- * Returns null when the heading is undefined.
+ * Returns null when the heading is undefined: the phone is face-down
+ * (screen normal points down past the guard), or the pose is degenerate -
+ * in the band where the screen faces below the horizon but not yet fully down,
+ * the two references physically oppose each other (the user cannot see the
+ * screen), so their blend cancels; that pose has no meaningful facing and is
+ * reported as null instead of an unstable heading.
  */
 export function headingFromEuler(alpha: number, beta: number, gamma: number, screenDeg = 0): number | null {
   const a = alpha * D2R
@@ -41,23 +56,40 @@ export function headingFromEuler(alpha: number, beta: number, gamma: number, scr
   const cY = Math.cos(g)
   const sY = Math.sin(g)
 
-  let east: number
-  let north: number
+  // Vertical component of the screen normal (device Z): +1 flat screen-up, -1 face-down.
+  if (cX * cY <= FACE_DOWN_GUARD) return null
 
-  if (Math.abs(cX * cY) >= FLAT_THRESHOLD) {
-    const t = screenDeg * D2R
-    const st = Math.sin(t)
-    const ct = Math.cos(t)
-    // World-space (east, north) of the on-screen "up" vector: st * deviceX + ct * deviceY
-    east = st * (cZ * cY - sZ * sX * sY) + ct * (-sZ * cX)
-    north = st * (sZ * cY + cZ * sX * sY) + ct * (cZ * cX)
-  } else {
-    // World-space (east, north) of the rear camera direction (-deviceZ)
-    east = -(cZ * sY + sZ * sX * cY)
-    north = -(sZ * sY - cZ * sX * cY)
-  }
+  // World-space (east, north) horizontal projections of the device axes.
+  const xE = cZ * cY - sZ * sX * sY
+  const xN = sZ * cY + cZ * sX * sY
+  const yE = -sZ * cX
+  const yN = cZ * cX
+  const zE = cZ * sY + sZ * sX * cY
+  const zN = sZ * sY - cZ * sX * cY
 
-  if (Math.hypot(east, north) < 1e-6) return null
+  // Primary reference: horizontal projection of the on-screen "up" vector.
+  const t = screenDeg * D2R
+  const st = Math.sin(t)
+  const ct = Math.cos(t)
+  const pE = st * xE + ct * yE
+  const pN = st * xN + ct * yN
+  const pMag = Math.hypot(pE, pN)
+
+  // Camera reference with the continuity sign (see the function comment).
+  const upOnScreen = -st * cX * sY + ct * sX
+  const sign = upOnScreen >= 0 ? -1 : 1
+  const rE = sign * zE
+  const rN = sign * zN
+
+  // Blend: primary where its projection is meaningful, camera near upright.
+  const wCam = Math.max(0, 1 - pMag)
+  const east = pE + wCam * rE
+  const north = pN + wCam * rN
+
+  const fMag = Math.hypot(east, north)
+  const sources = pMag + wCam * Math.hypot(rE, rN)
+  // Degenerate blend: the references cancelled (screen facing down-ish).
+  if (fMag < 1e-6 || (sources > 1e-9 && fMag < 0.5 * sources)) return null
   return normalize360(Math.atan2(east, north) * R2D)
 }
 
