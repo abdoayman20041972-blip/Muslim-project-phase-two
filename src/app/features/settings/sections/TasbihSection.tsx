@@ -104,7 +104,7 @@ export function TasbihSection({
           <div className="grid gap-2 sm:grid-cols-3">
             <button
               type="button"
-              className="rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.625rem] font-bold text-azkar-ink-soft"
+              className="rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.6875rem] font-bold text-azkar-ink-soft"
               onClick={async () => {
                 const rawSelected = localStorage.getItem('azkar_tasbih_selected_word')
                 // Normalize legacy values (stored phrase text instead of the
@@ -130,7 +130,7 @@ export function TasbihSection({
             </button>
             <button
               type="button"
-              className="rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.625rem] font-bold text-azkar-ink-soft"
+              className="rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.6875rem] font-bold text-azkar-ink-soft"
               onClick={async () => {
                 if (!(await confirm({ message: 'تصفير إجمالي تسبيح اليوم؟', danger: true }))) return
                 localStorage.setItem('azkar_day_total', '0')
@@ -143,7 +143,7 @@ export function TasbihSection({
             </button>
             <button
               type="button"
-              className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-[0.625rem] font-bold text-red-700"
+              className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-[0.6875rem] font-bold text-red-700"
               onClick={async () => {
                 if (!(await confirm({ message: 'مسح كل بيانات السبحة؟ سيشمل العدّ اليومي، الجولات، السجل والذكر المحدد.', danger: true }))) return
                 ;[
@@ -181,12 +181,12 @@ export function TasbihSection({
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="font-amiri text-sm font-bold text-azkar-teal-ink">{x.word}</div>
-                  <div className="mt-0.5 text-[0.625rem] text-azkar-ink-faint">الهدف: {toArabicNumber(x.goal)}</div>
+                  <div className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">الهدف: {toArabicNumber(x.goal)}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => editCustomTasbih(x.id)}
-                  className="rounded-xl border border-azkar-gold-soft bg-azkar-card px-2.5 py-1.5 text-[0.625rem] font-bold text-azkar-teal-ink"
+                  className="rounded-xl border border-azkar-gold-soft bg-azkar-card px-2.5 py-1.5 text-[0.6875rem] font-bold text-azkar-teal-ink"
                 >
                   تعديل
                 </button>
@@ -199,7 +199,7 @@ export function TasbihSection({
                       emitSettingsChanged()
                     } catch (error) { console.debug('[TasbihSection]', error) }
                   }}
-                  className="rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[0.625rem] font-bold text-red-700"
+                  className="rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[0.6875rem] font-bold text-red-700"
                 >
                   حذف
                 </button>
@@ -208,7 +208,7 @@ export function TasbihSection({
           ))}
 
           <div className="rounded-2xl border border-azkar-gold-soft bg-azkar-card p-3">
-            <div className="mb-2 text-[0.625rem] font-bold text-azkar-ink-soft">إضافة ذكر جديد</div>
+            <div className="mb-2 text-[0.6875rem] font-bold text-azkar-ink-soft">إضافة ذكر جديد</div>
             <div className="flex gap-2">
               <input
                 value={custom}
@@ -256,7 +256,7 @@ export function TasbihSection({
                   setCustomGoal('33')
                   emitSettingsChanged()
                 }}
-                className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.625rem] font-bold text-azkar-card"
+                className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card"
               >
                 إضافة
               </button>
