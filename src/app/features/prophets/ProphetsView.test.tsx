@@ -13,6 +13,15 @@ describe('ProphetsView', () => {
     expect(screen.getAllByText('قال تعالى').length).toBeGreaterThan(10)
   })
 
+  it('opens Nuh with verses from several surahs, each with its own surah name', async () => {
+    render(<ProphetsView onBack={() => {}} />)
+    fireEvent.click(screen.getByText('نوح'))
+    await waitFor(() => expect(document.querySelectorAll('.ys-ayah-no').length).toBeGreaterThan(60))
+    expect(screen.getAllByText(/^سورة هود، الآيات/).length).toBeGreaterThan(3)
+    expect(screen.getAllByText(/^سورة نوح، /).length).toBeGreaterThan(2)
+    expect(document.querySelector('[data-story="nuh"]')).toBeTruthy()
+  })
+
   it('returns to the top when another story opens with the next button', async () => {
     const scrollIntoView = vi.fn()
     Element.prototype.scrollIntoView = scrollIntoView
