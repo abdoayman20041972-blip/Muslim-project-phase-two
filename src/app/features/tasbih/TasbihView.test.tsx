@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ConfirmDialogProvider } from '../../components/confirm-dialog'
 import { TasbihView } from './TasbihView'
 
@@ -120,11 +120,13 @@ describe('TasbihView dialog migration', () => {
   })
 
 describe('TasbihView backgrounds', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    document.documentElement.classList.remove('dark')
+  })
+  afterEach(() => document.documentElement.classList.remove('dark'))
 
-  it('renders the day mosque and a genuinely dark night mosque for dark mode', () => {
-    // Dark mode = a real dark IMAGE, never a dark veil over the bright day
-    // photo: both <img> elements exist and CSS toggles which one is shown.
+  const renderView = () =>
     render(
       <ConfirmDialogProvider>
         <TasbihView
@@ -142,11 +144,108 @@ describe('TasbihView backgrounds', () => {
       </ConfirmDialogProvider>,
     )
 
+  it('renders only the day mosque in light mode (the night image is never fetched)', () => {
+    renderView()
     const day = document.querySelector('img.tasbih-background-photo') as HTMLImageElement
-    const night = document.querySelector('img.tasbih-background-photo-dark') as HTMLImageElement
     expect(day).toBeTruthy()
+    expect(day.getAttribute('src')).toBe('/img/tasbih-mosque-background.webp')
+    expect(document.querySelector('img.tasbih-background-photo-dark')).toBeNull()
+  })
+
+  it('renders only the genuinely dark night mosque in dark mode', () => {
+    document.documentElement.classList.add('dark')
+    renderView()
+    const night = document.querySelector('img.tasbih-background-photo-dark') as HTMLImageElement
     expect(night).toBeTruthy()
-    expect(day.getAttribute('src')).toBe('/img/tasbih-mosque-background.jpg')
-    expect(night.getAttribute('src')).toBe('/img/tasbih-mosque-night.jpg')
+    expect(night.getAttribute('src')).toBe('/img/tasbih-mosque-night.webp')
+    expect(document.querySelector('img.tasbih-background-photo')).toBeNull()
+  })
+
+  it('swaps the background instantly when the theme toggles', async () => {
+    renderView()
+    expect(document.querySelector('img.tasbih-background-photo')).toBeTruthy()
+    act(() => document.documentElement.classList.add('dark'))
+    await waitFor(() => expect(document.querySelector('img.tasbih-background-photo-dark')).toBeTruthy())
+    expect(document.querySelector('img.tasbih-background-photo')).toBeNull()
+  })
+})
+
+describe('TasbihView bead illumination cycle', () => {
+  beforeEach(() => localStorage.clear())
+
+  const renderView = (roundCounts: Record<string, number>, selectedWord = 'subhanallah') =>
+    render(
+      <ConfirmDialogProvider>
+        <TasbihView
+          counts={{}}
+          dayTotal={0}
+          selectedWord={selectedWord}
+          roundCounts={roundCounts}
+          rounds={{}}
+          onTap={vi.fn()}
+          onResetWord={vi.fn()}
+          onResetToday={vi.fn()}
+          onSelectWord={vi.fn()}
+          setView={vi.fn()}
+        />
+      </ConfirmDialogProvider>,
+    )
+
+  const litSmall = () => document.querySelectorAll('.tasbih-bead.is-lit').length
+  const imamLit = () => Boolean(document.querySelector('.tasbih-imam-bead.is-lit'))
+
+  it('renders 33 small beads plus the large imam bead', () => {
+    renderView({})
+    expect(document.querySelectorAll('.tasbih-bead').length).toBe(33)
+    expect(document.querySelector('.tasbih-imam-bead')).toBeTruthy()
+  })
+
+  it('first tap lights the first small bead; the imam bead stays off', () => {
+    renderView({ subhanallah: 1 })
+    expect(litSmall()).toBe(1)
+    expect(imamLit()).toBe(false)
+  })
+
+  it('goal 33 never lights the imam bead, even on the last tap of the round', () => {
+    renderView({ subhanallah: 32 })
+    expect(litSmall()).toBe(32)
+    expect(imamLit()).toBe(false)
+  })
+
+  it('goal 34 lights the imam bead together with all small beads on the last tap', () => {
+    renderView({ allahuakbar: 34 }, 'allahuakbar')
+    expect(litSmall()).toBe(33)
+    expect(imamLit()).toBe(true)
+  })
+
+  it('custom goal below 34 never lights the imam bead', () => {
+    localStorage.setItem('azkar_custom_tasbih_list', JSON.stringify([{ id: 'custom-ten', word: 'لا حول ولا قوة إلا بالله', goal: 10 }]))
+    renderView({ 'custom-ten': 10 }, 'custom-ten')
+    expect(litSmall()).toBe(10)
+    expect(imamLit()).toBe(false)
+  })
+
+  it('larger goals repeat a full 34-tap illumination cycle without resetting the count', () => {
+    localStorage.setItem('azkar_custom_tasbih_list', JSON.stringify([{ id: 'custom-hundred', word: 'استغفر الله', goal: 100 }]))
+    const { unmount } = renderView({ 'custom-hundred': 34 }, 'custom-hundred')
+    expect(litSmall()).toBe(33)
+    expect(imamLit()).toBe(true)
+    unmount()
+    renderView({ 'custom-hundred': 35 }, 'custom-hundred')
+    // The tap after a full cycle starts a new illumination cycle from bead 1.
+    expect(litSmall()).toBe(1)
+    expect(imamLit()).toBe(false)
+    expect(screen.getByText('٣٥', { selector: '.tasbih-count' })).toBeTruthy()
+  })
+
+  it('larger goals complete the second illumination cycle at tap 68 and restart at 69', () => {
+    localStorage.setItem('azkar_custom_tasbih_list', JSON.stringify([{ id: 'custom-hundred', word: 'استغفر الله', goal: 100 }]))
+    const { unmount } = renderView({ 'custom-hundred': 68 }, 'custom-hundred')
+    expect(litSmall()).toBe(33)
+    expect(imamLit()).toBe(true)
+    unmount()
+    renderView({ 'custom-hundred': 69 }, 'custom-hundred')
+    expect(litSmall()).toBe(1)
+    expect(imamLit()).toBe(false)
   })
 })
