@@ -224,6 +224,61 @@ describe('phase 7: no-location run preserves armed prayer alarms', () => {
     expect(alarms.schedule).not.toHaveBeenCalled()
   })
 
+  it('carried adhan entries follow the CURRENT sound mode (silent stays silent)', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    await scheduleNativeNotifications({ force: true })
+    localStorage.setItem('adhan_sound', 'silent')
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    const plan = (alarms.schedule.mock.calls[1]![0] as { alarms: Array<{ id: number; channel?: string }> }).alarms
+    const adhanEntries = plan.filter((a) => a.id >= ID_BASE && a.id < ID_BASE + 1000)
+    expect(adhanEntries.length).toBeGreaterThan(0)
+    expect(adhanEntries.every((a) => a.channel === 'muslim-adhan-v2-silent')).toBe(true)
+  })
+
+  it('re-derives a changed pre-reminder lead from the recoverable adhan anchor', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    await scheduleNativeNotifications({ force: true })
+    const first = (alarms.schedule.mock.calls[0]![0] as { alarms: Array<{ id: number; at: number }> }).alarms
+    localStorage.setItem(APP_SETTINGS_KEYS.prayerReminderLead, '15')
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    const second = (alarms.schedule.mock.calls[1]![0] as { alarms: Array<{ id: number; at: number; body?: string }> }).alarms
+    // Every carried pre-reminder sits exactly 15 minutes before its adhan anchor.
+    const beforeEntries = second.filter((a) => a.id >= ID_BASE + 1000 && a.id < ID_BASE + 2000)
+    expect(beforeEntries.length).toBeGreaterThan(0)
+    for (const b of beforeEntries) {
+      const anchor = second.find((a) => a.id === b.id - 1000)
+      expect(anchor).toBeTruthy()
+      expect(b.at).toBe(anchor!.at - 15 * 60_000)
+      expect(b.body).toContain('15')
+    }
+    // Sanity: the lead actually changed versus the original 5-minute plan.
+    const oldBefore = first.find((a) => a.id === beforeEntries[0]!.id)!
+    expect(beforeEntries[0]!.at).toBe(oldBefore.at - 10 * 60_000)
+  })
+
+  it('ignores malformed pending() payload items', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    const futureAt = Date.now() + 3 * 60 * 60_000
+    alarms.pending.mockResolvedValue({
+      items: [
+        { id: -5, at: futureAt, title: 'bad' },
+        { id: ID_BASE + 99_999, at: futureAt, title: 'out of range slot' },
+        { id: 123, at: futureAt, title: 'outside window' },
+        { id: 700000020, at: Number.NaN, title: 'bad time' },
+        { id: 700000020, at: futureAt, title: 'حان وقت صلاة الظهر' },
+      ],
+    })
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    const plan = (alarms.schedule.mock.calls[0]![0] as { alarms: Array<{ id: number; at: number }> }).alarms
+    const carried = plan.filter((a) => a.id >= ID_BASE && a.id < ID_BASE + 2000)
+    expect(carried).toHaveLength(1)
+    expect(carried[0]!.id).toBe(700000020)
+    expect(carried[0]!.at).toBe(futureAt)
+  })
+
   it('honors the muted-prayer filter for carried entries', async () => {
     const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
     await scheduleNativeNotifications({ force: true })
