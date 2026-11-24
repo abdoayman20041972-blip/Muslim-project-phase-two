@@ -60,11 +60,13 @@ const STATUS_TEXT_NATIVE: Partial<Record<Status, string>> = {
 const TICKS = Array.from({ length: 72 }, (_, i) => i * 5)
 const RIVETS = [0, 45, 90, 135, 180, 225, 270, 315]
 // Arabic cardinal abbreviations: ش شمال 0°, ق شرق 90° (ش taken by شمال), ج جنوب 180°, غ غرب 270°.
+// Full Arabic direction names: single-letter abbreviations are ambiguous
+// (north and east both start with ش), so the ring spells each direction out.
 const CARDINALS: { deg: number; label: string }[] = [
-  { deg: 0, label: 'ش' },
-  { deg: 90, label: 'ق' },
-  { deg: 180, label: 'ج' },
-  { deg: 270, label: 'غ' },
+  { deg: 0, label: 'شمال' },
+  { deg: 90, label: 'شرق' },
+  { deg: 180, label: 'جنوب' },
+  { deg: 270, label: 'غرب' },
 ]
 
 // Jitter detection on the Android Euler path: the residual left after removing
@@ -193,9 +195,13 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
           sumAbs += Math.abs(d)
           sum += d
         }
+        // Direction inconsistency, not motion amplitude: a smooth deliberate
+        // turn keeps every delta on the same sign, so sumAbs ~= |sum| and the
+        // residual stays ~0 no matter how far the user rotated. Only a stream
+        // that keeps flipping sign (trembling readings) builds a residual.
         const n = buf.length - 1
-        const jitter = sumAbs / n - Math.abs(sum / n)
-        setFluctuating((prev) => (jitter > JITTER_ON_DEG ? true : jitter < JITTER_OFF_DEG ? false : prev))
+        const instability = sumAbs / n - Math.abs(sum / n)
+        setFluctuating((prev) => (instability > JITTER_ON_DEG ? true : instability < JITTER_OFF_DEG ? false : prev))
       }
 
       publish(h)
@@ -407,8 +413,15 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       </div>
 
       <p className="q2-bearing">
-        زاوية القبلة {Math.round(bearing)}° من الشمال
-        {heading !== null ? ` · اتجاهك ${Math.round(normalize360(heading))}°` : ''}
+        زاوية القبلة <bdi className="q2-num">{Math.round(bearing)}°</bdi> من الشمال
+        {heading !== null ? (
+          <>
+            {' · اتجاهك '}
+            <bdi className="q2-num">{Math.round(normalize360(heading))}°</bdi>
+          </>
+        ) : (
+          ''
+        )}
       </p>
 
       <p className="q2-status" aria-live="polite">{message}</p>
