@@ -54,12 +54,13 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
       const stored = JSON.parse(localStorage.getItem(AZKAR_PROGRESS_KEY) || '{}') as { days?: Record<string, Record<string,number>> }
       const current = stored.days?.[currentDay]
       if (!current) { setProgress({}); return }
-      const migratedCurrent: Record<string, number> = {}
+      // Keep every stored key for the day: progress from other categories must survive opening this one.
+      const migratedCurrent: Record<string, number> = { ...current }
       for (const item of category.items) {
         const nextKey = favoriteKey(category, item)
         const oldKey = legacyFavoriteKey(category, item)
-        if (typeof current[nextKey] === 'number') migratedCurrent[nextKey] = current[nextKey]
-        else if (typeof current[oldKey] === 'number') migratedCurrent[nextKey] = current[oldKey]
+        if (typeof migratedCurrent[nextKey] !== 'number' && typeof current[oldKey] === 'number') migratedCurrent[nextKey] = current[oldKey]
+        if (nextKey !== oldKey) delete migratedCurrent[oldKey]
       }
       setProgress(migratedCurrent)
       if (JSON.stringify(migratedCurrent) !== JSON.stringify(current)) saveAzkarProgress(migratedCurrent, new Date())
@@ -121,7 +122,16 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack }: 
     if (filter === 'favorites') return favorites.includes(key)
     return true
   }), [category.items, category.id, progress, filter, favorites])
-  const resetToday = async () => { if (!(await confirm({ message: 'مسح تقدم أذكار هذا القسم اليوم؟', danger: true }))) return; saveProgress({}) }
+  const resetToday = async () => {
+    if (!(await confirm({ message: 'مسح تقدم أذكار هذا القسم اليوم؟', danger: true }))) return
+    // The confirmation promises to clear this section only, so remove just this category's keys.
+    const next = { ...progress }
+    for (const item of category.items) {
+      delete next[favoriteKey(category, item)]
+      delete next[legacyFavoriteKey(category, item)]
+    }
+    saveProgress(next)
+  }
   if (mode === 'journey') return <AzkarJourney category={category} progress={progress} counterEnabled={counterEnabled} autoAdvanceEnabled={autoAdvanceEnabled} onProgressChange={saveProgress} onExit={() => setMode('list')} />
 
   return <div className="azkar-category-redesign">
