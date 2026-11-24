@@ -87,6 +87,13 @@ export type PlannedNotification = {
   group?: string
   /** Milliseconds after posting before Android auto-removes it (0 = never). */
   ttl?: number
+  /**
+   * True when the instant is a fixed local clock time (custom or fallback wird
+   * time, ayah, Quran, Al-Kahf). Native code keeps that local hour if the
+   * device time zone changes while the app is closed. False for prayer and
+   * sun-anchored instants.
+   */
+  wallClock?: boolean
 }
 
 /** Every prayer/adhan notification joins this group so the shade stays tidy. */
@@ -170,14 +177,14 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
       const custom = input.morningTime ? clockAt(date, input.morningTime) : null
       const at = custom ?? sunrise ?? clockAt(date, FALLBACK_MORNING_TIME)
       if (at) {
-        push({ id: makeId(KIND.morning, dayIndex, 0), at, title: 'أذكار الصباح', body: sunrise && !custom ? 'حان وقت أذكار الصباح مع الشروق.' : 'حان وقت أذكار الصباح.', channel: channels.reminder, target: 'azkar-morning', ttl: TTL.morning })
+        push({ id: makeId(KIND.morning, dayIndex, 0), at, title: 'أذكار الصباح', body: sunrise && !custom ? 'حان وقت أذكار الصباح مع الشروق.' : 'حان وقت أذكار الصباح.', channel: channels.reminder, target: 'azkar-morning', ttl: TTL.morning, wallClock: Boolean(custom) || !sunrise })
       }
     }
     if (eveningEnabled) {
       const custom = input.eveningTime ? clockAt(date, input.eveningTime) : null
       const at = custom ?? sunset ?? clockAt(date, FALLBACK_EVENING_TIME)
       if (at) {
-        push({ id: makeId(KIND.evening, dayIndex, 0), at, title: 'أذكار المساء', body: sunset && !custom ? 'حان وقت أذكار المساء مع الغروب.' : 'حان وقت أذكار المساء.', channel: channels.reminder, target: 'azkar-evening', ttl: TTL.evening })
+        push({ id: makeId(KIND.evening, dayIndex, 0), at, title: 'أذكار المساء', body: sunset && !custom ? 'حان وقت أذكار المساء مع الغروب.' : 'حان وقت أذكار المساء.', channel: channels.reminder, target: 'azkar-evening', ttl: TTL.evening, wallClock: Boolean(custom) || !sunset })
       }
     }
     if (ayahEnabled) {
@@ -187,7 +194,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
       const at = new Date(date)
       at.setHours(Number(ayahMatch![1]), Number(ayahMatch![2]), 0, 0)
       const ayah = dailyAyahFor(midnightOf(date))
-      push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: channels.reminder, target: 'ayah', ttl: TTL.ayah })
+      push({ id: makeId(KIND.ayah, dayIndex, 0), at, title: 'آية اليوم', body: ayah.text + ' — ' + ayah.surah, channel: channels.reminder, target: 'ayah', ttl: TTL.ayah, wallClock: true })
     }
     if (quranEnabled) {
       const match = /^(\d{1,2}):(\d{2})$/.exec(quranTime)
@@ -197,14 +204,14 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
         // open / resume / hourly) keep the horizon fresh anyway.
         const at = new Date(date)
         at.setHours(Number(match[1]), Number(match[2]), 0, 0)
-        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'quran', ttl: TTL.quran })
+        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'quran', ttl: TTL.quran, wallClock: true })
       }
     }
     if (kahfEnabled && date.getDay() === 5) {
       const match = /^(\d{1,2}):(\d{2})$/.exec(input.kahfTime ?? '') ?? /^(\d{1,2}):(\d{2})$/.exec('10:00')
       const at = new Date(date)
       at.setHours(Number(match![1]), Number(match![2]), 0, 0)
-      push({ id: makeId(KIND.kahf, dayIndex, 0), at, title: 'سورة الكهف', body: 'اليوم الجمعة، لا تنسَ قراءة سورة الكهف.', channel: channels.reminder, target: 'kahf', ttl: TTL.kahf })
+      push({ id: makeId(KIND.kahf, dayIndex, 0), at, title: 'سورة الكهف', body: 'اليوم الجمعة، لا تنسَ قراءة سورة الكهف.', channel: channels.reminder, target: 'kahf', ttl: TTL.kahf, wallClock: true })
     }
   })
   return entries
