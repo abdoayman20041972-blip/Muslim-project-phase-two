@@ -49,7 +49,7 @@ function ReadingToggles({
         {preview && (
           <p
             data-testid="font-preview"
-            className={`font-amiri mt-3 rounded-xl border border-azkar-hairline px-3 py-2 leading-loose text-azkar-ink ${font === 'sm' ? 'text-[13px]' : font === 'lg' ? 'text-[19px]' : 'text-[16px]'}`}
+            className={`font-amiri mt-3 rounded-xl border border-azkar-hairline px-3 py-2 leading-loose text-azkar-ink ${font === 'sm' ? 'text-[0.8125rem]' : font === 'lg' ? 'text-[1.1875rem]' : 'text-[1rem]'}`}
           >
             {preview}
           </p>
@@ -64,7 +64,7 @@ function ReadingToggles({
               save(noteKey, n ? '1' : '0')
             }}
             aria-pressed={note}
-            className={`min-h-11 rounded-xl border px-4 py-2 text-[10px] font-bold ${note ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
+            className={`min-h-11 rounded-xl border px-4 py-2 text-[0.625rem] font-bold ${note ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
           >
             {note ? 'ظاهرة' : 'مخفية'}
           </button>
