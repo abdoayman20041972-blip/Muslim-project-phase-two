@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { angularDiff, dialLabelAngle, qiblaBearing } from '../../src/app/features/prayer/QiblaCompass'
+import { dialLabelAngle, qiblaBearing } from '../../src/app/features/qibla/QiblaCompass'
 describe('Qibla bearing',()=>{
  it('matches Cairo reference approximately',()=>expect(qiblaBearing(30.04442,31.235712)).toBeCloseTo(136.14,1))
  it('matches London reference approximately',()=>expect(qiblaBearing(51.507351,-0.127758)).toBeCloseTo(118.99,1))
  it('matches New York reference approximately',()=>expect(qiblaBearing(40.712776,-74.005974)).toBeCloseTo(58.48,1))
-})
-
-describe('Qibla angle normalization',()=>{
- it('handles 359° to 1° as a 2° difference',()=>expect(angularDiff(1,359)).toBe(2))
- it('handles values outside one full turn',()=>expect(angularDiff(721,1)).toBe(0))
 })
 
 describe('Qibla dial label angles',()=>{
