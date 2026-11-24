@@ -66,7 +66,7 @@ function subscribe(listener: () => void): () => void {
   }
 }
 
-export function updateQuranPreferences(partial: Partial<QuranPreferences>): void {
+function updateQuranPreferences(partial: Partial<QuranPreferences>): void {
   const current = getSnapshot()
   const next = { ...current, ...partial }
   if (next.fontSize === current.fontSize && next.reciter === current.reciter && next.layout === current.layout) return
