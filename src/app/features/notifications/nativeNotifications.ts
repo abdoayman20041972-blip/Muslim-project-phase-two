@@ -482,7 +482,17 @@ async function run(force: boolean, askPermission: boolean) {
       recordError('pending-carry', error)
       return null
     })
-    if (pendingNow === null && carried.length === 0) {
+    const pendingItems = pendingNow?.items ?? []
+    // A successful but corrupt response is as unreadable as an error: items
+    // with prayer-range ids that fail validation (bad slot, non-finite time)
+    // mean armed prayers may exist that we cannot recover, so replacing the
+    // plan could silently drop them. Expired-but-well-formed items are just
+    // history and never trigger this.
+    const corruptPrayerClaim = (item: { id?: unknown; at?: unknown }) =>
+      typeof item?.id === 'number' && Number.isInteger(item.id) && item.id >= ID_BASE && item.id < ID_BASE + ID_RANGE && isPrayerId(item.id) &&
+      (!(typeof item?.at === 'number' && Number.isFinite(item.at)) || prayerSlotOf(item.id) >= PRAYERS.length)
+    const validPending = pendingItems.filter((item) => isValidPrayerRef(item.id, item.at) && item.at > nowMs)
+    if ((pendingNow === null || (validPending.length === 0 && pendingItems.some(corruptPrayerClaim))) && carried.length === 0) {
       // Unrecoverable: no cached plan and the native armed list is unreadable,
       // so a replace could silently drop prayer alarms that are armed right
       // now. Keep the old protective skip for exactly this case — the armed
@@ -490,8 +500,8 @@ async function run(force: boolean, askPermission: boolean) {
       return
     }
     const mutedSet = new Set(mutedPrayers)
-    const reconstructed = (pendingNow?.items ?? [])
-      .filter((item) => isValidPrayerRef(item.id, item.at) && item.at > nowMs && !carriedIds.has(item.id))
+    const reconstructed = validPending
+      .filter((item) => !carriedIds.has(item.id))
       // Only the kinds the user still has on may come back.
       .filter((item) => (prayerKindOf(item.id) === KIND.at ? atTimeEnabled : beforeEnabled))
       .filter((item) => !mutedSet.has(PRAYERS[prayerSlotOf(item.id)] ?? ''))
