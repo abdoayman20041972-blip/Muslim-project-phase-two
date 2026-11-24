@@ -55,15 +55,15 @@ export function AzkarStreakStats() {
     <div className="p-4">
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-azkar-teal-tint p-3 text-center">
-          <div className="text-[0.625rem]">سلسلة الأذكار الحالية</div>
+          <div className="text-[0.6875rem]">سلسلة الأذكار الحالية</div>
           <b className="text-lg text-azkar-teal-ink">{toArabicNumber(current)} يوم</b>
         </div>
         <div className="rounded-xl bg-azkar-bg-alt p-3 text-center">
-          <div className="text-[0.625rem]">أفضل سلسلة أذكار</div>
+          <div className="text-[0.6875rem]">أفضل سلسلة أذكار</div>
           <b className="text-lg text-azkar-teal-ink">{toArabicNumber(best)} يوم</b>
         </div>
       </div>
-      <div className="mt-3 text-[0.5625rem] text-azkar-ink-faint">
+      <div className="mt-3 text-[0.6875rem] text-azkar-ink-faint">
         السلسلة تعتمد على الأيام التي سُجّل فيها ذكر واحد على الأقل.
       </div>
     </div>
@@ -116,17 +116,17 @@ export function TasbihStats() {
     <div className="p-4">
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-azkar-teal-tint p-3 text-center">
-          <div className="text-[0.625rem]">إجمالي التسبيح</div>
+          <div className="text-[0.6875rem]">إجمالي التسبيح</div>
           <b className="text-lg text-azkar-teal-ink">{toArabicNumber(total)}</b>
         </div>
         <div className="rounded-xl bg-azkar-bg-alt p-3 text-center">
-          <div className="text-[0.625rem]">تسبيح اليوم</div>
+          <div className="text-[0.6875rem]">تسبيح اليوم</div>
           <b className="text-lg text-azkar-teal-ink">{toArabicNumber(todayValue)}</b>
         </div>
       </div>
       <div className="mt-4 space-y-2">
         {words.map((x) => (
-          <div key={x.id} className="flex justify-between text-[0.625rem]">
+          <div key={x.id} className="flex justify-between text-[0.6875rem]">
             <span>{x.word}</span>
             <b>
               {toArabicNumber(Number(counts[x.id] || 0))} —{' '}
@@ -136,14 +136,14 @@ export function TasbihStats() {
         ))}
       </div>
       <div className="mt-4">
-        <div className="mb-2 text-[0.625rem] font-bold">آخر {toArabicDigits('7')} أيام</div>
+        <div className="mb-2 text-[0.6875rem] font-bold">آخر {toArabicDigits('7')} أيام</div>
         <div
           className="grid grid-cols-7 items-end gap-2"
           aria-label="رسم بياني لتسبيح آخر سبعة أيام"
         >
           {chartDays.map((d, i) => (
             <div key={d.key} className="flex min-w-0 flex-col items-center gap-1">
-              <span className="text-[0.5rem]">{toArabicNumber(d.value)}</span>
+              <span className="text-[0.6875rem]">{toArabicNumber(d.value)}</span>
               <div className="flex h-16 w-full max-w-7 items-end rounded-full bg-azkar-bg-alt">
                 <div
                   className={`w-full rounded-full ${i === 6 ? 'bg-azkar-teal' : 'bg-azkar-gold'}`}
@@ -152,7 +152,7 @@ export function TasbihStats() {
                 />
               </div>
               <span
-                className={`text-[0.5rem] ${i === 6 ? 'font-bold text-azkar-teal-ink' : 'text-azkar-ink-faint'}`}
+                className={`text-[0.6875rem] ${i === 6 ? 'font-bold text-azkar-teal-ink' : 'text-azkar-ink-faint'}`}
               >
                 {d.label}
               </span>
