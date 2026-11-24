@@ -55,6 +55,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const [status, setStatus] = useState<Status>('idle')
   const [lowAccuracy, setLowAccuracy] = useState(false)
   const [invalidPose, setInvalidPose] = useState(false)
+  const [declinationUnknown, setDeclinationUnknown] = useState(false)
   const stopRef = useRef<(() => void) | null>(null)
   const filterRef = useRef(createHeadingFilter(140))
 
@@ -65,6 +66,9 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   // uncorrected on purpose: its north reference (magnetic vs true) is strongly
   // indicated but not yet measured on the target WebView, so applying a blind
   // correction could add the very error it means to remove. Verify on device first.
+  // Null when no reliable declination exists (out-of-range coordinates, a date
+  // outside the WMM2025 2025-2029 validity window, or a polar blackout zone);
+  // the iOS path then refuses to show a magnetic heading it cannot correct.
   const declination = useMemo(() => magneticDeclination(coords.lat, coords.lng), [coords.lat, coords.lng])
 
   const stop = useCallback(() => {
@@ -78,6 +82,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     filter.reset()
     setHeading(null)
     setInvalidPose(false)
+    setDeclinationUnknown(false)
     setStatus('waiting')
 
     let raf = 0
@@ -106,6 +111,16 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       // 1) iOS: webkitCompassHeading is a ready-made magnetic heading of the device top.
       if (typeof e.webkitCompassHeading === 'number' && Number.isFinite(e.webkitCompassHeading) && e.webkitCompassHeading >= 0) {
         if (typeof e.webkitCompassAccuracy === 'number') setLowAccuracy(e.webkitCompassAccuracy < 0 || e.webkitCompassAccuracy > 25)
+        if (declination === null) {
+          // No reliable declination: the magnetic heading cannot be corrected
+          // to true north, so never present it as a confident qibla reading.
+          filter.reset()
+          pending = null
+          setHeading(null)
+          setStatus('active')
+          setDeclinationUnknown(true)
+          return
+        }
         publish(normalize360(e.webkitCompassHeading + declination + currentScreenAngle()))
         return
       }
@@ -207,7 +222,8 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const aligned = active && Math.abs(shortestDelta(bearing, normalize360(heading))) <= 4
 
   let message = STATUS_TEXT[status] ?? ''
-  if (status === 'active' && invalidPose) message = 'الهاتف مقلوب على وجهه أو في وضع لا تظهر فيه الشاشة، أدره حتى تتضح القراءة'
+  if (declinationUnknown) message = 'لا يمكن حساب اتجاه القبلة بدقة في موقعك الحالي'
+  else if (status === 'active' && invalidPose) message = 'الهاتف مقلوب على وجهه أو في وضع لا تظهر فيه الشاشة، أدره حتى تتضح القراءة'
   else if (status === 'active' && lowAccuracy) message = 'دقة البوصلة منخفضة، ابتعد عن المعادن والمغناطيس'
 
   return (
