@@ -69,6 +69,85 @@ export function timeBasedAzkar(date = new Date()): TimeBasedAzkar {
 }
 
 
+// Situational sections (travel, weather, sickness) are recited when the occasion happens,
+// not as a daily wird, so their counters belong to the occasion and stay out of the day log.
+export const AZKAR_OCCASION_KEY = 'azkar_azkar_occasion_progress_v1'
+export const OCCASIONAL_CATEGORY_IDS: readonly string[] = ['travel', 'weather', 'sickness']
+export function isOccasionalCategory(categoryId: string): boolean { return OCCASIONAL_CATEGORY_IDS.includes(categoryId) }
+
+export type AzkarOccasionState = { occasion: number; counts: Record<string, number> }
+
+function readOccasionStore(): Record<string, AzkarOccasionState> {
+  try {
+    const stored = JSON.parse(localStorage.getItem(AZKAR_OCCASION_KEY) || '{}') as { categories?: Record<string, AzkarOccasionState> }
+    return stored.categories && typeof stored.categories === 'object' && !Array.isArray(stored.categories) ? stored.categories : {}
+  } catch { return {} }
+}
+
+const AZKAR_OCCASION_MIGRATED_KEY = 'azkar_azkar_occasion_migrated_v1'
+
+// Before the occasion store existed, situational taps were written into today's daily
+// record. Move them once into the occasion store so that progress is not lost; past
+// days stay untouched as history.
+function migrateOccasionalProgress(): void {
+  try {
+    if (localStorage.getItem(AZKAR_OCCASION_MIGRATED_KEY) === '1') return
+    const stored = JSON.parse(localStorage.getItem(AZKAR_PROGRESS_KEY) || '{}') as { days?: AzkarProgressDays }
+    const day = todayKey()
+    const today = stored.days?.[day]
+    if (today && typeof today === 'object') {
+      const categories = readOccasionStore()
+      let changed = false
+      for (const categoryId of OCCASIONAL_CATEGORY_IDS) {
+        const prefix = `${categoryId}:`
+        const moved: Record<string, number> = {}
+        for (const key of Object.keys(today)) {
+          if (key.startsWith(prefix) && typeof today[key] === 'number') {
+            moved[key] = today[key]
+            delete today[key]
+            changed = true
+          }
+        }
+        if (Object.keys(moved).length > 0) {
+          const entry = categories[categoryId] && typeof categories[categoryId] === 'object' && categories[categoryId].counts
+            ? categories[categoryId]
+            : { occasion: 1, counts: {} as Record<string, number> }
+          const counts = { ...entry.counts }
+          for (const [key, value] of Object.entries(moved)) counts[key] = Math.max(Number(counts[key] || 0), value)
+          categories[categoryId] = { occasion: Math.max(1, Number(entry.occasion) || 1), counts }
+        }
+      }
+      if (changed) {
+        localStorage.setItem(AZKAR_PROGRESS_KEY, JSON.stringify({ ...stored, days: { ...(stored.days || {}), [day]: today } }))
+        localStorage.setItem(AZKAR_OCCASION_KEY, JSON.stringify({ version: 1, categories }))
+      }
+    }
+    localStorage.setItem(AZKAR_OCCASION_MIGRATED_KEY, '1')
+  } catch (error) { console.debug('[azkarProgress]', error) }
+}
+
+export function readOccasionProgress(categoryId: string): AzkarOccasionState {
+  migrateOccasionalProgress()
+  const entry = readOccasionStore()[categoryId]
+  if (entry && typeof entry === 'object' && entry.counts && typeof entry.counts === 'object') {
+    return { occasion: Math.max(1, Number(entry.occasion) || 1), counts: entry.counts }
+  }
+  return { occasion: 1, counts: {} }
+}
+
+export function saveOccasionProgress(categoryId: string, state: AzkarOccasionState): void {
+  try {
+    const categories = { ...readOccasionStore(), [categoryId]: { occasion: Math.max(1, Number(state.occasion) || 1), counts: state.counts } }
+    localStorage.setItem(AZKAR_OCCASION_KEY, JSON.stringify({ version: 1, categories }))
+  } catch (error) { console.debug('[azkarProgress]', error) }
+}
+
+export function resetOccasionProgress(categoryId: string): AzkarOccasionState {
+  const next = { occasion: readOccasionProgress(categoryId).occasion + 1, counts: {} as Record<string, number> }
+  saveOccasionProgress(categoryId, next)
+  return next
+}
+
 export function migrateLegacyProgress(
   readStorage = (key: string) => localStorage.getItem(key),
   writeStorage = (key: string, value: string) => localStorage.setItem(key, value),
