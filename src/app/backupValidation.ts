@@ -24,6 +24,7 @@ const ENUM_KEYS: Record<string, readonly string[]> = {
   azkar_number_style: ['arabic', 'western'],
   azkar_time_format: ['24', '12'],
   azkar_ui_scale: ['sm', 'md', 'lg'],
+  adhan_sound: ['adhan', 'default', 'silent'],
   azkar_tafsir_source: ['muyassar', 'saddi', 'ibnKathir', 'tabari'],
   azkar_prayer_calc_method: ['1', '2', '3', '4', '5'],
   azkar_asr_school: ['0', '1'],
