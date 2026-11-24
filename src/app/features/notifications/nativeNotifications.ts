@@ -714,4 +714,4 @@ export async function listScheduledNotifications(): Promise<ScheduledItem[]> {
     recordError('list-pending', error)
     return []
   }
-  }
+}
