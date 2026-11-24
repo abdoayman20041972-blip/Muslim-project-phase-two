@@ -31,7 +31,7 @@ export const TEST_NOTIFICATION_ID = ID_BASE + ID_RANGE + 1
 export const GROUP_SUMMARY_NOTIFICATION_ID = ID_BASE + ID_RANGE + 2
 
 // Deterministic ids: BASE + kind * 1000 + dayIndex * 10 + slot (no hashing, no collisions).
-export const KIND = { at: 0, before: 1, morning: 2, evening: 3, ayah: 4, quran: 5, test: 6 } as const
+export const KIND = { at: 0, before: 1, morning: 2, evening: 3, ayah: 4, quran: 5, test: 6, kahf: 7 } as const
 export const makeId = (kind: number, dayIndex: number, slot: number) => ID_BASE + kind * 1000 + dayIndex * 10 + slot
 
 /**
@@ -51,6 +51,8 @@ export const TTL = {
   /** The daily ayah can still be worth reading late in the day. */
   ayah: 10 * 60 * 60_000,
   quran: 4 * 60 * 60_000,
+  /** The Friday Al-Kahf reminder stays useful until the end of Friday. */
+  kahf: 12 * 60 * 60_000,
   /** The 10-second test: the user is watching the shade right now. */
   test: 0,
 } as const
@@ -91,12 +93,19 @@ export type PlanInput = {
   quranTime: string
   morningEnabled: boolean
   eveningEnabled: boolean
+  /** Opt-in Friday reminder to read Surat Al-Kahf (default off). */
+  kahfEnabled?: boolean
+  kahfTime?: string
+  /** Prayers the user switched off (applies to the adhan and the pre-prayer reminder). */
+  mutedPrayers?: readonly string[]
   lead: number
   channels: { adhan: string; prayer: string; reminder: string }
 }
 
 export function planNotifications(input: PlanInput): PlannedNotification[] {
   const { now, days, timingsByDay, atTimeEnabled, beforeEnabled, ayahEnabled, ayahTime, quranEnabled, quranTime, morningEnabled, eveningEnabled, lead, channels } = input
+  const muted = new Set(input.mutedPrayers ?? [])
+  const kahfEnabled = Boolean(input.kahfEnabled)
   const entries: PlannedNotification[] = []
   const push = (entry: Omit<PlannedNotification, 'at'> & { at: Date }) => {
     if (entry.at.getTime() <= now) return
@@ -106,6 +115,7 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
   days.forEach((date, dayIndex) => {
     const timings = timingsByDay[dayIndex]
     if (timings) {      PRAYERS.forEach((prayer, slot) => {
+        if (muted.has(prayer)) return
         const time = parsePrayerTime(timings[prayer], date)
         if (!time) return
         if (atTimeEnabled) {
@@ -125,21 +135,21 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
             id: makeId(KIND.before, dayIndex, slot),
             at: new Date(time.getTime() - lead * 60_000),
             title: 'اقترب وقت صلاة ' + LABELS[prayer],
-            body: 'تبقى ' + lead + ' دقائق على الأذان',
+            body: 'تبقى ' + lead + (lead <= 10 ? ' دقائق' : ' دقيقة') + ' على الأذان',
             channel: channels.prayer,
             target: 'prayer',
             group: PRAYER_GROUP,
-            ttl: TTL.before,
+            ttl: Math.max(TTL.before, lead * 60_000),
           })
         }
       })
       const sunrise = parsePrayerTime(timings.Sunrise, date)
       const sunset = parsePrayerTime(timings.Sunset ?? timings.Maghrib, date)
       if (morningEnabled && sunrise) {
-        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: channels.reminder, target: 'azkar', ttl: TTL.morning })
+        push({ id: makeId(KIND.morning, dayIndex, 0), at: sunrise, title: 'أذكار الصباح', body: 'حان وقت أذكار الصباح مع الشروق.', channel: channels.reminder, target: 'azkar-morning', ttl: TTL.morning })
       }
       if (eveningEnabled && sunset) {
-        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: channels.reminder, target: 'azkar', ttl: TTL.evening })
+        push({ id: makeId(KIND.evening, dayIndex, 0), at: sunset, title: 'أذكار المساء', body: 'حان وقت أذكار المساء مع الغروب.', channel: channels.reminder, target: 'azkar-evening', ttl: TTL.evening })
       }
     }
     if (ayahEnabled) {
@@ -159,8 +169,14 @@ export function planNotifications(input: PlanInput): PlannedNotification[] {
         // open / resume / hourly) keep the horizon fresh anyway.
         const at = new Date(date)
         at.setHours(Number(match[1]), Number(match[2]), 0, 0)
-        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'ayah', ttl: TTL.quran })
+        push({ id: makeId(KIND.quran, dayIndex, 0), at, title: 'حان وقت قراءة القرآن', body: 'خصص وقتك اليوم لتلاوة القرآن.', channel: channels.reminder, target: 'quran', ttl: TTL.quran })
       }
+    }
+    if (kahfEnabled && date.getDay() === 5) {
+      const match = /^(\d{1,2}):(\d{2})$/.exec(input.kahfTime ?? '') ?? /^(\d{1,2}):(\d{2})$/.exec('10:00')
+      const at = new Date(date)
+      at.setHours(Number(match![1]), Number(match![2]), 0, 0)
+      push({ id: makeId(KIND.kahf, dayIndex, 0), at, title: 'سورة الكهف', body: 'اليوم الجمعة، لا تنسَ قراءة سورة الكهف.', channel: channels.reminder, target: 'kahf', ttl: TTL.kahf })
     }
   })
   return entries
