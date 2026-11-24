@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from '../../net'
+import { convertDehlawiOrthography } from './hadithIntegrity'
 
 /** A grade is shown only when it names who graded it and links to where it was read. */
 export type HadithGrade = { label: string; by: string; url: string }
@@ -234,28 +235,56 @@ export type EditionOrigin = 'bundled' | 'network'
 export type LoadedEdition = ApiEditionData & { origin: EditionOrigin }
 
 const editionCache = new Map<string, LoadedEdition>()
+const EDITION_CACHE_VERSION = 2
+const EDITION_STORAGE_PREFIX = 'hadith-edition:'
+
+/** Apply the reviewed mechanical fixes equally to bundled, CDN and cached data. */
+function prepareEdition(edition: string, value: unknown, origin: EditionOrigin): LoadedEdition | null {
+  if (!value || typeof value !== 'object' || !('hadiths' in value) || !Array.isArray(value.hadiths) || !value.hadiths.length) return null
+  const seen = new Set<string>()
+  const hadiths: ApiHadith[] = []
+  for (const entry of value.hadiths) {
+    if (!entry || typeof entry !== 'object' || !['string', 'number'].includes(typeof entry.hadithnumber) || typeof entry.text !== 'string' || !entry.text.trim()) return null
+    const number = String(entry.hadithnumber)
+    if (!/^\d+$/.test(number) || Number(number) < 1 || seen.has(number)) return null
+    seen.add(number)
+    let text = entry.text
+    if (edition === 'ara-dehlawi') text = convertDehlawiOrthography(text)
+    if (edition === 'ara-nawawi') text = text.replace(/[\u202b\u202c]/g, '')
+    hadiths.push({ hadithnumber: entry.hadithnumber, text })
+  }
+  return { hadiths, origin }
+}
 
 export function clearEditionCache() {
   editionCache.clear()
   try {
-    sessionStorage.clear()
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith(EDITION_STORAGE_PREFIX)) sessionStorage.removeItem(key)
+    }
   } catch {
-    // ignore
+    // Storage can be disabled; the in-memory cache was still cleared.
   }
 }
 
 export async function loadApiEdition(edition: string): Promise<LoadedEdition> {
   const cached = editionCache.get(edition)
   if (cached) return cached
-  const storageKey = `hadith-edition:${edition}`
+  const storageKey = `${EDITION_STORAGE_PREFIX}v${EDITION_CACHE_VERSION}:${edition}`
   try {
+    // Retire this edition's legacy cache without touching unrelated session state.
+    sessionStorage.removeItem(`${EDITION_STORAGE_PREFIX}${edition}`)
     const stored = sessionStorage.getItem(storageKey)
     if (stored) {
       const parsed = JSON.parse(stored) as LoadedEdition
-      if (Array.isArray(parsed.hadiths) && (parsed.origin === 'bundled' || parsed.origin === 'network')) {
-        editionCache.set(edition, parsed)
-        return parsed
+      if (parsed.origin === 'bundled' || parsed.origin === 'network') {
+        const prepared = prepareEdition(edition, parsed, parsed.origin)
+        if (prepared) {
+          editionCache.set(edition, prepared)
+          return prepared
+        }
       }
+      sessionStorage.removeItem(storageKey)
     }
   } catch {
     // sessionStorage unavailable; fall through to loading
@@ -269,8 +298,7 @@ export async function loadApiEdition(edition: string): Promise<LoadedEdition> {
     try {
       const response = await fetchWithTimeout(source.url, source.timeout)
       if (!response.ok) continue
-      const parsed = (await response.json()) as ApiEditionData
-      if (Array.isArray(parsed.hadiths) && parsed.hadiths.length) data = { hadiths: parsed.hadiths, origin: source.origin }
+      data = prepareEdition(edition, await response.json(), source.origin)
       if (data) break
     } catch {
       // try the next source
