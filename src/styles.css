@@ -975,11 +975,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .hadith-mark{display:flex;height:2.55rem;width:2.55rem;align-items:center;justify-content:center;border:1px solid hsl(var(--azkar-gold)/.2);border-radius:999px;background:hsl(var(--azkar-gold-tint));color:hsl(var(--azkar-gold-deep));}
 .hadith-search-wrap{display:flex;align-items:center;gap:.6rem;min-height:3rem;margin-bottom:1.1rem;padding:.55rem .8rem;border:1px solid hsl(var(--azkar-teal)/.11);border-radius:1rem;background:hsl(var(--azkar-card)/.88);box-shadow:var(--shadow-1);}
 .hadith-card{padding:1rem 1.05rem;border:1px solid hsl(var(--azkar-teal)/.09);border-radius:var(--app-radius);background:var(--app-panel);box-shadow:var(--app-panel-shadow);}
-.hadith-tabs{display:flex;align-items:center;gap:.4rem;margin-bottom:.9rem;overflow-x:auto;scrollbar-width:none;padding:.15rem;}
-.hadith-tabs::-webkit-scrollbar{display:none;}
-.hadith-tab{flex:none;display:flex;align-items:center;height:2.2rem;padding:0 .95rem;border-radius:999px;border:1px solid hsl(var(--azkar-teal)/.12);background:hsl(var(--azkar-card));font-size:.72rem;font-weight:700;color:hsl(var(--azkar-ink-soft));box-shadow:var(--shadow-1);transition:border-color .2s ease,background .2s ease,color .2s ease;}
-.hadith-tab.is-active{border-color:hsl(var(--azkar-gold)/.4);background:hsl(var(--azkar-gold-tint));color:hsl(var(--azkar-gold-deep));}
-@media(max-width:380px){.hadith-tab{height:2rem;padding:0 .8rem;font-size:.68rem;}}
 .hadith-card-top{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem;color:hsl(var(--azkar-ink-faint));font-size:.62rem;font-weight:700;}
 .hadith-source{color:hsl(var(--azkar-gold-deep));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .hadith-text{margin:0;font-size:1.25rem;line-height:2.05;color:hsl(var(--azkar-ink));text-align:right;}
@@ -1771,3 +1766,5 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 
 /* Visible focus for phrase-picker options during keyboard navigation. */
 .tasbih-word-menu-option:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:-2px;background:hsl(var(--azkar-gold)/.09);}
+.hadith-empty{padding:2.2rem 1.2rem;border:1px solid hsl(var(--azkar-hairline));border-radius:var(--r-lg);background:hsl(var(--azkar-card));text-align:center;font-size:.75rem;color:hsl(var(--azkar-ink-soft));}
+.hadith-mark-hit{background:hsl(var(--azkar-gold)/.28);color:inherit;border-radius:.25rem;padding:0 .1rem;}
