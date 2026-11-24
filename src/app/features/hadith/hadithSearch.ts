@@ -36,7 +36,13 @@ export function highlightParts(text: string, query: string): { text: string; mat
   chars.forEach((ch, i) => {
     const f = foldChar(ch)
     for (const c of f) {
-      norm += c
+      if (/\s/u.test(c)) {
+        // Search collapses whitespace, so highlighting must use the same form.
+        if (!norm || norm.endsWith(' ')) continue
+        norm += ' '
+      } else {
+        norm += c
+      }
       map.push(i)
     }
   })
