@@ -55,24 +55,28 @@ export type Category =
   | 'about'
 export type SettingsEntry = { category: Category; at: number }
 const CATEGORY_GROUPS: ReadonlyArray<readonly [string, ReadonlyArray<readonly [Category, string, string, typeof Settings2]>]> = [
-  ['المظهر والقراءة', [
+  ['المظهر', [
     ['general', 'عام', 'المظهر والأرقام والحركة', Settings2],
-    ['quran', 'المصحف', 'الخط والقارئ والتفسير', BookOpen],
   ]],
-  ['العبادة والتذكير', [
+  ['الصلاة والإشعارات', [
     ['prayer', 'الصلاة', 'الحساب والتذكيرات', Clock3],
     ['notifications', 'الإشعارات', 'الأذان والتنبيهات', BellRing],
-    ['azkar', 'الأذكار', 'التفضيلات والكاش', Sparkles],
-    ['tasbih', 'السبحة', 'الصوت والاهتزاز', CircleDot],
+    ['device', 'الأذونات والجهاز', 'الموقع والحركة', ShieldCheck],
+  ]],
+  ['القرآن والتفسير', [
+    ['quran', 'المصحف', 'الخط والقارئ والتفسير', BookOpen],
     ['hadith', 'الأحاديث', 'حجم الخط والملاحظات', ScrollText],
     ['prophets', 'قصص الأنبياء', 'الخط وأسئلة التأمل', Star],
   ]],
-  ['الجهاز والبيانات', [
-    ['device', 'الأذونات والجهاز', 'الموقع والحركة', ShieldCheck],
-    ['privacy', 'الخصوصية والبيانات', 'النسخ الاحتياطي', Info],
+  ['الأذكار والسبحة', [
+    ['azkar', 'الأذكار', 'التفضيلات والكاش', Sparkles],
+    ['tasbih', 'السبحة', 'الصوت والاهتزاز', CircleDot],
     ['motivation', 'التحفيز', 'إحصائيات السبحة والختمة', TrendingUp],
   ]],
-  ['حول مسلم', [
+  ['البيانات والخصوصية', [
+    ['privacy', 'الخصوصية والبيانات', 'النسخ الاحتياطي', Info],
+  ]],
+  ['حول', [
     ['about', 'حول مسلم', 'معلومات التطبيق والتواصل', Info],
   ]],
 ]
