@@ -100,7 +100,7 @@ export function QuranListView(p: P) {
         <BackButton onClick={() => p.setView({ name: 'home' })} />
         <div className="flex-1">
           <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">المصحف الشريف</div>
-          <div className="text-[0.625rem] text-azkar-ink-faint mt-0.5">كتاب الله بين يديك</div>
+          <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5">كتاب الله بين يديك</div>
         </div>
         <span className="quran-header-badge" aria-hidden="true">
           <BookIcon />
@@ -115,9 +115,9 @@ export function QuranListView(p: P) {
             <PlayIcon />
           </span>
           <span className="flex-1 text-right min-w-0">
-            <span className="block text-[0.625rem] opacity-75">متابعة القراءة</span>
+            <span className="block text-[0.6875rem] opacity-75">متابعة القراءة</span>
             <span className="block font-amiri font-bold text-xl mt-0.5 truncate">سورة {last.shortName}</span>
-            <span className="block text-[0.625rem] opacity-70 mt-0.5">
+            <span className="block text-[0.6875rem] opacity-70 mt-0.5">
               {last.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · {toArabicNumber(last.numberOfAyahs)} آية
               {positionText ? ` · توقفت عند ${positionText}` : ''}
             </span>
@@ -144,7 +144,7 @@ export function QuranListView(p: P) {
             <SearchIcon />
           </div>
           <div className="mt-3 font-amiri text-lg font-bold text-azkar-teal-ink">لا توجد سورة مطابقة</div>
-          <p className="mt-1 text-[0.625rem] leading-5 text-azkar-ink-soft">جرّب اسم السورة أو رقمها بطريقة أخرى.</p>
+          <p className="mt-1 text-[0.6875rem] leading-5 text-azkar-ink-soft">جرّب اسم السورة أو رقمها بطريقة أخرى.</p>
         </div>
       ) : (
         <div className="quran-index">
@@ -160,7 +160,7 @@ export function QuranListView(p: P) {
               </span>
               <span className="flex-1 min-w-0 text-right">
                 <span className="block font-amiri font-bold text-[1.125rem] leading-tight">{s.shortName}</span>
-                <span className="block text-[0.625rem] text-azkar-ink-soft mt-0.5">
+                <span className="block text-[0.6875rem] text-azkar-ink-soft mt-0.5">
                   {s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · {toArabicNumber(s.numberOfAyahs)} آية
                 </span>
               </span>
