@@ -29,7 +29,8 @@ describe('App user journeys', () => {
   it('navigates home → tasbih and records a tap in localStorage', async () => {
     render(<App />)
     await finishBoot()
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'السبحة' }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'السبحة' }))
     await waitFor(() => expect(screen.getByText(/إجمالي اليوم:/)).toBeTruthy())
     const countButton = screen.getByText('من ٣٣').closest('button')
     expect(countButton).toBeTruthy()
@@ -87,7 +88,8 @@ describe('App user journeys', () => {
     fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الأذكار' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
 
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'السبحة' }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'السبحة' }))
     await waitFor(() => expect(screen.getAllByText('السبحة').length).toBeGreaterThan(0))
   }, 10000)
 })
