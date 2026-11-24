@@ -630,6 +630,14 @@ function startJob(
   pending: number[],
   options?: DownloadOptions,
 ): Promise<DownloadJobResult> {
+  // The entry points await storage reads before reaching here, so two rapid
+  // calls can both pass their own jobs.get check; re-check at the last moment
+  // and hand back the live job instead of duplicating the download.
+  const existing = jobs.get(reciter)
+  if (existing) {
+    if (existing.state === 'paused') return resumeDownload(reciter) ?? existing.promise
+    return existing.promise
+  }
   let resolve!: (result: DownloadJobResult) => void
   const promise = new Promise<DownloadJobResult>((res) => {
     resolve = res
@@ -803,7 +811,11 @@ export async function deleteSurah(
 }
 
 export async function deleteReciterAll(reciter: QuranAudioReciter): Promise<void> {
+  // Settle the cancelled job before wiping: its final in-flight store must
+  // not commit after the delete and leave a surah behind.
+  const running = jobs.get(reciter)
   cancelDownload(reciter)
+  if (running) await running.promise.catch(() => undefined)
   await withDatabase(async (db) => {
     const transaction = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
     const audioStore = transaction.objectStore(AUDIO_STORE)
