@@ -66,8 +66,8 @@ export function HomeTile({
         {icon}
       </span>
       <span className="relative z-10 mt-7 block">
-        <span className="block font-amiri text-[18px] font-bold leading-none text-white">{title}</span>
-        <span className="mt-1.5 block text-[11px] font-semibold text-white">{subtitle}</span>
+        <span className="block font-amiri text-[1.125rem] font-bold leading-none text-white">{title}</span>
+        <span className="mt-1.5 block text-[0.6875rem] font-semibold text-white">{subtitle}</span>
       </span>
       <span className="home-tile-arrow absolute bottom-2.5 left-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/10 text-white backdrop-blur-sm">
         <ChevronLeft className="h-4 w-4" />
@@ -80,7 +80,7 @@ function QuickTool({ onClick, title, icon, tone, ariaLabel }: { onClick: () => v
   return (
     <button onClick={onClick} aria-label={ariaLabel || title} className="u-pressable flex min-w-[4.2rem] flex-col items-center gap-1.5 text-center">
       <span className={`home-quick-icon ${tone} flex h-12 w-12 items-center justify-center rounded-full`}>{icon}</span>
-      <span className="home-quick-label whitespace-nowrap text-[9px] font-bold text-azkar-ink">{title}</span>
+      <span className="home-quick-label whitespace-nowrap text-[0.5625rem] font-bold text-azkar-ink">{title}</span>
     </button>
   )
 }
@@ -196,9 +196,9 @@ export function HomeView({
       <main className="home-reference-content mx-auto w-full max-w-md px-3.5">
         <header className="flex items-center justify-between pb-3 pt-[max(.8rem,env(safe-area-inset-top))]">
           <div className="text-right" data-reveal>
-            <div className="text-[13px] font-semibold text-azkar-ink-soft">{greeting}</div>
-            <div className="font-amiri text-[24px] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
-            {hijriDate && <div className="text-[12px] font-semibold text-azkar-gold-deep">{hijriDate}</div>}
+            <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
+            <div className="font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
+            {hijriDate && <div className="text-[0.75rem] font-semibold text-azkar-gold-deep">{hijriDate}</div>}
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onToggleDarkMode} aria-label="تبديل الوضع الليلي" className="home-v4-round u-pressable">
@@ -212,16 +212,16 @@ export function HomeView({
           <div className="home-prayer-photo-shade" aria-hidden="true" />
           <div className="relative z-10 flex items-start justify-between px-4 pt-3.5">
             <span className="home-reference-location"><span>{locationLabel}</span><Compass className="h-4 w-4" /></span>
-            <span className="text-[13px] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
+            <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
           </div>
           <div className="relative z-10 flex items-end justify-between px-4 pb-3 pt-6">
             <div className="text-left">
-              <div className="text-[12px] font-semibold text-white/80">متبقي</div>
-              <div dir="ltr" className="text-[26px] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
+              <div className="text-[0.75rem] font-semibold text-white/80">متبقي</div>
+              <div dir="ltr" className="text-[1.625rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
             </div>
             <div className="text-right">
-              <div className="font-amiri text-[44px] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
-              <div className="mt-1 text-[22px] font-bold tabular-nums text-white">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
+              <div className="font-amiri text-[2.75rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
+              <div className="mt-1 text-[1.375rem] font-bold tabular-nums text-white">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
             </div>
           </div>
           <span className="sr-only" role="status">{next ? `الصلاة القادمة ${PRAYER_LABELS[next.key]}` : ''}</span>
@@ -231,21 +231,21 @@ export function HomeView({
               const time = timings?.[key]
               return (
                 <button key={key} onClick={onOpenPrayer} aria-label={`${PRAYER_LABELS[key]} ${time ? formatPrayerTime(time) : ''}`} className={`u-pressable flex min-w-0 flex-col items-center justify-center rounded-xl px-0.5 py-1.5 ${active ? 'home-prayer-chip-active' : 'text-white'}`}>
-                  <span className="whitespace-nowrap text-[11px] font-bold">{PRAYER_LABELS[key]}</span>
-                  <span className="mt-1 whitespace-nowrap text-[13px] font-bold tabular-nums">{time ? formatPrayerTime(time) : '—:—'}</span>
+                  <span className="whitespace-nowrap text-[0.6875rem] font-bold">{PRAYER_LABELS[key]}</span>
+                  <span className="mt-1 whitespace-nowrap text-[0.8125rem] font-bold tabular-nums">{time ? formatPrayerTime(time) : '—:—'}</span>
                 </button>
               )
             })}
           </div>
-          <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[9px] text-white/75" dir="ltr">
+          <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[0.5625rem] text-white/75" dir="ltr">
             <span>Illustrative photo, not your location · </span>
             <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.artist}</a>
             <span> / Wikimedia Commons / </span>
             <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.license}</a>
           </div>
-          {!coords && <div className="relative z-10 px-4 pb-2.5 text-center text-[11px] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
-          {coords && prayerLoading && !timings && <div role="status" className="relative z-10 px-4 pb-2.5 text-center text-[11px] text-white/80">جارٍ حساب المواقيت…</div>}
-          {coords && prayerError && !timings && <div role="alert" className="relative z-10 px-4 pb-2.5 text-center text-[11px] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
+          {!coords && <div className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
+          {coords && prayerLoading && !timings && <div role="status" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">جارٍ حساب المواقيت…</div>}
+          {coords && prayerError && !timings && <div role="alert" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
         </section>
 
         <section className="mt-3 grid grid-cols-3 gap-2" data-reveal aria-label="تقدمك اليوم">
@@ -260,8 +260,8 @@ export function HomeView({
 
         <section className="mt-4" data-reveal>
           <div className="mb-2 flex items-baseline justify-between px-1">
-            <h2 className="font-amiri text-[22px] font-bold text-azkar-teal-ink">أقسام أخرى</h2>
-            <span className="text-[11px] text-azkar-ink-soft">غير موجودة في الشريط السفلي</span>
+            <h2 className="font-amiri text-[1.375rem] font-bold text-azkar-teal-ink">أقسام أخرى</h2>
+            <span className="text-[0.6875rem] text-azkar-ink-soft">غير موجودة في الشريط السفلي</span>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} reveal={false} />
@@ -270,8 +270,8 @@ export function HomeView({
             <HomeTile onClick={onOpenFavorites} title="المفضلة" subtitle="ما حفظته" tone="azkar" icon={<Heart className="h-6 w-6" />} reveal={false} />
           </div>
           <button type="button" onClick={onOpenMore} className="home-more-link u-pressable mt-2.5 flex w-full items-center justify-between rounded-2xl px-4 py-3 text-right">
-            <span className="flex items-center gap-2 font-amiri text-[17px] font-bold text-azkar-teal-ink"><MoreHorizontal className="h-5 w-5" />المزيد</span>
-            <span className="text-[11px] text-azkar-ink-soft">السبحة والإعدادات وأدوات أخرى</span>
+            <span className="flex items-center gap-2 font-amiri text-[1.0625rem] font-bold text-azkar-teal-ink"><MoreHorizontal className="h-5 w-5" />المزيد</span>
+            <span className="text-[0.6875rem] text-azkar-ink-soft">السبحة والإعدادات وأدوات أخرى</span>
           </button>
         </section>
       </main>
@@ -295,8 +295,8 @@ function ProgressCard({ onClick, title, sub, ring, icon }: { onClick: () => void
       ) : (
         <span className="home-progress-icon flex items-center justify-center">{icon}</span>
       )}
-      <span className="mt-2 block font-amiri text-[16px] font-bold leading-tight text-azkar-teal-ink">{title}</span>
-      <span className="mt-0.5 block text-[11px] font-semibold text-azkar-ink-soft">{sub}</span>
+      <span className="mt-2 block font-amiri text-[1rem] font-bold leading-tight text-azkar-teal-ink">{title}</span>
+      <span className="mt-0.5 block text-[0.6875rem] font-semibold text-azkar-ink-soft">{sub}</span>
     </button>
   )
 }
