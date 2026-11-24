@@ -82,10 +82,10 @@ export function MotivationSection({
                   aria-invalid={pageOutOfRange}
                   className="min-w-0 flex-1 rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-center text-sm"
                 />
-                <span className="text-[0.625rem] text-azkar-ink-soft">من {toArabicDigits(String(KHATMA_TOTAL_PAGES))}</span>
+                <span className="text-[0.6875rem] text-azkar-ink-soft">من {toArabicDigits(String(KHATMA_TOTAL_PAGES))}</span>
               </div>
               {pageOutOfRange && (
-                <p role="alert" className="mt-1 text-[0.625rem] text-red-700 dark:text-red-300">
+                <p role="alert" className="mt-1 text-[0.6875rem] text-red-700 dark:text-red-300">
                   القيمة خارج النطاق، سيتم حفظ أقرب قيمة من ٠ إلى {toArabicDigits(String(KHATMA_TOTAL_PAGES))}.
                 </p>
               )}
@@ -95,7 +95,7 @@ export function MotivationSection({
                   style={{ width: (page / KHATMA_TOTAL_PAGES) * 100 + '%' }}
                 />
               </div>
-              <div className="mt-1 text-[0.625rem] text-azkar-ink-soft">
+              <div className="mt-1 text-[0.6875rem] text-azkar-ink-soft">
                 {toArabicNumber(Math.round((page / KHATMA_TOTAL_PAGES) * 100))}٪
                 مكتمل
               </div>
@@ -125,10 +125,10 @@ export function MotivationSection({
                   aria-invalid={targetOutOfRange}
                   className="w-24 rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-center text-sm"
                 />
-                <span className="text-[0.625rem] text-azkar-ink-soft">صفحات يوميًا</span>
+                <span className="text-[0.6875rem] text-azkar-ink-soft">صفحات يوميًا</span>
               </div>
               {targetOutOfRange && (
-                <p role="alert" className="mt-1 text-[0.625rem] text-red-700 dark:text-red-300">
+                <p role="alert" className="mt-1 text-[0.6875rem] text-red-700 dark:text-red-300">
                   القيمة خارج النطاق، سيتم حفظ أقرب قيمة من ١ إلى {toArabicDigits(String(KHATMA_TOTAL_PAGES))}.
                 </p>
               )}
