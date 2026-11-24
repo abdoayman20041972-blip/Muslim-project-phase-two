@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { arabicCount, CATEGORY_COUNT_FORMS, toArabicNumber, ZIKR_COUNT_FORMS } from '../../constants'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton, CategoryIcon } from '../../components/app-chrome'
@@ -51,7 +51,16 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   const [search, setSearch] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
   const currentWird = timeBasedAzkar()
-  const progress = readAzkarProgress()
+  const [progress, setProgress] = useState<Record<string, number>>(() => readAzkarProgress())
+  useEffect(() => {
+    const refresh = () => setProgress(readAzkarProgress())
+    window.addEventListener('azkar-progress-changed', refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.removeEventListener('azkar-progress-changed', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [])
   const morning = categories.find(category => category.id === 'morning')
   const evening = categories.find(category => category.id === 'evening')
   const otherCategories = categories.filter(category => category.id !== 'morning' && category.id !== 'evening')
@@ -60,7 +69,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   const completedToday = completedItemCount(allItems, allKeys, progress)
   const todayPercent = completionPercent(completedToday, allItems.length)
   const currentCategory = categories.find(category => category.id === currentWird.id)
-  const history = useMemo(() => Object.entries(readAzkarProgressDays()).sort(([a], [b]) => b.localeCompare(a)).slice(0, AZKAR_PROGRESS_RETENTION_DAYS), [])
+  const history = useMemo(() => Object.entries(readAzkarProgressDays()).sort(([a], [b]) => b.localeCompare(a)).slice(0, AZKAR_PROGRESS_RETENTION_DAYS), [progress])
   const searchResults = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('ar')
     if (!query) return []
