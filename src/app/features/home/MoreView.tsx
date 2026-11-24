@@ -17,8 +17,8 @@ const ENTRIES: Entry[] = [
 export function MoreView({ onOpen }: { onOpen: (view: View) => void }) {
   return (
     <div className="w-full min-w-0" data-testid="more-view">
-      <h1 className="font-amiri text-[28px] font-bold text-azkar-teal-ink">المزيد</h1>
-      <p className="mb-4 mt-1 text-[12px] text-azkar-ink-soft">أدوات وأقسام ثانوية. الأقسام الأساسية في الشريط السفلي.</p>
+      <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">المزيد</h1>
+      <p className="mb-4 mt-1 text-[0.75rem] text-azkar-ink-soft">أدوات وأقسام ثانوية. الأقسام الأساسية في الشريط السفلي.</p>
       <div className="grid grid-cols-2 gap-2.5">
         {ENTRIES.map((e, i) => (
           <HomeTile key={e.view.name} onClick={() => onOpen(e.view)} title={e.title} subtitle={e.subtitle} icon={e.icon} tone={e.tone} delay={i} reveal={false} />
