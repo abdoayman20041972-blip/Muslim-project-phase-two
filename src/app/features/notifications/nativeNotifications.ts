@@ -41,7 +41,7 @@ import {
 //      after reboot). The native fire receiver chain-advances the window on
 //      every alarm that fires, so weeks pass correctly without the app open.
 //   3. TIMING goes through the custom @muslim/exact-alarms plugin:
-//      AlarmManager.setAlarmClock(), the one alarm API Android never defers.
+//      AlarmManager.setAlarmClock(), which Android documents as firing in Doze.
 //      The stock plugin's setExactAndAllowWhileIdle was still postponed by
 //      Battery Saver / OEM battery managers. Channels, permission and tap
 //      actions stay with @capacitor/local-notifications.
@@ -54,8 +54,9 @@ import {
 //   6. The intended prayer time is written into the notification body, and
 //      each kind carries a TTL so stale notifications remove themselves.
 //   7. Re-arms happen on app open, resume, hourly while running, settings
-//      change, reboot, package replace; a manual clock/timezone change wipes
-//      the plan (native) because every stored instant is absolute epoch time.
+//      change, reboot, package replace. A clock change keeps the plan; a real
+//      time-zone change moves fixed-local-time reminders to the same local hour
+//      and flags that prayer times need a replan when the app opens.
 
 export type AdhanSoundMode = 'adhan' | 'default' | 'silent'
 
@@ -587,6 +588,7 @@ async function scheduleEntries(entries: PlannedNotification[]): Promise<number> 
       target: entry.target,
       group: entry.group ?? null,
       ttl: entry.ttl ?? 0,
+      wallClock: Boolean(entry.wallClock),
     }))
     // The pending diagnostic test survives this replace run: a resume or
     // settings change during its 10 seconds must not cancel it.
@@ -607,7 +609,7 @@ let testFallbackTimer = 0
  * the test notification 12 seconds after scheduling (checked against the real
  * shade state), post it right away through @capacitor/local-notifications
  * with the same id (posting the same id replaces, so it can never
- * double-stack). setAlarmClock is never deferred, so this should stay dormant —
+ * double-stack). setAlarmClock is documented to fire in Doze, so this should stay dormant —
  * it only covers a broken vendor alarm path while the user is watching.
  */
 function armTestFallback() {
