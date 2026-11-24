@@ -18,9 +18,9 @@ export function Row({
       className={`min-h-16 gap-3 px-4 py-3 ${stacked ? 'flex flex-col items-stretch' : 'flex items-center'} ${last ? '' : 'border-b border-azkar-gold-soft/50'}`}
     >
       <div className={`min-w-0 text-right ${stacked ? 'w-full' : 'flex-1'}`}>
-        <div className="text-[13px] font-bold text-azkar-ink">{title}</div>
+        <div className="text-[0.8125rem] font-bold text-azkar-ink">{title}</div>
         {description && (
-          <div className="mt-1 text-[10px] leading-5 text-azkar-ink-soft">{description}</div>
+          <div className="mt-1 text-[0.625rem] leading-5 text-azkar-ink-soft">{description}</div>
         )}
       </div>
       {children}
@@ -53,7 +53,7 @@ export function Choice({
           key={k}
           onClick={() => onChange(k)}
           aria-pressed={current === k}
-          className={`min-h-11 min-w-0 rounded-xl border px-2 py-2 text-center text-[10px] font-bold leading-5 ${current === k ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
+          className={`min-h-11 min-w-0 rounded-xl border px-2 py-2 text-center text-[0.625rem] font-bold leading-5 ${current === k ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
         >
           {v}
         </button>
