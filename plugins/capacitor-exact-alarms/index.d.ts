@@ -16,6 +16,8 @@ export interface ExactAlarm {
    * the shade by itself (setTimeoutAfter). 0 or absent = never auto-remove.
    */
   ttl?: number
+  /** Fixed local clock time: native code keeps the local hour if the device time zone changes. Default false. */
+  wallClock?: boolean
 }
 
 export interface LaunchNotification {
@@ -51,6 +53,42 @@ export interface ExactAlarmsPlugin {
    * launched from a notification.
    */
   launchNotification(): Promise<{ notification: LaunchNotification | null }>
+  /** What the native receivers did: fired alarms and clock/boot events, oldest first (newest 40). */
+  fireLog(): Promise<{ items: FireLogItem[] }>
+  clearFireLog(): Promise<void>
+  /** Native-only facts: battery optimization exemption, notifications enabled, plan needing a rebuild. */
+  status(): Promise<NativeStatus>
+}
+
+export type FireResult =
+  | 'posted'
+  | 'notifications_disabled'
+  | 'post_failed'
+  | 'no_entry'
+  | 'error'
+  | 'boot'
+  | 'package_replaced'
+  | 'time_set'
+  | 'timezone_event'
+  | 'timezone_changed'
+
+export interface FireLogItem {
+  id: number
+  title: string
+  /** Planned fire time in epoch ms; 0 for events that are not alarms. */
+  planned: number
+  /** When the receiver ran, epoch ms. */
+  at: number
+  result: FireResult | string
+  detail: string
+}
+
+export interface NativeStatus {
+  ignoringBatteryOptimizations: boolean
+  notificationsEnabled: boolean
+  /** The time zone changed while the app was closed; prayer times are for the previous place until the app is opened. */
+  needsReplan: boolean
+  storedAlarms: number
 }
 
 export declare const ExactAlarms: ExactAlarmsPlugin
