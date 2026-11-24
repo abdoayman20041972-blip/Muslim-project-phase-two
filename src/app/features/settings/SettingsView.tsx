@@ -18,6 +18,8 @@ import { useConfirmDialog } from '../../components/confirm-dialog'
 import { removeFromMirror, replaceMirror } from '../storage/preferencesMirror'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
 import { validateBackupEntries } from '../../backupValidation'
+import { dropPrayerPlanCarryover } from '../notifications/nativeNotifications'
+import { readPrayerCoords } from '../prayer/prayerTimes'
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
 import { AboutSection } from './sections/AboutSection'
 import { DeviceSection } from './sections/DeviceSection'
@@ -227,6 +229,11 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         await alert({ message: 'تم استيراد النسخة، لكن تعذّر تحديث التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود بيانات قديمة. حاول الاستيراد مرة أخرى.' })
         return
       }
+      // A backup without a usable location must not leave prayer alarms from the old one.
+      if (!readPrayerCoords() && !(await dropPrayerPlanCarryover())) {
+        await alert({ message: 'تم استيراد النسخة، لكن تعذّر إلغاء تنبيهات الصلاة القديمة. لم تتم إعادة التحميل. حاول الاستيراد مرة أخرى.' })
+        return
+      }
       location.reload()
     } catch {
       await alert({ message: 'ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق مسلم.' })
@@ -245,6 +252,12 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     SETTINGS_RESET_KEYS.forEach((k) => localStorage.removeItem(k))
     if (!(await removeFromMirror([...SETTINGS_RESET_KEYS]))) {
       await alert({ message: 'تعذّر مسح الإعدادات من التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود إعدادات قديمة. حاول إعادة الضبط مرة أخرى.' })
+      return
+    }
+    // The location and method were just cleared: drop the cached plan and the armed
+    // alarms computed from them, otherwise they would be carried over after reload.
+    if (!(await dropPrayerPlanCarryover())) {
+      await alert({ message: 'تعذّر إلغاء تنبيهات الصلاة المحسوبة من الموقع القديم. لم تتم إعادة التحميل. حاول إعادة الضبط مرة أخرى.' })
       return
     }
     location.reload()
