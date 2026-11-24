@@ -34,8 +34,11 @@ type Props = {
   appearance: 'light' | 'dark' | 'system'
   onAppearance: (v: 'light' | 'dark' | 'system') => void
   onBack: () => void
+  // Deep-link entry (e.g. from the qibla empty state): jump straight to a
+  // section. A fresh object per request re-applies even to the same section.
+  entry?: SettingsEntry | null
 }
-type Category =
+export type Category =
   | 'main'
   | 'general'
   | 'quran'
@@ -49,6 +52,7 @@ type Category =
   | 'motivation'
   | 'privacy'
   | 'about'
+export type SettingsEntry = { category: Category; at: number }
 const CATEGORY_GROUPS: ReadonlyArray<readonly [string, ReadonlyArray<readonly [Category, string, string, typeof Settings2]>]> = [
   ['المظهر والقراءة', [
     ['general', 'عام', 'المظهر والأرقام والحركة', Settings2],
@@ -72,10 +76,13 @@ const CATEGORY_GROUPS: ReadonlyArray<readonly [string, ReadonlyArray<readonly [C
   ]],
 ]
 
-export function SettingsView({ appearance, onAppearance, onBack }: Props) {
+export function SettingsView({ appearance, onAppearance, onBack, entry }: Props) {
   const { confirm, alert } = useConfirmDialog()
   const { fontSize, setFontSize, reciter, setReciter, layout, setLayout } = useQuranPreferences()
-  const [category, setCategory] = useState<Category>('main')
+  const [category, setCategory] = useState<Category>(entry?.category ?? 'main')
+  useEffect(() => {
+    if (entry) setCategory(entry.category)
+  }, [entry])
   const [uiSound, setUiSound] = useState(true),
     [tasbihSound, setTasbihSound] = useState(true),
     [vibration, setVibration] = useState(true),
