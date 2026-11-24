@@ -78,7 +78,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
     return () => window.removeEventListener('azkar-settings-changed', refresh)
   }, [])
 
-  const fontClass = font === 'sm' ? 'text-[0.8125rem]' : font === 'lg' ? 'text-[1.1875rem]' : 'text-[1rem]'
+  const fontSize = font === 'sm' || font === 'lg' ? font : 'md'
 
   useEffect(() => {
     let cancelled = false
@@ -209,7 +209,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
                 </span>
                 {item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}
               </div>
-              <p className={'hadith-text font-amiri ' + fontClass}>{item.text}</p>
+              <p className="hadith-text font-amiri" data-size={fontSize}>{item.text}</p>
               {item.grade && (
                 <p className="mt-2 text-[0.6875rem] text-azkar-ink-soft" data-testid="hadith-grade">
                   الدرجة: {item.grade.label} · {item.grade.by}{' '}
@@ -259,7 +259,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
               {hits.slice(0, 20).map((item) => (
                 <button key={item.key} type="button" onClick={() => open(group.key, itemsOf(group.key).findIndex((entry) => entry.key === item.key))} className="hadith-card u-pressable text-right" data-testid="hadith-result">
                   <div className="hadith-card-top"><span>{item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}</span>{item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}</div>
-                  <p className={'hadith-text font-amiri line-clamp-3 ' + fontClass}><HighlightedText text={item.text} query={query} /></p>
+                  <p className="hadith-text font-amiri line-clamp-3" data-size={fontSize}><HighlightedText text={item.text} query={query} /></p>
                   {item.note && matches(item.note, query) && !matches(item.text, query) && <p className="mt-2 text-[0.6875rem] text-azkar-ink-soft">ملاحظة: <HighlightedText text={item.note} query={query} /></p>}
                 </button>
               ))}
