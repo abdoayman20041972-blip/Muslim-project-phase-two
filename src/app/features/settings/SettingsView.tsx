@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useConfirmDialog } from '../../components/confirm-dialog'
+import { removeFromMirror, replaceMirror } from '../storage/preferencesMirror'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
 import { AboutSection } from './sections/AboutSection'
@@ -67,7 +68,7 @@ const CATEGORY_GROUPS: ReadonlyArray<readonly [string, ReadonlyArray<readonly [C
     ['prophets', 'قصص الأنبياء', 'الخط وأسئلة التأمل', Star],
   ]],
   ['الجهاز والبيانات', [
-    ['device', 'الأذونات والجهاز', 'الإشعارات والموقع', ShieldCheck],
+    ['device', 'الأذونات والجهاز', 'الموقع والحركة', ShieldCheck],
     ['privacy', 'الخصوصية والبيانات', 'النسخ الاحتياطي', Info],
     ['motivation', 'التحفيز', 'إحصائيات السبحة والختمة', TrendingUp],
   ]],
@@ -217,6 +218,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         .filter(isBackupKey)
         .forEach((k) => localStorage.removeItem(k))
       entries.forEach(([k, v]) => localStorage.setItem(k, v))
+      await replaceMirror(entries)
       location.reload()
     } catch {
       await alert({ message: 'ملف النسخة الاحتياطية غير صالح أو لا يخص تطبيق مسلم.' })
@@ -233,6 +235,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     // One canonical list lives in settings.ts (SETTINGS_RESET_KEYS) so this
     // never drifts from the registered settings keys again.
     SETTINGS_RESET_KEYS.forEach((k) => localStorage.removeItem(k))
+    await removeFromMirror([...SETTINGS_RESET_KEYS])
     location.reload()
   }
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
