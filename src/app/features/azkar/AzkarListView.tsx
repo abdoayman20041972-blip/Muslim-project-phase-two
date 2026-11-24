@@ -72,16 +72,20 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
   const currentCategory = categories.find(category => category.id === currentWird.id)
   const history = useMemo(() => Object.entries(readAzkarProgressDays()).sort(([a], [b]) => b.localeCompare(a)).slice(0, AZKAR_PROGRESS_RETENTION_DAYS), [progress])
   const searchResults = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('ar')
+    // Users type without tashkeel: match on stripped text so a plain query
+    // still reaches the voweled dhikr itself.
+    const strip = (value: string) => value.toLocaleLowerCase('ar').replace(/[\u0640\u064B-\u0652\u0670]/g, '')
+    const query = strip(search.trim())
     if (!query) return []
     return categories
       .flatMap(category => category.items.map(item => ({ category, item })))
-      .filter(({ item }) => item.text.toLocaleLowerCase().includes(query))
+      .filter(({ item }) => strip(item.text).includes(query))
       .slice(0, 12)
   }, [categories, search])
 
-  const openCategory = (category?: ZikrCategory) => {
-    if (category) setView({ name: 'category', id: category.id })
+  const openCategory = (category?: ZikrCategory, itemId?: string) => {
+    if (!category) return
+    setView(itemId ? { name: 'category', id: category.id, item: itemId } : { name: 'category', id: category.id })
   }
 
   const renderPrimaryCard = (category: ZikrCategory | undefined, tone: 'morning' | 'evening') => {
@@ -161,7 +165,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
                   {searchResults.length === 0
                     ? <div className="py-4 text-center text-[10px] text-azkar-ink-faint">لا توجد نتائج مطابقة.</div>
                     : searchResults.map(({ category, item }) => (
-                      <button key={`${category.id}:${item.id ?? item.text}`} type="button" aria-label={`فتح ${category.label}: ${item.text}`} onClick={() => openCategory(category)} className="u-pressable flex w-full items-center gap-2 rounded-xl bg-azkar-surface-1 px-3 py-2.5 text-right">
+                      <button key={`${category.id}:${item.id ?? item.text}`} type="button" aria-label={`فتح ${category.label}: ${item.text}`} onClick={() => openCategory(category, item.id)} className="u-pressable flex w-full items-center gap-2 rounded-xl bg-azkar-surface-1 px-3 py-2.5 text-right">
                         <span className="min-w-0 flex-1 truncate text-[11px] text-azkar-ink">{item.text}</span>
                         <ChevronIcon />
                       </button>
@@ -246,19 +250,34 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
           </button>
         </div>
       </section>
-    <div className="sr-only">
-      <button type="button" aria-expanded={historyOpen} aria-controls="azkar-progress-history-legacy" onClick={() => setHistoryOpen(open => !open)}>سجل الأيام</button>
-      {historyOpen && <div id="azkar-progress-history-legacy" role="region" aria-label="سجل الأيام">
-        {history.length === 0 ? <span>لا يوجد سجل سابق بعد</span> : history.map(([dateKey, dayProgress]) => {
-          const completed = completedItemCount(allItems, allKeys, dayProgress)
-          const percent = completionPercent(completed, allItems.length)
-          const [year, month, day] = dateKey.split("-").map(Number)
-          const label = year && month && day ? new Intl.DateTimeFormat("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(year, month - 1, day)) : dateKey
-          return <div key={dateKey}><span>{label}</span> <span>{toArabicNumber(percent)}٪</span> <span>{toArabicNumber(completed)} مكتمل من {toArabicNumber(allItems.length)}</span></div>
-        })}
-      </div>}
-      <span>الأذكار المفضلة</span>
-    </div>
+      <section className="mt-6 px-1" aria-label="سجل الأيام">
+        <div className="overflow-hidden rounded-2xl border border-azkar-hairline bg-azkar-card u-shadow-1">
+          <button type="button" aria-expanded={historyOpen} aria-controls="azkar-days-log" onClick={() => setHistoryOpen(open => !open)} className="u-pressable flex w-full items-center justify-between gap-3 px-4 py-3.5 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
+            <span className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-azkar-teal-tint text-azkar-teal-ink"><HistoryIcon /></span>
+              <span>
+                <span className="block font-amiri text-[16px] font-bold text-azkar-ink">سجل الأيام</span>
+                <span className="mt-0.5 block text-[9px] text-azkar-ink-faint">إنجازك في الأيام السابقة</span>
+              </span>
+            </span>
+            <span className={"text-azkar-ink-faint transition-transform duration-200 " + (historyOpen ? "rotate-90" : "")}><ChevronIcon /></span>
+          </button>
+          {historyOpen && <div id="azkar-days-log" className="border-t border-azkar-hairline px-4 py-1.5">
+            {history.length === 0
+              ? <div className="py-5 text-center text-[10px] text-azkar-ink-faint">لا يوجد سجل سابق بعد</div>
+              : history.slice(0, 14).map(([dateKey, dayProgress]) => {
+                const completed = completedItemCount(allItems, allKeys, dayProgress)
+                const percent = completionPercent(completed, allItems.length)
+                const [year, month, day] = dateKey.split("-").map(Number)
+                const label = year && month && day ? new Intl.DateTimeFormat("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(year, month - 1, day)) : dateKey
+                return <div key={dateKey} className="flex items-center justify-between gap-3 border-b border-azkar-hairline py-2.5 last:border-0">
+                  <span className="text-[11px] text-azkar-ink">{label}</span>
+                  <span className="shrink-0 text-[10px] font-bold text-azkar-teal-ink">{toArabicNumber(completed)} / {toArabicNumber(allItems.length)} · {toArabicNumber(percent)}٪</span>
+                </div>
+              })}
+          </div>}
+        </div>
+      </section>
     </div>
   )
 }
