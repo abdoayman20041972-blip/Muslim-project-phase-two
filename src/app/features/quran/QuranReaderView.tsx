@@ -475,7 +475,7 @@ export function QuranReaderView({ view, setView }: Props) {
             <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">
               {activeSurah!.shortName}
             </div>
-            <div className="text-[0.625rem] text-azkar-ink-faint mt-0.5 truncate">
+            <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5 truncate">
               {activeSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} ·{' '}
               {toArabicNumber(activeSurah.numberOfAyahs)} آية ·{' '}
               {QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter}
@@ -540,12 +540,12 @@ export function QuranReaderView({ view, setView }: Props) {
               <div className="rounded-[1.3rem] border border-azkar-gold-soft bg-azkar-card p-3 flex items-center justify-between">
                 <button
                   onClick={() => setReadingMode(true)}
-                  className="u-pressable rounded-full bg-azkar-teal px-3.5 py-2 text-[0.625rem] font-bold text-azkar-card"
+                  className="u-pressable rounded-full bg-azkar-teal px-3.5 py-2 text-[0.6875rem] font-bold text-azkar-card"
                 >
                   وضع القراءة
                 </button>
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.625rem] text-azkar-ink-soft">{fs.label}</span>
+                  <span className="text-[0.6875rem] text-azkar-ink-soft">{fs.label}</span>
                   <button
                     aria-label="تصغير الخط"
                     onClick={() =>
@@ -696,7 +696,7 @@ export function QuranReaderView({ view, setView }: Props) {
                       panelAnchorRef.current = e.currentTarget.closest('[data-ayah]')
                       setPanel(a)
                     }}
-                    className="inline-flex items-center justify-center w-6 h-6 mx-1 rounded-full border border-azkar-gold-soft bg-azkar-bg-alt text-azkar-gold text-[0.625rem] align-middle"
+                    className="inline-flex items-center justify-center w-6 h-6 mx-1 rounded-full border border-azkar-gold-soft bg-azkar-bg-alt text-azkar-gold text-[0.6875rem] align-middle"
                   >
                     {toArabicNumber(a.numberInSurah)}
                   </button>{' '}
@@ -892,7 +892,7 @@ export function QuranReaderView({ view, setView }: Props) {
                   </div>
                 )}
               </div>
-              <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-[0.625rem] text-azkar-ink-soft">
+              <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-[0.6875rem] text-azkar-ink-soft">
                 {tafsirLabel}
               </div>
             </div>
