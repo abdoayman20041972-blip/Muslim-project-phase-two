@@ -14,13 +14,13 @@ function TafsirPanel({ ayah, surah, fullText }: { ayah: DailyAyah; surah: number
   }, [openTafsir, ayah.number, ayah.text, fullText])
   return (
     <div data-testid="daily-ayah-tafsir" className="mt-2.5 rounded-xl bg-azkar-teal-tint px-3 py-2.5 text-right">
-      <div className="text-[10px] font-bold text-azkar-teal-ink">{tafsirLabel}</div>
+      <div className="text-[0.625rem] font-bold text-azkar-teal-ink">{tafsirLabel}</div>
       {tafsirLoading ? (
-        <div role="status" className="mt-1 text-[12px] text-azkar-ink-soft">جارٍ تحميل التفسير…</div>
+        <div role="status" className="mt-1 text-[0.75rem] text-azkar-ink-soft">جارٍ تحميل التفسير…</div>
       ) : tafsirError || !tafsirText ? (
-        <div role="alert" className="mt-1 text-[12px] text-azkar-ink-soft">تعذر تحميل التفسير الآن. جرّب مرة أخرى عند توفر الإنترنت.</div>
+        <div role="alert" className="mt-1 text-[0.75rem] text-azkar-ink-soft">تعذر تحميل التفسير الآن. جرّب مرة أخرى عند توفر الإنترنت.</div>
       ) : (
-        <div className="mt-1 text-[13px] leading-[1.9] text-azkar-ink">{tafsirText}</div>
+        <div className="mt-1 text-[0.8125rem] leading-[1.9] text-azkar-ink">{tafsirText}</div>
       )}
     </div>
   )
@@ -84,25 +84,25 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
     }
   }
 
-  const pill = 'u-pressable flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[11px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
+  const pill = 'u-pressable flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
   const quiet = `${pill} bg-azkar-teal-tint text-azkar-teal-ink`
   const primary = `${pill} bg-azkar-gold-tint text-azkar-gold-deep`
 
   return (
     <div className="home-reference-ayah rounded-[1.5rem] border border-white/60 bg-white/85 px-5 py-3.5 text-center shadow-2xl backdrop-blur-md" data-testid="daily-ayah-card">
       <div className="home-ayah-ornament" aria-hidden="true">❧</div>
-      <div className="mb-1 text-[10px] font-bold text-azkar-gold-deep">آية اليوم · مقتطف</div>
-      <div className="font-amiri text-[24px] font-bold leading-[1.8] text-[#173c35]">{ayah.text}</div>
-      <div className="mt-1 text-[11px] font-semibold text-azkar-ink-soft">{reference}</div>
+      <div className="mb-1 text-[0.625rem] font-bold text-azkar-gold-deep">آية اليوم · مقتطف</div>
+      <div className="font-amiri text-[1.5rem] font-bold leading-[1.8] text-[#173c35]">{ayah.text}</div>
+      <div className="mt-1 text-[0.6875rem] font-semibold text-azkar-ink-soft">{reference}</div>
 
       {panel === 'full' && (
         <div data-testid="daily-ayah-full" className="mt-2.5 rounded-xl bg-azkar-gold-tint px-3 py-2.5">
           {fullText ? (
-            <div className="font-amiri text-[20px] font-bold leading-[2] text-[#173c35]">{fullText}</div>
+            <div className="font-amiri text-[1.25rem] font-bold leading-[2] text-[#173c35]">{fullText}</div>
           ) : fullFailed ? (
-            <div role="alert" className="text-[12px] text-azkar-ink-soft">تعذر تحميل نص الآية الكامل.</div>
+            <div role="alert" className="text-[0.75rem] text-azkar-ink-soft">تعذر تحميل نص الآية الكامل.</div>
           ) : (
-            <div role="status" className="text-[12px] text-azkar-ink-soft">جارٍ التحميل…</div>
+            <div role="status" className="text-[0.75rem] text-azkar-ink-soft">جارٍ التحميل…</div>
           )}
         </div>
       )}
@@ -115,9 +115,9 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
       {surah && onOpenSurah && (
-        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-2 text-[11px] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
+        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-2 text-[0.6875rem] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
       )}
-      <div role="status" aria-live="polite" className="min-h-[1rem] text-[10px] font-semibold text-azkar-teal-ink">{notice}</div>
+      <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.625rem] font-semibold text-azkar-teal-ink">{notice}</div>
       <div className="home-ayah-divider mt-1" aria-hidden="true" />
     </div>
   )
