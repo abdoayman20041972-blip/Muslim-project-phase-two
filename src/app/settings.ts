@@ -38,7 +38,8 @@ export const emitSettingsChanged=()=>window.dispatchEvent(new Event('azkar-setti
 // Derived caches are deliberately excluded from both: 'azkar_prayer_plan_cache_v1'
 // (the last location-based prayer plan, re-armed verbatim while the location is
 // unavailable) is rebuilt from live state on the next run with coordinates.
-try{localStorage.removeItem('azkar_app_lock_enabled');localStorage.removeItem('azkar_app_lock_pin')}catch (error) { console.debug('[settings]', error) }
+// Module runs on the server too (SSR); touch storage only in a browser.
+if (typeof localStorage !== 'undefined') { try{localStorage.removeItem('azkar_app_lock_enabled');localStorage.removeItem('azkar_app_lock_pin')}catch (error) { console.debug('[settings]', error) } }
 
 export const BACKUP_KEYS = new Set<string>([
   APP_SETTINGS_KEYS.darkMode,APP_SETTINGS_KEYS.appearance,APP_SETTINGS_KEYS.numberStyle,APP_SETTINGS_KEYS.timeFormat,APP_SETTINGS_KEYS.uiScale,
