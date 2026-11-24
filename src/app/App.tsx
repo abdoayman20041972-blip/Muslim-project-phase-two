@@ -35,6 +35,19 @@ export function notificationOpenTarget(value: string | null): View | null {
   if (value === 'prayer') return { name: 'prayer-times' }
   if (value === 'azkar') return { name: 'azkar-list' }
   if (value === 'ayah') return { name: 'mushaf-list' }
+  if (value === 'azkar-morning') return { name: 'category', id: 'morning' }
+  if (value === 'azkar-evening') return { name: 'category', id: 'evening' }
+  if (value === 'kahf') return { name: 'mushaf-surah', number: 18 }
+  if (value === 'quran') {
+    // Quran reading reminder: continue where the user stopped, else the list.
+    try {
+      const last = parseInt(localStorage.getItem('azkar_last_surah') ?? '', 10)
+      if (last >= 1 && last <= 114) return { name: 'mushaf-surah', number: last }
+    } catch {
+      // storage unavailable: fall through to the list
+    }
+    return { name: 'mushaf-list' }
+  }
   return null
 }
 function consumeNotificationOpen(): View | null {
