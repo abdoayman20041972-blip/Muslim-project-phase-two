@@ -17,6 +17,7 @@ import {
 import { useConfirmDialog } from '../../components/confirm-dialog'
 import { removeFromMirror, replaceMirror } from '../storage/preferencesMirror'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
+import { validateBackupEntries } from '../../backupValidation'
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
 import { AboutSection } from './sections/AboutSection'
 import { DeviceSection } from './sections/DeviceSection'
@@ -213,11 +214,11 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     try {
       const p = JSON.parse(await file.text())
       if (p?.format !== 'muslim-local-backup' || !p.data) throw 0
-      const entries = Object.entries(p.data).filter(
-        ([k, v]) => isBackupKey(k) && typeof v === 'string',
-      ) as [string, string][]
+      if (typeof p.data !== 'object' || Array.isArray(p.data)) throw 0
+      const { valid: entries, rejected } = validateBackupEntries(p.data as Record<string, unknown>, isBackupKey)
       if (!entries.length) throw 0
-      if (!(await confirm({ message: 'استبدال البيانات الحالية بالنسخة الاحتياطية؟' }))) return
+      const skipNote = rejected.length ? ` سيتم تجاهل ${rejected.length} عنصر تالف في الملف.` : ''
+      if (!(await confirm({ message: 'استبدال البيانات الحالية بالنسخة الاحتياطية؟' + skipNote }))) return
       Object.keys(localStorage)
         .filter(isBackupKey)
         .forEach((k) => localStorage.removeItem(k))
