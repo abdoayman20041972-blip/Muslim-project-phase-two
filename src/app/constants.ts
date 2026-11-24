@@ -60,7 +60,7 @@ export function quranSurahAudioUrl(reciter: QuranAudioReciter, surahNumber: numb
 export const FONT_SIZES={sm:{text:'text-[18px]',leading:'leading-[2.2]',label:'صغير'},md:{text:'text-[21px]',leading:'leading-[2.5]',label:'متوسط'},lg:{text:'text-[24px]',leading:'leading-[2.6]',label:'كبير'},xl:{text:'text-[28px]',leading:'leading-[2.9]',label:'كبير جدًا'}} as const
 export type FontSizeKey=keyof typeof FONT_SIZES
 export const FONT_ORDER:FontSizeKey[]=['sm','md','lg','xl']
-export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}
+export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string;item?:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}
 export type Section='mushaf'|'hadith'|'home'|'azkar'|'tasbih'|'more'
 export type Ayah={number:number;numberInSurah:number;text:string}
 export function sectionOf(view:View):Section|null{switch(view.name){case'home':return'home';case'mushaf-list':case'mushaf-surah':return'mushaf';case'hadith':return'hadith';case'azkar-list':case'category':case'favorites':return'azkar';case'tasbih':return'tasbih';case'settings':return'more';default:return null}}
