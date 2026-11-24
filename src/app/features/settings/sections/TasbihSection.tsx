@@ -1,10 +1,11 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { getTasbihWords, normalizeTasbihText, toArabicNumber, todayKey } from '../../../constants'
 import { Toggle } from '../../../components/app-chrome'
 import { useConfirmDialog } from '../../../components/confirm-dialog'
-import { APP_SETTINGS_KEYS, emitSettingsChanged } from '../../../settings'
+import { APP_SETTINGS_KEYS, emitSettingsChanged, readSetting, writeSetting } from '../../../settings'
 import { addCustomTasbih, deleteCustomTasbih, updateCustomTasbih } from '../../tasbih/customTasbih'
 import { useCustomTasbihDialog } from '../../tasbih/custom-tasbih-dialog'
+import { getTasbihButtonColor, TASBIH_BUTTON_COLORS, TASBIH_BUTTON_COLOR_LABELS, type TasbihButtonColor } from '../../tasbih/tasbihButtonColor'
 import { Row, Section } from '../settingsPrimitives'
 
 type TasbihSectionProps = {
@@ -32,6 +33,13 @@ export function TasbihSection({
 }: TasbihSectionProps) {
   const { confirm, alert } = useConfirmDialog()
   const { dialog: customTasbihDialog, open: openCustomTasbihDialog } = useCustomTasbihDialog()
+  const [buttonColor, setButtonColor] = useState<TasbihButtonColor>(() => getTasbihButtonColor())
+
+  const chooseButtonColor = (color: TasbihButtonColor) => {
+    setButtonColor(color)
+    writeSetting(APP_SETTINGS_KEYS.tasbihButtonColor, color)
+    emitSettingsChanged()
+  }
 
   const customWords = getTasbihWords().filter((x) => x.id.startsWith('custom-'))
 
@@ -63,13 +71,32 @@ export function TasbihSection({
         <Row
           title="الاهتزاز"
           description="اهتزاز خفيف مع كل تسبيحة للمساعدة على العد دون النظر للشاشة."
-          last
         >
           <Toggle
             checked={vibration}
             onChange={() => toggle(APP_SETTINGS_KEYS.vibration, setVibration, vibration)}
             label="الاهتزاز"
           />
+        </Row>
+        <Row
+          title="لون زر التسبيح"
+          description="لون زر العد الرئيسي في شاشة السبحة. الشكل يبقى دائريًا كما هو."
+          last
+        >
+          <div className="flex items-center gap-2" role="radiogroup" aria-label="لون زر التسبيح">
+            {TASBIH_BUTTON_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                role="radio"
+                aria-checked={buttonColor === color}
+                aria-label={TASBIH_BUTTON_COLOR_LABELS[color]}
+                title={TASBIH_BUTTON_COLOR_LABELS[color]}
+                className={`tasbih-color-swatch tasbih-color-swatch-${color} ${buttonColor === color ? 'is-selected' : ''}`}
+                onClick={() => chooseButtonColor(color)}
+              />
+            ))}
+          </div>
         </Row>
       </Section>
       <Section title="بيانات السبحة">
