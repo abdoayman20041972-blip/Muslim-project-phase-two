@@ -61,7 +61,13 @@ export function useTasbih(){
   try{localStorage.setItem(SELECTED_WORD_KEY,selected??'');localStorage.setItem(DATE_KEY,today);localStorage.setItem(TOTAL_KEY,String(nextDayTotal))}catch (error) { console.debug('[useTasbih]', error) }
  },[])
 
- useEffect(()=>{load();const onFocus=()=>{flush();load();};const onVisibility=()=>{if(document.visibilityState==='visible')load();else flush()};window.addEventListener('focus',onFocus);document.addEventListener('visibilitychange',onVisibility);window.addEventListener('pagehide',flush);return()=>{window.removeEventListener('focus',onFocus);document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('pagehide',flush);flush()}},[load,flush])
+ // External resets (the settings buttons write storage directly) must be
+ // authoritative: cancel any pending debounced persist FIRST so a stale flush
+ // can never rewrite the wiped values, then reload from storage so the next
+ // tap builds on the post-reset state only.
+ const applyExternalReset=useCallback(()=>{if(persistTimer.current!==null){window.clearTimeout(persistTimer.current);persistTimer.current=null}load()},[load])
+
+ useEffect(()=>{load();const onFocus=()=>{flush();load();};const onVisibility=()=>{if(document.visibilityState==='visible')load();else flush()};window.addEventListener('focus',onFocus);document.addEventListener('visibilitychange',onVisibility);window.addEventListener('pagehide',flush);window.addEventListener('azkar-tasbih-reload',applyExternalReset);return()=>{window.removeEventListener('focus',onFocus);document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('pagehide',flush);window.removeEventListener('azkar-tasbih-reload',applyExternalReset);flush()}},[load,flush,applyExternalReset])
 
  const setSelectedWord=useCallback((id:string)=>{const words=getTasbihWords();const word=words.find(w=>w.id===id)||words.find(w=>w.word===id);if(!word)return;setSelectedWordState(word.id);writeSetting(SELECTED_WORD_KEY,word.id)},[])
  const tap=useCallback((id:string)=>{
