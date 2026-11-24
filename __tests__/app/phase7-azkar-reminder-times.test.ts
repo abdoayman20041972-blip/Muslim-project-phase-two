@@ -279,6 +279,37 @@ describe('phase 7: no-location run preserves armed prayer alarms', () => {
     expect(carried[0]!.at).toBe(futureAt)
   })
 
+  it('keeps the protective skip when pending() returns only corrupt prayer claims', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    const futureAt = Date.now() + 3 * 60 * 60_000
+    // Successful response, but every prayer claim is malformed: the armed
+    // list is effectively unreadable and a replace could drop real alarms.
+    alarms.pending.mockResolvedValue({
+      items: [
+        { id: 700000007, at: Number.NaN, title: 'corrupt time' },
+        { id: 700001009, at: futureAt, title: 'corrupt slot' },
+      ],
+    })
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    expect(alarms.schedule).not.toHaveBeenCalled()
+  })
+
+  it('proceeds when pending() lists only expired or non-prayer items (nothing armed to protect)', async () => {
+    const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
+    alarms.pending.mockResolvedValue({
+      items: [
+        { id: 700000010, at: Date.now() - 60_000, title: 'fired already' },
+        { id: 700100001, at: Date.now() + 60_000, title: 'test notification' },
+      ],
+    })
+    localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    await scheduleNativeNotifications({ force: true })
+    expect(alarms.schedule).toHaveBeenCalledTimes(1)
+    const plan = (alarms.schedule.mock.calls[0]![0] as { alarms: Array<{ id: number }> }).alarms
+    expect(plan.some((a) => a.id === 700000010)).toBe(false)
+  })
+
   it('honors the muted-prayer filter for carried entries', async () => {
     const { scheduleNativeNotifications } = await import('../../src/app/features/notifications/nativeNotifications')
     await scheduleNativeNotifications({ force: true })
