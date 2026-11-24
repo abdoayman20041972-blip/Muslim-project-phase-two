@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowRight, BookOpen, ScrollText } from 'lucide-react'
 import { PROPHET_STORIES, type ProphetStory } from './prophetsData'
 import { readSetting } from '../../settings'
 import { YusufStoryBody } from './YusufStoryBody'
+import { StoryBody } from './StoryBody'
+import { DETAILED_STORIES } from './storyContent'
 
 export function ProphetsView({ onBack }: { onBack: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -107,6 +109,8 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
 
       {story.id === 'yusuf' ? (
         <YusufStoryBody fontClass={fontClass} />
+      ) : DETAILED_STORIES[story.id] ? (
+        <StoryBody content={DETAILED_STORIES[story.id]} fontClass={fontClass} />
       ) : (
         <ol className="grid gap-3">
           {story.scenes.map((scene, i) => (
