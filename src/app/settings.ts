@@ -48,11 +48,12 @@ export const BACKUP_KEYS = new Set<string>([
 export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.startsWith('azkar_tafsir_')}
 
 // Canonical reset list for "إعادة الإعدادات الافتراضية": every registered
-// preference, plus the custom tasbih phrases, which the reset dialog already
-// promises to clear. Progress and content keys (azkar_last_surah,
-// azkar_last_view, readingPosition, favorites, azkar/tasbih progress) and the
-// downloaded audio are NOT reset.
+// preference, plus the theme color and the custom tasbih list, which the reset
+// dialog already promises to clear (azkar_custom_tasbih is already a registered
+// key). Progress and content keys (azkar_last_surah, azkar_last_view,
+// readingPosition, favorites, azkar/tasbih progress) and the downloaded audio
+// are NOT reset.
 export const SETTINGS_RESET_KEYS:readonly string[]=[
   ...Object.values(APP_SETTINGS_KEYS).filter((key)=>key!==APP_SETTINGS_KEYS.readingPosition),
-  'azkar_theme_color','azkar_custom_tasbih','azkar_custom_tasbih_list',
+  'azkar_theme_color','azkar_custom_tasbih_list',
 ]
