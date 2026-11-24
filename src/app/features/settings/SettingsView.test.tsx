@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest'
+import { fireEvent, render } from '@testing-library/react'
+import { SettingsView, type SettingsEntry } from './SettingsView'
+import { ConfirmDialogProvider } from '../../components/confirm-dialog'
+
+function ui(entry: SettingsEntry | null) {
+  return (
+    <ConfirmDialogProvider>
+      <SettingsView darkMode={false} appearance="light" onAppearance={() => {}} onBack={() => {}} entry={entry} />
+    </ConfirmDialogProvider>
+  )
+}
+
+describe('SettingsView entry deep link', () => {
+  it('opens on the main category grid without an entry request', () => {
+    const { getByText } = render(ui(null))
+    getByText('كل التفضيلات في مكان واحد')
+  })
+
+  it('opens directly on the device section (location) when requested', () => {
+    const { getAllByText, getByText, queryByText } = render(ui({ category: 'device', at: 1 }))
+    // Page header and section card both carry the section name.
+    expect(getAllByText('الأذونات والجهاز').length).toBeGreaterThan(0)
+    // The location row of the device/permissions section.
+    getByText('الموقع')
+    expect(queryByText('كل التفضيلات في مكان واحد')).toBeNull()
+  })
+
+  it('re-enters the requested section on a fresh entry request', () => {
+    const first = render(ui({ category: 'device', at: 1 }))
+    first.getByText('الموقع')
+
+    // The user backs out to the settings grid...
+    fireEvent.click(first.getByText('‹'))
+    first.getByText('كل التفضيلات في مكان واحد')
+
+    // ...then a new entry request (same section, new nonce) lands there again.
+    first.rerender(ui({ category: 'device', at: 2 }))
+    first.getByText('الموقع')
+    expect(first.queryByText('كل التفضيلات في مكان واحد')).toBeNull()
+  })
+})
