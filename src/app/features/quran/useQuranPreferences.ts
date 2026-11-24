@@ -35,6 +35,12 @@ function getSnapshot(): QuranPreferences {
   return (cache ??= readStored())
 }
 
+// SSR: there is no storage on the server, so the server render uses the
+// defaults; React patches to the stored client snapshot right after
+// hydration. Without this third argument useSyncExternalStore aborts
+// server rendering ("Missing getServerSnapshot", React error #419).
+const getServerSnapshot = (): QuranPreferences => DEFAULTS
+
 function emit() {
   listeners.forEach((listener) => listener())
 }
@@ -84,7 +90,7 @@ export function __resetQuranPreferencesForTests(): void {
 }
 
 export function useQuranPreferences() {
-  const state = useSyncExternalStore(subscribe, getSnapshot)
+  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const setFontSize = useCallback((value: FontSizeKey) => {
     if (!FONT_ORDER.includes(value)) return
