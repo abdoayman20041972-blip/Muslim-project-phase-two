@@ -178,6 +178,31 @@ describe('SettingsView smoke coverage', () => {
     })
   })
 
+  it('lets the user pick custom azkar reminder times and shows the fixed-time notice without a location', async () => {
+    openCategory('الإشعارات')
+    fireEvent.click(screen.getByRole('switch', { name: 'أذكار الصباح' }))
+    fireEvent.click(screen.getByRole('switch', { name: 'أذكار المساء' }))
+    await waitFor(() => {
+      expect(localStorage.getItem('azkar_azkar_morning_reminders')).toBe('1')
+    })
+    // No stored location in this harness: the fixed-time notice explains the fallback.
+    expect(screen.getByText(/توقيت ثابت/)).toBeTruthy()
+    const morningInput = screen.getByLabelText('وقت تذكير أذكار الصباح') as HTMLInputElement
+    const eveningInput = screen.getByLabelText('وقت تذكير أذكار المساء') as HTMLInputElement
+    expect(morningInput.value).toBe('')
+    fireEvent.change(morningInput, { target: { value: '07:30' } })
+    expect(localStorage.getItem('azkar_azkar_morning_time')).toBe('07:30')
+    fireEvent.change(eveningInput, { target: { value: '21:15' } })
+    expect(localStorage.getItem('azkar_azkar_evening_time')).toBe('21:15')
+    // "تلقائي" returns the wird to the Sunrise anchor.
+    fireEvent.click(screen.getAllByRole('button', { name: 'تلقائي' })[0]!)
+    expect(localStorage.getItem('azkar_azkar_morning_time')).toBe('')
+    // A stored location removes the fixed-time notice.
+    localStorage.setItem('azkar_coords', JSON.stringify({ lat: 30.06, lng: 31.25 }))
+    window.dispatchEvent(new Event('azkar-prayer-settings-changed'))
+    await waitFor(() => expect(screen.queryByText(/توقيت ثابت/)).toBeNull())
+  })
+
   it('does not show notification settings in the general category', () => {
     openCategory('عام')
     expect(screen.queryByText('تذكير الأذكار')).toBeNull()
