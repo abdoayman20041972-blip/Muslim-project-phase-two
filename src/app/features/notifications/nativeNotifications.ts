@@ -286,9 +286,16 @@ async function computeAllTimings(coords: { lat: number; lng: number }, days: Dat
 const PRAYER_PLAN_CACHE_KEY = 'azkar_prayer_plan_cache_v1'
 
 function cachePrayerEntries(entries: PlannedNotification[]) {
+  // The cache mirrors the last successfully scheduled plan, never an older
+  // one: it is rewritten on every successful run (with or without coords) and
+  // cleared when the plan holds no prayer entries, so alarms the user turned
+  // off can never be resurrected from a stale cache.
   const prayerEntries = entries.filter((entry) => entry.target === 'prayer')
-  if (!prayerEntries.length) return
   try {
+    if (!prayerEntries.length) {
+      localStorage.removeItem(PRAYER_PLAN_CACHE_KEY)
+      return
+    }
     localStorage.setItem(PRAYER_PLAN_CACHE_KEY, JSON.stringify(prayerEntries.map((entry) => ({ ...entry, at: entry.at.getTime() }))))
   } catch (error) {
     console.debug('[notifications] prayer plan cache write failed', error)
@@ -302,12 +309,14 @@ const isPrayerId = (id: number) => prayerKindOf(id) === KIND.at || prayerKindOf(
 function reconstructPrayerEntry(item: { id: number; at: number; title: string }, lead: number, sound: AdhanSoundMode): PlannedNotification {
   const at = new Date(item.at)
   if (prayerKindOf(item.id) === KIND.before) {
-    return { id: item.id, at, title: item.title, body: 'تبقى ' + lead + (lead <= 10 ? ' دقائق' : ' دقيقة') + ' على الأذان', channel: PRAYER_CHANNEL, target: 'prayer', group: PRAYER_GROUP, ttl: Math.max(TTL.before, lead * 60_000) }
+    // No lead count in the body: the armed instant already carries the lead
+    // it was armed with, and quoting the current lead could misdescribe it.
+    return { id: item.id, at, title: item.title, body: 'استعد للصلاة.', channel: PRAYER_CHANNEL, target: 'prayer', group: PRAYER_GROUP, ttl: Math.max(TTL.before, lead * 60_000) }
   }
   return { id: item.id, at, title: item.title, body: 'حي على الصلاة، حي على الفلاح', channel: adhanChannelId(sound), target: 'prayer', group: PRAYER_GROUP, ttl: TTL.at }
 }
 
-function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[]): PlannedNotification[] {
+function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[], atTimeEnabled: boolean, beforeEnabled: boolean): PlannedNotification[] {
   try {
     const raw = localStorage.getItem(PRAYER_PLAN_CACHE_KEY)
     if (!raw) return []
@@ -315,6 +324,8 @@ function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[]): P
     const parsed = JSON.parse(raw) as Array<Omit<PlannedNotification, 'at'> & { at: number }>
     return parsed
       .filter((entry) => entry.at > nowMs)
+      // Only the kinds the user still has on may come back.
+      .filter((entry) => (prayerKindOf(entry.id) === KIND.at ? atTimeEnabled : beforeEnabled))
       .filter((entry) => {
         // makeId: BASE + kind * 1000 + dayIndex * 10 + slot, slot = PRAYERS index
         const slot = (entry.id - ID_BASE) % 10
@@ -434,7 +445,7 @@ async function run(force: boolean, askPermission: boolean) {
   let entries = planned
   if (!coords && (atTimeEnabled || beforeEnabled)) {
     const nowMs = Date.now()
-    const carried = carriedPrayerEntries(nowMs, mutedPrayers)
+    const carried = carriedPrayerEntries(nowMs, mutedPrayers, atTimeEnabled, beforeEnabled)
     const carriedIds = new Set(carried.map((entry) => entry.id))
     // Upgrade path: the cache only exists after the first location-based run
     // of this version, so also carry still-armed native prayer alarms (the
@@ -443,9 +454,18 @@ async function run(force: boolean, askPermission: boolean) {
       recordError('pending-carry', error)
       return null
     })
+    if (pendingNow === null && carried.length === 0) {
+      // Unrecoverable: no cached plan and the native armed list is unreadable,
+      // so a replace could silently drop prayer alarms that are armed right
+      // now. Keep the old protective skip for exactly this case — the armed
+      // plan stays untouched and the next trigger retries.
+      return
+    }
     const mutedSet = new Set(mutedPrayers)
     const reconstructed = (pendingNow?.items ?? [])
       .filter((item) => isPrayerId(item.id) && item.at > nowMs && !carriedIds.has(item.id))
+      // Only the kinds the user still has on may come back.
+      .filter((item) => (prayerKindOf(item.id) === KIND.at ? atTimeEnabled : beforeEnabled))
       .filter((item) => !mutedSet.has(PRAYERS[(item.id - ID_BASE) % 10] ?? ''))
       .map((item) => reconstructPrayerEntry(item, lead, sound))
     entries = [...carried, ...withTimeInBody(reconstructed), ...planned]
@@ -457,7 +477,7 @@ async function run(force: boolean, askPermission: boolean) {
   // side stores the full 30-day plan but arms only the 48h window; the fire
   // receiver chain-advances the window as alarms fire.
   const armed = await scheduleEntries(entries)
-  if (armed >= 0 && coords) cachePrayerEntries(entries)
+  if (armed >= 0) cachePrayerEntries(entries)
 
   // Only now is the run considered successful; a failure above leaves the
   // fingerprint untouched so the next trigger retries.
