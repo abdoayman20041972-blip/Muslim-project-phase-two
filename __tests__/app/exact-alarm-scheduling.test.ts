@@ -112,14 +112,24 @@ describe('scheduleNativeNotifications (native, exact alarms)', () => {
     expect(alarms.schedule).not.toHaveBeenCalled()
   })
 
-  it('keeps the previously armed plan when the location is missing but prayers are on', async () => {
-    // v1.2.7 root-cause fix: a replace run without coords used to cancel the
-    // whole armed prayer plan and store a prayer-less one. Skip instead —
-    // whatever is armed stays correct until coords come back.
+  it('keeps armed prayers and plans fixed-time wirds when the location is missing', async () => {
+    // v1.2.7 root-cause fix, refined in phase 7: a replace run without coords
+    // used to cancel the whole armed prayer plan. The run now re-includes the
+    // cached/pending prayer alarms verbatim and gives the wirds fixed
+    // fallback times instead of skipping everything.
     localStorage.removeItem(APP_SETTINGS_KEYS.coords)
+    const futureAt = Date.now() + 2 * 60 * 60_000
+    alarms.pending.mockResolvedValue({
+      items: [{ id: 700000010, at: futureAt, title: 'حان وقت صلاة الظهر' }],
+    })
     const { scheduleNativeNotifications } = await load()
     await scheduleNativeNotifications({ force: true })
-    expect(alarms.schedule).not.toHaveBeenCalled()
+    expect(alarms.schedule).toHaveBeenCalledTimes(1)
+    const { alarms: plan } = alarms.schedule.mock.calls[0]![0] as { alarms: Array<{ id: number; at: number }> }
+    // The still-armed Dhuhr alarm survives the replace with its exact instant.
+    const carried = plan.find((a) => a.id === 700000010)
+    expect(carried).toBeTruthy()
+    expect(carried!.at).toBe(futureAt)
   })
 
   it('records the permission state even when the location is missing, without prompting', async () => {
