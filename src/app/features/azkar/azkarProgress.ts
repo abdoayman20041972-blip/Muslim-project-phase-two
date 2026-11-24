@@ -61,11 +61,38 @@ export function completedItemCount(items: readonly { repeat?: number }[], keys: 
 export function completionPercent(completed: number, total: number): number { return total ? Math.round(completed / total * 100) : 0 }
 
 export type TimeBasedAzkar = { id: 'morning' | 'evening' | 'sleep'; title: string; subtitle: string }
+const WIRD_MORNING: TimeBasedAzkar = { id: 'morning', title: 'أذكار الصباح', subtitle: 'ورد الصباح الآن' }
+const WIRD_EVENING: TimeBasedAzkar = { id: 'evening', title: 'أذكار المساء', subtitle: 'ورد المساء الآن' }
+const WIRD_SLEEP: TimeBasedAzkar = { id: 'sleep', title: 'أذكار النوم', subtitle: 'ورد النوم الآن' }
+
 export function timeBasedAzkar(date = new Date()): TimeBasedAzkar {
   const hour = date.getHours()
-  if (hour >= 5 && hour < 15) return { id: 'morning', title: 'أذكار الصباح', subtitle: 'ورد الصباح الآن' }
-  if (hour >= 15 && hour < 21) return { id: 'evening', title: 'أذكار المساء', subtitle: 'ورد المساء الآن' }
-  return { id: 'sleep', title: 'أذكار النوم', subtitle: 'ورد النوم الآن' }
+  if (hour >= 5 && hour < 15) return WIRD_MORNING
+  if (hour >= 15 && hour < 21) return WIRD_EVENING
+  return WIRD_SLEEP
+}
+
+function prayerMinutes(value: string | undefined): number | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(value || '')
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null
+}
+
+// «وردك الآن» follows the user's computed prayer times: morning from Fajr,
+// evening from Asr, sleep from Isha - the same windows the fixed-hour fallback
+// approximates. The anchors only pick which card the app surfaces; they are not
+// a religious ruling on the valid time of each wird. Falls back to the fixed
+// hours whenever timings are missing or malformed.
+export function wirdForPrayerTimes(timings: Record<string, string> | null | undefined, date = new Date()): TimeBasedAzkar {
+  if (!timings) return timeBasedAzkar(date)
+  const fajr = prayerMinutes(timings.Fajr)
+  const asr = prayerMinutes(timings.Asr)
+  const isha = prayerMinutes(timings.Isha)
+  if (fajr === null || asr === null || isha === null) return timeBasedAzkar(date)
+  const minutes = date.getHours() * 60 + date.getMinutes()
+  if (minutes < fajr) return WIRD_SLEEP
+  if (minutes < asr) return WIRD_MORNING
+  if (minutes < isha) return WIRD_EVENING
+  return WIRD_SLEEP
 }
 
 
