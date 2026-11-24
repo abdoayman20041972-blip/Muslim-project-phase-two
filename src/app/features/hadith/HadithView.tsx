@@ -209,7 +209,7 @@ export function HadithView({ onBack }: { onBack: () => void }) {
                 </span>
                 {item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}
               </div>
-              <p className={'hadith-text font-amiri ' + fontClass}>{item.group === 'curated' ? `«${item.text}»` : item.text}</p>
+              <p className={'hadith-text font-amiri ' + fontClass}>{item.text}</p>
               {item.grade && (
                 <p className="mt-2 text-[11px] text-azkar-ink-soft" data-testid="hadith-grade">
                   الدرجة: {item.grade.label} · {item.grade.by}{' '}
