@@ -55,7 +55,7 @@ describe('SettingsView main grid grouping', () => {
     const { container } = render(ui(null))
     const groups = Array.from(container.querySelectorAll('section[aria-label]'))
     expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual([
-      'المظهر', 'الصلاة والإشعارات', 'القرآن والتفسير', 'الأذكار والسبحة', 'البيانات والخصوصية', 'حول',
+      'المظهر', 'الصلاة والإشعارات', 'القرآن والحديث والقصص', 'الأذكار والسبحة', 'البيانات والخصوصية', 'حول',
     ])
     const tiles = groups.map((g) => Array.from(g.querySelectorAll('button b')).map((b) => b.textContent))
     expect(tiles).toEqual([
