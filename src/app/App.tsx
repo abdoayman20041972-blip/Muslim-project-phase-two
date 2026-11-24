@@ -9,6 +9,7 @@ import { type View, type Section } from "./constants";
 import { Splash } from "./components/app-chrome";
 import { AppContent, BottomNav } from "./components/app-shell";
 import { HomeView } from "./features/home/HomeView";
+import { MoreView } from "./features/home/MoreView";
 import { AzkarListView } from "./features/azkar/AzkarListView";
 import { CategoryView } from "./features/azkar/CategoryView";
 import { FavoritesView } from "./features/azkar/FavoritesView";
@@ -440,9 +441,7 @@ export function App() {
             ? { name: "hadith" }
             : s === "azkar"
               ? { name: "azkar-list" }
-              : s === "tasbih"
-                ? { name: "tasbih" }
-                : { name: "settings" },
+              : { name: "more" },
     );
   };
   // Quick Tools entries return straight to Home; bottom-nav and dashboard
@@ -482,6 +481,8 @@ export function App() {
               setView({ name: "mushaf-list" }))
         }
         onOpenSettings={() => setView({ name: "settings" })}
+        onOpenMore={() => setView({ name: "more" })}
+        onOpenSurah={(n) => setView({ name: "mushaf-surah", number: n })}
         onOpenQibla={() => setView({ name: "qibla" })}
         onOpenProphets={() => setView({ name: "prophets" })}
         onOpenHadith={() => setView({ name: "hadith" })}
@@ -492,6 +493,10 @@ export function App() {
       />
     ),
     [lastSurahMeta, darkMode, setAppearance],
+  );
+  const moreScreen = useMemo(
+    () => <MoreView onOpen={goView} />,
+    [goView],
   );
   const settingsScreen = useMemo(
     () => (
@@ -650,6 +655,7 @@ export function App() {
             hadith={hadithScreen}
             onHome={() => setView({ name: "home" })}
             tasbih={tasbihScreen}
+            more={moreScreen}
           />
         <QuranMiniPlayer />
         {view.name !== "mushaf-surah" && (
