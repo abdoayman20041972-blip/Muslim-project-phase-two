@@ -9,6 +9,11 @@
  * (see declination.test.ts). Fully offline: no network, no external model file.
  *
  * Declination here means: true_north_heading = magnetic_heading + declination.
+ *
+ * Returns null when no reliable declination exists: a date outside the model's
+ * official 2025-2029 validity window, non-finite or out-of-range coordinates,
+ * or the polar blackout zones where declination is physically undefined.
+ * Callers must treat null as "unknown" and never fall back to zero.
  */
 
 const D2R = Math.PI / 180
@@ -132,8 +137,15 @@ export function decimalYear(date: Date): number {
  * Accurate within the WMM2025 validity window (2025.0 - end of 2029); dates far
  * outside it are still evaluated but the linear secular drift degrades.
  */
-export function magneticDeclination(latDeg: number, lngDeg: number, date: Date = new Date()): number {
+export function magneticDeclination(latDeg: number, lngDeg: number, date: Date = new Date()): number | null {
   const year = decimalYear(date)
+  // Unsupported inputs must never yield a confident-looking correction:
+  // impossible coordinates, a broken clock, or a date outside the model's
+  // official validity window (WMM2025: 2025.0 through the end of 2029) mean
+  // "unknown", not zero.
+  if (!Number.isFinite(latDeg) || !Number.isFinite(lngDeg)) return null
+  if (Math.abs(latDeg) > 90) return null
+  if (!Number.isFinite(year) || year < EPOCH || year >= EPOCH + 5) return null
   // WGS84 geodetic -> geocentric spherical at height 0.
   const phi = latDeg * D2R
   const sphi = Math.sin(phi)
@@ -219,9 +231,10 @@ export function magneticDeclination(latDeg: number, lngDeg: number, date: Date =
   const X = Xp * Math.cos(psi) - Zp * Math.sin(psi)
 
   // Near the magnetic poles the horizontal field vanishes and declination is
-  // physically unstable (WMM "blackout zones"); skip the correction there
-  // rather than return a wild angle. Irrelevant at normal inhabited latitudes.
-  if (Math.hypot(X, Y) < 1000) return 0
+  // physically undefined (WMM "blackout zones"). Returning any number here,
+  // even zero, would fabricate a plausible correction, so report "unknown"
+  // and let the caller avoid showing a confidently aligned heading.
+  if (Math.hypot(X, Y) < 1000) return null
 
   return Math.atan2(Y, X) * R2D
 }
