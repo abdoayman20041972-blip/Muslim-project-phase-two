@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "pending-human-review",
+  "status": "applied-by-delegated-choice",
   "basis": {
     "repo": "abdoayman20041972-blip/Muslim-project-phase-two",
     "branch": "main-2",
@@ -776,5 +776,21 @@
       "item": "الأربعون النووية",
       "observation": "الملف المضمّن يحوي 42 حديثًا، ووصف الواجهة يقول أربعون. مصدر واحد قُرئ (islamhouse.com/ar/books/2097) يذكر أن متن النووي نفسه 42 حديثًا وأن ابن رجب زاد ثمانية ليبلغ خمسين، فعدد 42 ليس من إضافات ابن رجب. المقترح تعديل الوصف لا البيانات. مصدر واحد فقط، فيبقى مرجّحًا لا مؤكدًا."
     }
-  ]
+  ],
+  "applied": {
+    "when": "2026-11-24",
+    "authority": "User message 8918930 delegated the review decisions to the assistant (\"execute the best\"). Choices follow source verification on sunnah.com. This is not scholarly certification; the notes are assistant drafts.",
+    "choices": [
+      "remove bukhari-6436 and tirmidhi-2516 (duplicates)",
+      "muslim-2627 renamed muslim-2626, source label corrected, text unchanged",
+      "abudawud-4811 option A (Abu Dawud wording)",
+      "bukhari-52 option A (Bukhari wording)",
+      "muslim-783 adds تعالى",
+      "15 note rewrites applied",
+      "Dehlawi Persian ک/ی letters converted by the documented rule (28 hadiths)",
+      "Nawawi hadith 2 stray U+202B/U+202C removed",
+      "Nawawi blurb now says 42",
+      "No grade added to any entry"
+    ]
+  }
 }
