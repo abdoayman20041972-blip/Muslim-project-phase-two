@@ -77,6 +77,24 @@ public class AlarmStorage {
         prefs.edit().remove(KEY).apply();
     }
 
+    /** Time zone id the stored plan was built under; null when unknown (older plans). */
+    public synchronized String planTimeZoneId() {
+        return prefs.getString("plan_tz_id", null);
+    }
+
+    public synchronized void setPlanTimeZoneId(String id) {
+        prefs.edit().putString("plan_tz_id", id).apply();
+    }
+
+    /** True when a timezone change removed wall-clock reminders that only the app can rebuild. */
+    public synchronized boolean needsReplan() {
+        return prefs.getBoolean("needs_replan", false);
+    }
+
+    public synchronized void setNeedsReplan(boolean value) {
+        prefs.edit().putBoolean("needs_replan", value).apply();
+    }
+
     /**
      * Drops entries that fired long ago. Entries that fired TODAY are kept:
      * they are harmless (nothing re-arms the past) and keeping them means the
