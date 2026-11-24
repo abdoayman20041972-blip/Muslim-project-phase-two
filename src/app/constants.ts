@@ -57,7 +57,7 @@ export function quranSurahAudioUrl(reciter: QuranAudioReciter, surahNumber: numb
   if (!Number.isInteger(surahNumber) || surahNumber < 1 || surahNumber > 114) throw new RangeError('surahNumber must be between 1 and 114')
   return QURAN_SURAH_AUDIO_SERVERS[reciter] + '/' + String(surahNumber).padStart(3, '0') + '.mp3'
 }
-export const FONT_SIZES={sm:{text:'text-[18px]',leading:'leading-[2.2]',label:'صغير'},md:{text:'text-[21px]',leading:'leading-[2.5]',label:'متوسط'},lg:{text:'text-[24px]',leading:'leading-[2.6]',label:'كبير'},xl:{text:'text-[28px]',leading:'leading-[2.9]',label:'كبير جدًا'}} as const
+export const FONT_SIZES={sm:{text:'text-[1.125rem]',leading:'leading-[2.2]',label:'صغير'},md:{text:'text-[1.3125rem]',leading:'leading-[2.5]',label:'متوسط'},lg:{text:'text-[1.5rem]',leading:'leading-[2.6]',label:'كبير'},xl:{text:'text-[1.75rem]',leading:'leading-[2.9]',label:'كبير جدًا'}} as const
 export type FontSizeKey=keyof typeof FONT_SIZES
 export const FONT_ORDER:FontSizeKey[]=['sm','md','lg','xl']
 export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string;item?:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}|{name:'more'}
