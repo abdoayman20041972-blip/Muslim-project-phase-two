@@ -58,13 +58,15 @@ describe('azkar data and progress safety (phase 1)', () => {
   })
 
   it('updates the home summary when progress changes without remounting', () => {
-    render(<AzkarListView categories={[categoryA]} favoritesCount={0} onBack={vi.fn()} setView={vi.fn()} />)
-    expect(screen.getByText(`${toArabicNumber(0)}٪`)).toBeTruthy()
+    const morning: ZikrCategory = { ...categoryA, id: 'morning' }
+    const morningKey = favoriteKey(morning, morning.items[0])
+    render(<AzkarListView categories={[morning]} favoritesCount={0} onBack={vi.fn()} setView={vi.fn()} />)
+    expect(screen.getByLabelText('ملخص اليوم')).toHaveTextContent(`${toArabicNumber(0)}٪`)
     act(() => {
-      seedDay({ [keyA]: 1 })
+      seedDay({ [morningKey]: 1 })
       window.dispatchEvent(new Event('azkar-progress-changed'))
     })
-    expect(screen.getByText(`${toArabicNumber(100)}٪`)).toBeTruthy()
+    expect(screen.getByLabelText('ملخص اليوم')).toHaveTextContent(`${toArabicNumber(100)}٪`)
     expect(screen.getByRole('progressbar', { name: 'تقدم الأذكار اليوم: 1 من 1' })).toBeTruthy()
   })
 
