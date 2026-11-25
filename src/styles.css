@@ -1795,3 +1795,45 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .home-more-link{background:rgba(255,255,255,.64);border:1px solid rgba(255,255,255,.6)}
 .dark .home-more-link{background:rgba(24,43,37,.72);border-color:rgba(255,255,255,.08)}
 .home-v4 .home-reference-ayah{margin-top:0}
+
+/* Home v5: sky motion above the prayer card text, green ayah card, small ayah actions. */
+.home-v4{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.home-prayer-sky{position:relative;z-index:1;height:3.6rem;pointer-events:none;overflow:hidden}
+.home-sky-glow{position:absolute;top:-2.2rem;left:-30%;width:60%;height:5.5rem;border-radius:999px;background:radial-gradient(closest-side,rgba(233,200,117,.38),rgba(233,200,117,0));animation:home-sky-drift 14s ease-in-out infinite alternate}
+.home-sky-star{position:absolute;display:block;width:3px;height:3px;border-radius:999px;background:#fff;opacity:.2;animation:home-sky-twinkle 3.6s ease-in-out infinite}
+.home-sky-star-a{top:1.1rem;right:22%}
+.home-sky-star-b{top:2.1rem;right:58%;animation-delay:1.2s}
+.home-sky-star-c{top:.8rem;right:80%;animation-delay:2.2s}
+@keyframes home-sky-drift{from{transform:translateX(0)}to{transform:translateX(230%)}}
+@keyframes home-sky-twinkle{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.95;transform:scale(1.7)}}
+@media (prefers-reduced-motion:reduce){.home-sky-glow,.home-sky-star{animation:none}.home-sky-star{opacity:.6}}
+.home-ayah-green{background:radial-gradient(circle at 12% 10%,rgba(86,148,118,.65),transparent 46%),radial-gradient(circle at 92% 88%,rgba(8,30,24,.75),transparent 50%),radial-gradient(circle at 80% 15%,rgba(10,36,29,.55),transparent 40%),linear-gradient(135deg,#1c5444 0%,#2d6652 45%,#123329 100%);border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 24px rgba(20,45,38,.2);margin-top:0}
+.home-ayah-green .home-tile-shape{opacity:.7}
+.home-ayah-lines{position:absolute;inset:0;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200' preserveAspectRatio='none'%3E%3Cpath d='M-10 150 C60 110 110 190 190 140 S320 90 410 130' fill='none' stroke='%23e9c875' stroke-width='1.6' stroke-opacity='.8'/%3E%3Cpath d='M-10 178 C70 140 130 205 215 165 S330 120 410 158' fill='none' stroke='%23e9c875' stroke-width='1.2' stroke-opacity='.55'/%3E%3C/svg%3E") center/100% 100% no-repeat}
+.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:2.1rem;line-height:1.8}
+@media (max-width:380px){.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.85rem}}
+.home-ayah-act{min-height:1.6rem;color:#fff}
+.home-ayah-act::after{content:"";position:absolute;inset:-.5rem -.15rem}
+.home-ayah-act-quiet{background:rgba(255,255,255,.14)}
+.home-ayah-act-primary{background:rgba(233,200,117,.28);color:#fbe9b8}
+.home-ayah-panel{background:rgba(0,0,0,.2)}
+.home-ayah-green .home-reference-ayah{margin-top:0}
+
+/* Bottom bar v5: the floating dark-green bar from the approved concept (dark #0B2C23 rounded bar, five tabs,
+   Home raised in gold while active, other active tab as a lighter green pill). */
+.nav-float{position:fixed;left:50%;bottom:max(.6rem,env(safe-area-inset-bottom));width:min(calc(100% - 1.6rem),27rem);transform:translateX(-50%);height:4.4rem;border-radius:1.9rem;background:#0b2c23;border:1px solid rgba(255,255,255,.07);box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.nav-float>div{height:100%;display:flex;align-items:center}
+.nav-float .dashboard-nav-main{height:100%}
+.nav-float .dashboard-nav-item{color:#b9c9bf;min-height:3.4rem;background:transparent}
+.nav-float .dashboard-nav-item-active{color:#fff;transform:none}
+.nav-float .dashboard-nav-indicator{top:.5rem;height:3.3rem;border-radius:1.2rem;background:#1f6b57;box-shadow:0 4px 12px rgba(0,0,0,.25);animation:none!important}
+.nav-float .dashboard-nav-indicator::before,.nav-float .dashboard-nav-indicator::after{display:none}
+.nav-float[data-home-active="true"] .dashboard-nav-indicator{display:none}
+.nav-float .dashboard-nav-home.dashboard-nav-item-active{width:4rem;height:4rem;min-height:4rem;margin:-1.5rem auto 0;border-radius:999px;background:linear-gradient(#ecc96f,#c39a3a);color:#10382c;border:4px solid hsl(var(--azkar-bg));box-shadow:0 6px 14px rgba(0,0,0,.3);gap:0}
+.dark .nav-float .dashboard-nav-home.dashboard-nav-item-active{border-color:#0d211c}
+.app-content{padding-bottom:max(6.75rem,calc(5.9rem + env(safe-area-inset-bottom)))}
+.app-content.home-spacing{padding-bottom:max(7rem,calc(6.2rem + env(safe-area-inset-bottom)))}
+.home-reference-content{padding-bottom:0}
+
+.home-prayer-top{margin-top:-1.1rem}
+.home-prayer-time-block{padding-left:.9rem;min-width:6.2rem}
