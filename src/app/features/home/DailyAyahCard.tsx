@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toArabicNumber } from '../../constants'
 import type { DailyAyah } from '../../../daily-ayahs'
-import { shareText } from '../azkar/shareActions'
+import { showShareFailure } from '../azkar/shareActions'
 import { shareCardImage } from '../azkar/shareCard'
 import { useQuranTafsir } from '../quran/useQuranTafsir'
 import { dailyAyahReference, fullTextForDailyAyah, surahNumberForDailyAyah } from './dailyAyahFull'
@@ -75,13 +75,13 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
     const { text } = await payload()
     try {
       const shared = await shareCardImage({ text, reference, heading: 'آية اليوم', footer: 'مسلم', filename: 'ayah-of-the-day.png' })
-      if (!shared) await shareText(text, { title: 'آية اليوم', source: `${reference}\nمن تطبيق مسلم` })
+      if (!shared) showShareFailure()
     } catch {
       flash('تعذرت المشاركة')
     }
   }
 
-  const pill = 'home-ayah-act u-pressable relative flex flex-1 items-center justify-center whitespace-nowrap rounded-full px-2 py-0.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
+  const pill = 'home-ayah-act u-pressable relative flex flex-1 items-center justify-center whitespace-nowrap rounded-full px-1.5 py-0.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
   const quiet = `${pill} home-ayah-act-quiet`
   const primary = `${pill} home-ayah-act-primary`
 
@@ -91,7 +91,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
       <span className="home-ayah-lines" aria-hidden="true" />
       <div className="relative z-10">
-      <div className="mb-3 mt-5 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
+      <div className="mb-4 mt-5 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
       <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
 
       {panel === 'full' && (
@@ -107,12 +107,12 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       )}
       {panel === 'tafsir' && surah && <TafsirPanel ayah={ayah} surah={surah} fullText={fullText} />}
 
-      <div className="mt-2.5 flex items-center gap-1.5 px-3" role="group" aria-label="إجراءات آية اليوم">
+      <div className="mt-4 flex items-center gap-1 px-3" role="group" aria-label="إجراءات آية اليوم">
         <button type="button" className={primary} aria-expanded={panel === 'full'} onClick={toggleFull}>الآية كاملة</button>
         <button type="button" className={quiet} aria-expanded={panel === 'tafsir'} onClick={toggleTafsir}>التفسير</button>
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
-      <div className="mt-2 text-[0.6875rem] font-semibold text-white/75">{reference}</div>
+      <div className="mt-1.5 text-[0.6875rem] font-semibold text-white/75">{reference}</div>
       {surah && onOpenSurah && (
         <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-8 items-center text-[0.6875rem] font-bold text-white/85 underline underline-offset-2">فتح السورة في المصحف</button>
       )}
