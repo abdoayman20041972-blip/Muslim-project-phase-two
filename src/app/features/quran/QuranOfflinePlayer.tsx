@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { isSurahDownloaded } from './offlineDownload'
-import type { QuranAudioReciter } from './quranAudioPlayback'
+import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 
 type Props = { reciter: QuranAudioReciter; surahNumber: number }
 
@@ -15,6 +15,6 @@ export function QuranOfflinePlayer({ reciter, surahNumber }: Props) {
   }, [reciter, surahNumber])
   if (!available) return null
   return <div data-testid="quran-offline-player" className="mb-3 inline-flex rounded-full border border-azkar-teal-soft bg-azkar-card px-3 py-1 text-xs font-bold text-azkar-teal-ink">
-    منزّلة للاستماع بدون إنترنت
+    منزّلة للاستماع بدون إنترنت · {QURAN_AUDIO_RECITER_LABELS[reciter]}
   </div>
 }
