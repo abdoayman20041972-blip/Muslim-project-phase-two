@@ -322,7 +322,27 @@ export async function getReciterStorageBytes(reciter: QuranAudioReciter): Promis
   })
 }
 
-function looksLikeAudio(first: Uint8Array): boolean {
+// Some CDNs (mp3quran's Abdul Basit files) prefix the MP3 with a block of zero
+// padding bytes (208 of them) before the first frame. Players skip it, so the
+// check does too, within the head we inspect.
+const AUDIO_HEAD_BYTES = 4096
+
+function headBytes(chunks: Uint8Array[], limit = AUDIO_HEAD_BYTES): Uint8Array {
+  const head = new Uint8Array(Math.min(limit, chunks.reduce((n, c) => n + c.byteLength, 0)))
+  let offset = 0
+  for (const chunk of chunks) {
+    if (offset >= head.length) break
+    const part = chunk.subarray(0, head.length - offset)
+    head.set(part, offset)
+    offset += part.byteLength
+  }
+  return head
+}
+
+function looksLikeAudio(raw: Uint8Array): boolean {
+  let start = 0
+  while (start < raw.length && raw[start] === 0) start += 1
+  const first = raw.subarray(start)
   // ID3 tag
   if (first.length >= 3 && first[0] === 0x49 && first[1] === 0x44 && first[2] === 0x33) return true
   // MP3 frame sync
@@ -397,7 +417,7 @@ async function fetchSurahBlobOnce(
     if (!reader) {
       // Older WebViews without stream support: no byte progress, still validate.
       const blob = await response.blob()
-      const first = new Uint8Array(await blob.slice(0, 3).arrayBuffer())
+      const first = new Uint8Array(await blob.slice(0, AUDIO_HEAD_BYTES).arrayBuffer())
       validateAudioFile(first, blob.size, declared)
       return blob
     }
@@ -417,7 +437,7 @@ async function fetchSurahBlobOnce(
     }
     if (stalled) throw new DownloadError('stalled', 'Connection stalled while receiving audio')
 
-    validateAudioFile(chunks[0] ?? new Uint8Array(), received, declared)
+    validateAudioFile(headBytes(chunks), received, declared)
     return new Blob(chunks as BlobPart[], { type: contentType || 'audio/mpeg' })
   } catch (error) {
     if (stalled && !(error instanceof DownloadError)) {
