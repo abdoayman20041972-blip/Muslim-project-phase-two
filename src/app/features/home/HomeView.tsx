@@ -222,14 +222,14 @@ export function HomeView({
             <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
             <span className="home-reference-location"><Compass className="h-4 w-4" /><span>{locationLabel}</span></span>
           </div>
-          <div className="relative z-10 flex items-end justify-between px-4 pb-3 pt-3">
-            <div className="text-right">
-              <div className="font-amiri text-[2.75rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
+          <div className="relative z-10 flex items-end justify-between pb-3 pt-2">
+            <div className="home-prayer-name-block text-center">
+              <div className="font-amiri text-[2.1rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
+              <div className="mt-1.5 text-[1.15rem] font-bold tabular-nums leading-none text-white/90">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
             </div>
-            <div className="home-prayer-time-block text-center">
-              <div className="text-[1.625rem] font-bold tabular-nums leading-none text-white">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
-              <div className="mt-2 text-[0.75rem] font-semibold leading-none text-white/80">متبقي</div>
-              <div dir="ltr" className="mt-1 text-[1.3rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
+            <div className="home-prayer-remaining-block text-center">
+              <div className="text-[0.75rem] font-semibold leading-none text-white/80">متبقي</div>
+              <div dir="ltr" className="mt-1.5 text-[1.45rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
             </div>
           </div>
           <span className="sr-only" role="status">{next ? `الصلاة القادمة ${PRAYER_LABELS[next.key]}` : ''}</span>
