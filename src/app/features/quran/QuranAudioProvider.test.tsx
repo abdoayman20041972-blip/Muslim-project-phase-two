@@ -118,8 +118,8 @@ describe('QuranAudioProvider', () => {
     expect(oldAudio.pause).toHaveBeenCalled()
     const switchedPreload = audioInstances[audioInstances.length - 1]
     await act(async () => switchedPreload.dispatchEvent(new Event('canplaythrough')))
-    expect(audioInstances.some((item) => item.src.includes('server13.mp3quran.net/husr/114.mp3'))).toBe(true)
-    expect(audioInstances.some((item) => item.src.includes('server13.mp3quran.net/husr/114.mp3'))).toBe(true)
+    expect(audioInstances.some((item) => item.src.includes('cdn.mp3quran.net/audio/mahmoud-husary/r1/114.mp3'))).toBe(true)
+    expect(audioInstances.some((item) => item.src.includes('cdn.mp3quran.net/audio/mahmoud-husary/r1/114.mp3'))).toBe(true)
   })
 
   it('does not expose misleading previous and next track actions for complete-surah playback', async () => {
