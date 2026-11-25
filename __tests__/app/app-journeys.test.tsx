@@ -73,6 +73,18 @@ describe('App user journeys', () => {
     expect(screen.queryByText('البقرة')).toBeNull()
   })
 
+  it('hides the bottom nav inside an opened hadith collection and restores it on the list', async () => {
+    render(<App />)
+    await finishBoot()
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الأحاديث' }))
+    await waitFor(() => expect(screen.getByTestId('hadith-group-curated')).toBeTruthy())
+    expect(screen.queryByRole('navigation', { name: 'التنقل الرئيسي' })).toBeTruthy()
+    fireEvent.click(screen.getByTestId('hadith-group-curated'))
+    await waitFor(() => expect(screen.queryByRole('navigation', { name: 'التنقل الرئيسي' })).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع' }))
+    await waitFor(() => expect(screen.queryByRole('navigation', { name: 'التنقل الرئيسي' })).toBeTruthy())
+  })
+
   it('shows the fixed bottom navigation and navigates to all core sections', async () => {
     render(<App />)
     await finishBoot()
