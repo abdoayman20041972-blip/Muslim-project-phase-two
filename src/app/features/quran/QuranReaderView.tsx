@@ -1,3 +1,6 @@
+import { Capacitor } from '@capacitor/core'
+import { shareImageBlob } from '../azkar/shareCard'
+import { showShareFailure } from '../azkar/shareActions'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { toPng } from 'html-to-image'
@@ -21,18 +24,6 @@ import { loadReadingPosition, saveReadingPosition } from './readingPosition'
 
 type Props = { view: Extract<View, { name: 'mushaf-surah' }>; setView: (v: View) => void }
 
-function CopyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-    </svg>
-  )
-}
 function ShareIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
@@ -128,8 +119,6 @@ export function QuranReaderView({ view, setView }: Props) {
   const [readingMode, setReadingMode] = useState(false)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [panel, setPanel] = useState<Ayah | null>(null)
-  const [copyNotice, setCopyNotice] = useState<string | null>(null)
-  const copyNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mushafRef = useRef<HTMLDivElement | null>(null)
   // س07: the audio follow effect may only move the page when the PLAYING AYAH
   // changes, never when the user turned the page manually.
@@ -357,26 +346,6 @@ export function QuranReaderView({ view, setView }: Props) {
   function save(a: Ayah) {
     setSelectedAyah({ surah: view.number, ayah: a.numberInSurah })
   }
-  function showCopyNotice(message: string) {
-    setCopyNotice(message)
-    if (copyNoticeTimer.current) clearTimeout(copyNoticeTimer.current)
-    copyNoticeTimer.current = setTimeout(() => setCopyNotice(null), 2200)
-  }
-  useEffect(() => () => {
-    if (copyNoticeTimer.current) clearTimeout(copyNoticeTimer.current)
-  }, [])
-  async function copy(text: string) {
-    try {
-      // Optional chaining alone would turn a missing Clipboard API (older
-      // WebViews) into a false success toast; treat it as a failure instead.
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable')
-      await navigator.clipboard.writeText(text)
-      showCopyNotice('تم نسخ الآية')
-    } catch (error) {
-      console.debug('[QuranReaderView]', error)
-      showCopyNotice('تعذّر النسخ، جرّب مرة أخرى')
-    }
-  }
   async function openShare(a: Ayah) {
     setPanel(null)
     setShareFor(a)
@@ -399,11 +368,8 @@ export function QuranReaderView({ view, setView }: Props) {
       const binary = atob(encoded)
       const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
       const blob = new Blob([bytes], { type: 'image/png' })
-      const file = new File([blob], 'muslim-ayah-card.png', { type: 'image/png' })
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file] })
-        return
-      }
+      if (await shareImageBlob(blob, 'muslim-ayah-card.png')) return
+      if (Capacitor.isNativePlatform()) { showShareFailure(); return }
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -412,7 +378,7 @@ export function QuranReaderView({ view, setView }: Props) {
       anchor.click()
       anchor.remove()
       URL.revokeObjectURL(url)
-    } catch (error) { console.debug('[QuranReaderView]', error) }
+    } catch (error) { console.debug('[QuranReaderView]', error); showShareFailure() }
   }
   function openTafsir(a: Ayah) {
     setPanel(null)
@@ -727,15 +693,6 @@ export function QuranReaderView({ view, setView }: Props) {
               style={{ top: 0, left: 0 }}
             >
               <button
-                onClick={() => copy(panel.text)}
-                aria-label="نسخ الآية"
-                autoFocus
-                className="quran-tool-btn u-pressable"
-              >
-                <CopyIcon />
-                نسخ
-              </button>
-              <button
                 onClick={() => openShare(panel)}
                 aria-label="مشاركة الآية"
                 className="quran-tool-btn u-pressable"
@@ -822,22 +779,6 @@ export function QuranReaderView({ view, setView }: Props) {
                   <ShareIcon />
                   مشاركة البطاقة
                 </button>
-                <button
-                  onClick={() => {
-                    copy(
-                      shareFor.text +
-                        '\n\n' +
-                        activeSurah!.shortName +
-                        ' — الآية ' +
-                        toArabicNumber(shareFor.numberInSurah) +
-                        '\nتطبيق مسلم',
-                    )
-                    setShareFor(null)
-                  }}
-                  className="u-pressable mt-2 w-full rounded-[1.1rem] border border-azkar-hairline bg-azkar-bg-alt text-azkar-teal-ink py-3 text-xs font-bold"
-                >
-                  نسخ نص الآية
-                </button>
               </div>
             </div>
           </div>,
@@ -899,15 +840,6 @@ export function QuranReaderView({ view, setView }: Props) {
           </div>,
           document.body,
         )}
-      {copyNotice && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-24 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-azkar-teal-deep px-4 py-2 text-xs font-bold text-azkar-card shadow-lg"
-        >
-          {copyNotice}
-        </div>
-      )}
     </div>
   )
 }
