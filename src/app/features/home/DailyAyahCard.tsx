@@ -91,7 +91,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
       <span className="home-ayah-lines" aria-hidden="true" />
       <div className="relative z-10">
-      <div className="mb-3 mt-1 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
+      <div className="mb-3 mt-5 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
       <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
 
       {panel === 'full' && (
