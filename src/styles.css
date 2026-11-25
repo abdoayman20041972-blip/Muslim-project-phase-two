@@ -1835,5 +1835,5 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .app-content.home-spacing{padding-bottom:max(7rem,calc(6.2rem + env(safe-area-inset-bottom)))}
 .home-reference-content{padding-bottom:0}
 
-.home-prayer-top{margin-top:-1.1rem}
-.home-prayer-time-block{padding-left:.9rem;min-width:6.2rem}
+.home-prayer-top{margin-top:-2.9rem}
+.home-prayer-name-block,.home-prayer-remaining-block{width:31.8%;margin-inline:.0rem}
