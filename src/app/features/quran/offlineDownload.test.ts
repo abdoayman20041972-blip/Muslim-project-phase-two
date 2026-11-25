@@ -297,6 +297,19 @@ describe('Quran offline download manager', () => {
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith('/002.mp3'))).toHaveLength(3)
   })
 
+  it('does not report a download complete when the stored copy is shorter than what was received', async () => {
+    const realPut = FakeStore.prototype.put
+    vi.spyOn(FakeStore.prototype, 'put').mockImplementation(function (this: FakeStore, value: RecordValue) {
+      return realPut.call(this, value.blob instanceof Blob ? { ...value, blob: new Blob([new Uint8Array(10)]) } : value)
+    })
+
+    const result = await downloadSurah('ar.minshawi', 7)
+
+    expect(result.failed).toEqual([{ surahNumber: 7, reason: 'storage' }])
+    expect(await isSurahDownloaded('ar.minshawi', 7)).toBe(false)
+    expect(await getDownloadedSurahBlob('ar.minshawi', 7)).toBeUndefined()
+  })
+
   it('rejects an HTML error page even with HTTP 200', async () => {
     const html = new TextEncoder().encode('<html><body>Not Found</body></html>')
     vi.mocked(fetch).mockResolvedValue(
