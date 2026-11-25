@@ -5,6 +5,8 @@ import { fullTextForDailyAyah, surahNumberForDailyAyah } from '../../src/app/fea
 import { DailyAyahCard } from '../../src/app/features/home/DailyAyahCard'
 import { MoreView } from '../../src/app/features/home/MoreView'
 
+vi.mock('../../src/app/features/radio/RadioProvider', () => ({ useRadio: () => ({ station: null, status: 'idle', toggle: vi.fn() }) }))
+
 describe('daily ayah full text', () => {
   it('resolves every bundled excerpt to a surah and a complete verse that contains it', async () => {
     const strip = (t: string) => t.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ـ/g, '')
@@ -43,10 +45,11 @@ describe('DailyAyahCard', () => {
 })
 
 describe('MoreView', () => {
-  it('stays in the bar as an empty placeholder that says soon, with no tool tabs', () => {
+  it('shows the radio card as its only section, with no old tool tabs', () => {
     render(<MoreView />)
     expect(screen.getByRole('heading', { name: 'المزيد' })).toBeTruthy()
-    expect(screen.getByText('قريبًا')).toBeTruthy()
+    expect(screen.getByTestId('more-radio-card')).toBeTruthy()
+    expect(screen.queryByText('قريبًا')).toBeNull()
     // The tools moved out: no tab-like entries remain on this page.
     for (const name of ['السبحة', 'الإعدادات', 'المفضلة', 'قصص الأنبياء', 'القبلة']) {
       expect(screen.queryByRole('button', { name })).toBeNull()
