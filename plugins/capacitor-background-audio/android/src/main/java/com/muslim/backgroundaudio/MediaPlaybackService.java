@@ -121,6 +121,12 @@ public class MediaPlaybackService extends Service {
                 public void onStop() {
                     dispatch("stop");
                 }
+
+                @Override
+                public void onSeekTo(long positionMs) {
+                    // Expanded-notification seek bar. The web element owns the real position.
+                    dispatch("seek:" + positionMs);
+                }
             }
         );
         try {
@@ -291,6 +297,7 @@ public class MediaPlaybackService extends Service {
                             | PlaybackStateCompat.ACTION_PAUSE
                             | PlaybackStateCompat.ACTION_PLAY_PAUSE
                             | PlaybackStateCompat.ACTION_STOP
+                            | PlaybackStateCompat.ACTION_SEEK_TO
                     )
                     .setState(
                         playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED,
