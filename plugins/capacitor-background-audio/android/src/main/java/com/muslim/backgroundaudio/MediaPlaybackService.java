@@ -73,6 +73,8 @@ public class MediaPlaybackService extends Service {
     private long durationMs = -1L;
     private boolean skipPrevious = false;
     private boolean skipNext = false;
+    /** Live radio: no seek bar and no seeking, and the cover carries a live badge. */
+    private boolean live = false;
 
     public static boolean isRunning() {
         return running;
@@ -181,6 +183,7 @@ public class MediaPlaybackService extends Service {
             durationMs = intent.getLongExtra("durationMs", -1L);
             skipPrevious = intent.getBooleanExtra("skipPrevious", false);
             skipNext = intent.getBooleanExtra("skipNext", false);
+            live = intent.getBooleanExtra("live", false);
         }
         applyWakeLock();
         startForegroundInternal();
@@ -301,7 +304,8 @@ public class MediaPlaybackService extends Service {
     /** Cover drawn per title: brand-colour gradient, thin gold waves and the surah name. */
     private Bitmap coverFor(String text) {
         if (text == null || text.length() == 0) return null;
-        if (coverCache != null && text.equals(coverCacheTitle)) return coverCache;
+        String cacheKey = (live ? "L:" : "S:") + text;
+        if (coverCache != null && cacheKey.equals(coverCacheTitle)) return coverCache;
         try {
             int[][] palettes = {
                 { 0xFF12324A, 0xFF1F6070 }, { 0xFF0F5A45, 0xFF33905F }, { 0xFF4B5A1C, 0xFF8B8B2B },
@@ -343,8 +347,20 @@ public class MediaPlaybackService extends Service {
             }
             label.setShadowLayer(8f, 0f, 2f, 0x99000000);
             canvas.drawText(name, size / 2f, size / 2f + textSize / 3f, label);
+            if (live) {
+                // Small badge near the bottom: red dot and the word for "live".
+                android.graphics.Paint dot = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                dot.setColor(0xFFE5484D);
+                canvas.drawCircle(size / 2f + 58f, size - 78f, 13f, dot);
+                android.graphics.Paint badge = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                badge.setColor(0xFFFFFFFF);
+                badge.setTextAlign(android.graphics.Paint.Align.CENTER);
+                badge.setFakeBoldText(true);
+                badge.setTextSize(46f);
+                canvas.drawText("\u0645\u0628\u0627\u0634\u0631", size / 2f - 16f, size - 62f, badge);
+            }
             coverCache = bmp;
-            coverCacheTitle = text;
+            coverCacheTitle = cacheKey;
             return bmp;
         } catch (RuntimeException failure) {
             return null;
@@ -389,13 +405,13 @@ public class MediaPlaybackService extends Service {
                             | PlaybackStateCompat.ACTION_PAUSE
                             | PlaybackStateCompat.ACTION_PLAY_PAUSE
                             | PlaybackStateCompat.ACTION_STOP
-                            | PlaybackStateCompat.ACTION_SEEK_TO
+                            | (live ? 0L : PlaybackStateCompat.ACTION_SEEK_TO)
                             | (skipNext ? PlaybackStateCompat.ACTION_SKIP_TO_NEXT : 0L)
                             | (skipPrevious ? PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS : 0L)
                     )
                     .setState(
                         playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED,
-                        positionMs,
+                        live ? PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN : positionMs,
                         playing ? 1f : 0f
                     )
                     .build()
