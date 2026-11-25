@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sectionOf } from '../../src/app/constants'
+import { hasBottomNav, sectionOf } from '../../src/app/constants'
 
 describe('navigation mapping', () => {
   it('maps home to the home section', () => expect(sectionOf({ name: 'home' })).toBe('home'))
@@ -21,5 +21,16 @@ describe('navigation mapping', () => {
     expect(sectionOf({ name: 'tasbih' })).toBe('more')
     expect(sectionOf({ name: 'settings' })).toBe('more')
     expect(sectionOf({ name: 'more' })).toBe('more')
+  })
+
+  it('shows the bottom bar only on the five main tab destinations', () => {
+    for (const view of [{ name: 'home' }, { name: 'azkar-list' }, { name: 'mushaf-list' }, { name: 'hadith' }, { name: 'more' }] as const) {
+      expect(hasBottomNav(view), view.name).toBe(true)
+    }
+  })
+  it('hides the bottom bar on inner screens, like the original app', () => {
+    for (const view of [{ name: 'category', id: 'morning' }, { name: 'favorites' }, { name: 'tasbih' }, { name: 'prayer-times' }, { name: 'qibla' }, { name: 'prophets' }, { name: 'settings' }, { name: 'mushaf-surah', number: 2 }] as const) {
+      expect(hasBottomNav(view), view.name).toBe(false)
+    }
   })
 })
