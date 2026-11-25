@@ -5,6 +5,7 @@ import { type Ayah, type View } from '../../constants'
 import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { QuranAudioSession } from './quranAudioSession'
 import { useQuranPreferences } from './useQuranPreferences'
+import { isRadioActive, notifyQuranStarted } from '../radio/audioOwner'
 
 // One shared dynamic import, so concurrent callers never race on first load.
 let audioPlugin: Promise<typeof import('@muslim/background-audio')> | undefined
@@ -63,6 +64,7 @@ function useAudioValue() {
   const artist = request ? QURAN_AUDIO_RECITER_LABELS[request.reciter] : ''
   // The native service lives as long as a session exists (loading, playing or paused), so the
   // notification and lock screen keep their controls while paused. Idle or error stops it.
+  useEffect(() => { if (state.status === 'loading' || state.status === 'playing') notifyQuranStarted() }, [state.status])
   const serviceNeeded = !!request && ['loading', 'playing', 'paused'].includes(state.status)
   // Notification previous/next exist only for whole-surah recitation, within surah 1..114.
   const skipPrevious = request?.kind === 'connected' && request.surah > 1
@@ -91,7 +93,7 @@ function useAudioValue() {
             // start it again now that the answer is known.
             else if (current) await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration, ...skipFlags })
           }
-        } else await BackgroundAudio.stop()
+        } else if (!isRadioActive()) await BackgroundAudio.stop()
       } catch {
         if (current && serviceNeeded) setBackgroundWarning('تعذر تفعيل خدمة الخلفية. استمرار الصوت عند قفل الشاشة غير مضمون.')
       }
