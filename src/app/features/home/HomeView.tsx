@@ -226,7 +226,8 @@ export function HomeView({
     }
   }, [])
 
-  const gregorianDate = formatLocalizedDate(dateTick, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, 'ar-EG')
+  const gregorianDate = formatLocalizedDate(dateTick, { day: 'numeric', month: 'long', year: 'numeric' }, 'ar-EG')
+  const weekdayName = formatLocalizedDate(dateTick, { weekday: 'long' }, 'ar-EG')
   const hijriDate = readSetting(APP_SETTINGS_KEYS.hijriCalendar, '1') !== '0'
     ? formatLocalizedDate(dateTick, { day: 'numeric', month: 'long', year: 'numeric' }, 'ar-SA-u-ca-islamic-umalqura')
     : ''
@@ -260,7 +261,10 @@ export function HomeView({
           <div className="text-right" data-reveal>
             <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
             <div className="font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
-            {hijriDate && <div className="text-[0.75rem] font-semibold text-azkar-gold-deep">{hijriDate}</div>}
+            <div className="home-date-line flex items-baseline gap-2 font-semibold text-azkar-gold-deep">
+              <span className="home-weekday font-amiri text-[1.0625rem] font-bold text-azkar-teal-ink">{weekdayName}</span>
+              {hijriDate && <span className="text-[0.75rem]">{hijriDate}</span>}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onToggleDarkMode} aria-label="تبديل الوضع الليلي" className="home-v4-round u-pressable">
