@@ -103,6 +103,28 @@ export function App() {
     if (viewHistoryRef.current.length > 50) viewHistoryRef.current.shift();
     lastViewRef.current = view;
   }, [view]);
+  // Text copy is removed app-wide: block the copy command outside text fields.
+  useEffect(() => {
+    const block = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return;
+      event.preventDefault();
+    };
+    document.addEventListener("copy", block);
+    return () => document.removeEventListener("copy", block);
+  }, []);
+  // Soft back for tools opened from "More": returns to the previous screen
+  // (More) and drops that history entry, like the hardware back button.
+  const backOr = useCallback((fallback: View) => {
+    const previous = viewHistoryRef.current[viewHistoryRef.current.length - 1];
+    if (previous && previous.name === "more") {
+      viewHistoryRef.current.pop();
+      lastViewRef.current = previous;
+      setView(previous);
+    } else {
+      setView(fallback);
+    }
+  }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let cleanup = () => {};
@@ -504,11 +526,11 @@ export function App() {
         darkMode={darkMode}
         appearance={appearance}
         onAppearance={setAppearance}
-        onBack={() => setView({ name: "home" })}
+        onBack={() => backOr({ name: "home" })}
         entry={settingsEntry}
       />
     ),
-    [darkMode, appearance, setAppearance, settingsEntry],
+    [darkMode, appearance, setAppearance, settingsEntry, backOr],
   );
   const azkarListScreen = useMemo(
     () => (
@@ -529,12 +551,12 @@ export function App() {
         <FavoritesView
           favorites={favoriteItems}
           onToggleFavorite={toggleFavorite}
-          onBack={backTo ?? (() => setView({ name: "azkar-list" }))}
+          onBack={backTo ?? (() => backOr({ name: "azkar-list" }))}
           setView={setView}
         />
       </div>
     ),
-    [favoriteItems, backTo, toggleFavorite],
+    [favoriteItems, backTo, toggleFavorite, backOr],
   );
   const categoryScreen = useMemo(
     () =>
@@ -599,16 +621,16 @@ export function App() {
   const qiblaScreen = useMemo(
     () => (
       <QiblaView
-        onBack={() => setView({ name: "home" })}
+        onBack={() => backOr({ name: "home" })}
         onOpenLocation={() => {
           setSettingsEntry({ category: "device", at: Date.now() });
           setView({ name: "settings" });
         }}
       />
     ),
-    [],
+    [backOr],
   );
-  const prophetsScreen = useMemo(() => <ProphetsView onBack={() => setView({ name: "home" })} />, []);
+  const prophetsScreen = useMemo(() => <ProphetsView onBack={() => backOr({ name: "home" })} />, [backOr]);
   const hadithScreen = useMemo(() => <HadithView onBack={() => setView({ name: "home" })} />, []);
   const tasbihScreen = useMemo(
     () => (
@@ -622,10 +644,10 @@ export function App() {
         onResetWord={resetWord}
         onResetToday={resetToday}
         onSelectWord={setSelectedWord}
-        setView={setView}
+        setView={(v) => (v.name === "home" ? backOr({ name: "home" }) : setView(v))}
       />
     ),
-    [counts, dayTotal, selectedWord, roundCounts, rounds, tap, resetWord, resetToday, setSelectedWord],
+    [counts, dayTotal, selectedWord, roundCounts, rounds, tap, resetWord, resetToday, setSelectedWord, backOr],
   );
 
   return (
@@ -658,7 +680,7 @@ export function App() {
             more={moreScreen}
           />
         <QuranMiniPlayer />
-        {view.name !== "mushaf-surah" && (
+        {view.name !== "mushaf-surah" && view.name !== "settings" && (
           <BottomNav view={view} onNavigate={go} />
         )}
       </div>
