@@ -17,6 +17,7 @@ import { BackButton } from '../../components/app-chrome'
 import { juzForPage } from './juz'
 import { useQuranAudio } from './QuranAudioProvider'
 import { QuranOfflinePlayer } from './QuranOfflinePlayer'
+import { ReciterPicker } from './ReciterPicker'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { useQuranTafsir } from './useQuranTafsir'
 import { assertQuranPageMap, groupSurahPages, type QuranPageMap } from './quranPageIntegrity'
@@ -409,28 +410,15 @@ export function QuranReaderView({ view, setView }: Props) {
                   <button
                     type="button"
                     onClick={handleToggle}
-                    aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
+                    aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة'}
                     className="u-pressable inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
                   >
                     {playing && currentSurah === view.number && playback?.kind === 'connected' ? <PauseIcon /> : <PlayIcon />}
                   </button>
                 </div>
               </div>
-              <select
-                aria-label="القارئ في وضع القراءة"
-                value={reciter}
-                onChange={(e) => {
-                  const next = e.target.value
-                  setReciter(next as QuranAudioReciter)
-                }}
-                className="order-1 h-10 w-[7rem] shrink-0 truncate rounded-full border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-xs font-bold text-azkar-teal-ink"
-              >
-                {QURAN_AUDIO_RECITERS.map((id) => (
-                  <option key={id} value={id}>
-                    {QURAN_AUDIO_RECITER_LABELS[id]}
-                  </option>
-                ))}
-              </select>
+              <ReciterPicker label="القارئ في وضع القراءة" value={reciter} onChange={setReciter}
+                className="order-1 h-10 w-[7.5rem] shrink-0" />
             </div>
           </div>
         </>
@@ -460,7 +448,7 @@ export function QuranReaderView({ view, setView }: Props) {
           <button
             type="button"
             onClick={handleToggle}
-            aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة من بدايتها'}
+            aria-label={playing && currentSurah === view.number && playback?.kind === 'connected' ? 'إيقاف التلاوة' : 'تشغيل السورة'}
             aria-busy={buffering}
             className="u-pressable inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal-deep text-azkar-card shadow-sm"
           >
@@ -473,22 +461,8 @@ export function QuranReaderView({ view, setView }: Props) {
           {controlsOpen && (
             <div id="quran-reader-controls" className="space-y-2 mb-4">
               <div className="grid grid-cols-2 gap-2">
-                <select
-                  aria-label="القارئ"
-                  value={reciter}
-                  onChange={(e) => {
-                    const next = e.target.value as QuranAudioReciter
-                    setReciter(next)
-                  }}
-                  className="h-11 rounded-[1.1rem] bg-azkar-card border border-azkar-gold-soft px-3 text-xs"
-                >
-                  <option disabled>القارئ</option>
-                  {QURAN_AUDIO_RECITERS.map((id) => (
-                    <option key={id} value={id}>
-                      {QURAN_AUDIO_RECITER_LABELS[id]}
-                    </option>
-                  ))}
-                </select>
+                <ReciterPicker label="القارئ" value={reciter} onChange={setReciter}
+                  className="h-11 w-full rounded-[1.1rem]" />
                 <select
                   aria-label="التكرار"
                   value={repeat}
@@ -499,7 +473,7 @@ export function QuranReaderView({ view, setView }: Props) {
                   className="h-11 rounded-[1.1rem] bg-azkar-card border border-azkar-gold-soft px-3 text-xs"
                 >
                   <option value="off">بدون تكرار</option>
-                  <option value="ayah" disabled={playback?.kind !== 'single-ayah'}>تكرار الآية (تشغيل آية منفردة فقط)</option>
+                  <option value="ayah" disabled={playback?.kind !== 'single-ayah'}>تكرار الآية</option>
                   <option value="surah" disabled={playback?.kind === 'single-ayah'}>تكرار السورة</option>
                 </select>
               </div>
@@ -568,7 +542,6 @@ export function QuranReaderView({ view, setView }: Props) {
           surahNumber={view.number}
         />
       )}
-      <p className="mb-3 text-xs text-azkar-ink-soft">تشغيل السورة يبدأ من أولها. للاستماع لآية محددة استخدم زر الصوت في قائمة الآية. تغيير القارئ يبدأ التسجيل الجديد من أوله ويحافظ على الإيقاف المؤقت.</p>
       {loading && (
         <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card text-center text-sm text-azkar-ink-soft py-12">
           جاري تحميل السورة...
@@ -842,4 +815,4 @@ export function QuranReaderView({ view, setView }: Props) {
         )}
     </div>
   )
-}
+        }
