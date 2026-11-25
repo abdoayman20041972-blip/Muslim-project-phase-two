@@ -267,8 +267,8 @@ html[data-theme="amber"]{--azkar-teal:31 62% 38%;--azkar-teal-deep:30 66% 25%;--
   .home-reference-brand>div:first-child{font-size:2.75rem!important}
   .home-reference-brand>div:last-child{font-size:1.05rem!important}
 }
-[data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .55s cubic-bezier(.22,.8,.32,1),transform .55s cubic-bezier(.22,.8,.32,1);transition-delay:var(--reveal-delay,0ms);will-change:opacity,transform}
-[data-reveal].reveal-in{opacity:1;transform:translateY(0)}
+[data-reveal]{opacity:0;transform:translateY(22px) scale(.97);transition:opacity .55s cubic-bezier(.22,.8,.32,1),transform .55s cubic-bezier(.22,.8,.32,1);transition-delay:var(--reveal-delay,0ms);will-change:opacity,transform}
+[data-reveal].reveal-in{opacity:1;transform:translateY(0) scale(1)}
 html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 @media (prefers-reduced-motion:reduce){[data-reveal]{opacity:1;transform:none;transition:none}}
 
@@ -1816,8 +1816,8 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .home-ayah-green{background:radial-gradient(circle at 12% 10%,rgba(86,148,118,.65),transparent 46%),radial-gradient(circle at 92% 88%,rgba(8,30,24,.75),transparent 50%),radial-gradient(circle at 80% 15%,rgba(10,36,29,.55),transparent 40%),linear-gradient(135deg,#1c5444 0%,#2d6652 45%,#123329 100%);border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 24px rgba(20,45,38,.2);margin-top:0}
 .home-ayah-green .home-tile-shape{opacity:.7}
 .home-ayah-lines{position:absolute;left:0;right:0;top:0;height:1.7rem;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200' preserveAspectRatio='none'%3E%3Cpath d='M-10 70 C60 5 110 135 190 70 S320 5 410 60' fill='none' stroke='%23e9c875' stroke-width='4' stroke-opacity='.9'/%3E%3Cpath d='M-10 140 C70 75 130 195 215 135 S330 80 410 130' fill='none' stroke='%23e9c875' stroke-width='3' stroke-opacity='.7'/%3E%3C/svg%3E") center top/100% 100% no-repeat}
-.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.45rem;line-height:1.8}
-@media (max-width:380px){.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.28rem}}
+.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:calc(1.45rem + 3px);line-height:1.85}
+@media (max-width:380px){.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:calc(1.28rem + 3px)}}
 .home-ayah-act{min-height:1.45rem;color:#fff}
 .home-ayah-act::after{content:"";position:absolute;inset:-.5rem -.15rem}
 .home-ayah-act-quiet{background:rgba(255,255,255,.14)}
@@ -1857,3 +1857,24 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 /* Quran mini player: fixed to the bottom edge, directly above the bottom bar when it is shown. */
 .quran-mini-player{left:50%;transform:translateX(-50%);bottom:max(.6rem,env(safe-area-inset-bottom))}
 body:has(.nav-float) .quran-mini-player{bottom:calc(max(.6rem,env(safe-area-inset-bottom)) + 4.4rem + .5rem)}
+
+/* ---- Hadith redesign: daily hero, accent group cards, motion ---- */
+.hadith-daily{position:relative;display:block;width:100%;margin-bottom:1rem;padding:1rem 1.05rem .95rem;border:0;border-radius:1.35rem;text-align:right;color:#fff;background:radial-gradient(circle at 88% 12%,hsl(43 76% 74%/.14),transparent 42%),linear-gradient(165deg,#194b3e 0%,#386c58 55%,#173a32 100%);box-shadow:0 10px 26px hsl(160 40% 14%/.3);}
+.hadith-daily-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+.hadith-daily-tag{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;background:hsl(43 76% 74%/.18);color:#eed6a8;font-size:.6875rem;font-weight:700;}
+.hadith-daily-src{font-size:.6875rem;font-weight:700;color:#d9bd7f;}
+.hadith-daily-text{margin:.55rem 0 .4rem;font-size:1.12rem;line-height:1.9;color:#fdfaf2;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+.hadith-daily-cta{display:inline-flex;align-items:center;gap:.15rem;font-size:.6875rem;font-weight:700;color:#eed6a8;}
+.hadith-accent-gold{--hacc:#a87b2c;--hacc-soft:#a87b2c24}
+.hadith-accent-teal{--hacc:#3f7a63;--hacc-soft:#3f7a6322}
+.hadith-accent-olive{--hacc:#7c8a33;--hacc-soft:#7c8a3326}
+.hadith-accent-plum{--hacc:#7f557b;--hacc-soft:#7f557b24}
+.hadith-group-card{position:relative;overflow:hidden;}
+.hadith-group-card::before{content:"";position:absolute;inset-inline-start:.75rem;top:1rem;bottom:1rem;width:.28rem;border-radius:999px;background:var(--hacc,hsl(var(--azkar-teal)));}
+.hadith-group-card>button{position:relative;padding-inline-start:.85rem;padding-inline-end:1.5rem;}
+.hadith-count-pill{padding:.2rem .55rem;border-radius:999px;background:var(--hacc-soft,hsl(var(--azkar-gold)/.12));color:var(--hacc,hsl(var(--azkar-gold-deep)));font-size:.6875rem;font-weight:700;white-space:nowrap;}
+.hadith-group-chevron{position:absolute;inset-inline-end:.15rem;top:1.1rem;height:1rem;width:1rem;color:var(--hacc,hsl(var(--azkar-teal)));}
+.hadith-num-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .65rem;border-radius:999px;background:var(--hacc-soft,hsl(var(--azkar-gold)/.12));color:var(--hacc,hsl(var(--azkar-gold-deep)));font-weight:700;}
+@keyframes hadith-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hadith-anim{animation:hadith-in .32s ease both;}
+@media (prefers-reduced-motion:reduce){.hadith-anim{animation:none !important;}}
