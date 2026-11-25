@@ -126,7 +126,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
       )}
 
       <blockquote className="ps-verse">
-        <p className="font-amiri">﴿{story.verse.text}﴾</p>
+        <p className="font-amiri">{story.verse.text}</p>
         <cite>{story.verse.ref}</cite>
       </blockquote>
 
