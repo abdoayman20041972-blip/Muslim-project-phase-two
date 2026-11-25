@@ -64,6 +64,10 @@ export type FontSizeKey=keyof typeof FONT_SIZES
 export const FONT_ORDER:FontSizeKey[]=['sm','md','lg','xl']
 export type View={name:'home'}|{name:'azkar-list'}|{name:'favorites'}|{name:'category';id:string;item?:string}|{name:'tasbih'}|{name:'mushaf-list'}|{name:'mushaf-surah';number:number}|{name:'prayer-times'}|{name:'qibla'}|{name:'settings'}|{name:'prophets'}|{name:'hadith'}|{name:'more'}
 export type Section='mushaf'|'hadith'|'home'|'azkar'|'more'
+// The bottom bar lives only on the five main tab destinations; every inner
+// screen (category, favorites, tasbih, prayer times, qibla, prophets,
+// settings, reader) navigates back instead, like the original app.
+export function hasBottomNav(view:View){return view.name==='home'||view.name==='azkar-list'||view.name==='mushaf-list'||view.name==='hadith'||view.name==='more'}
 export type Ayah={number:number;numberInSurah:number;text:string}
 export function sectionOf(view:View):Section|null{switch(view.name){case'home':return'home';case'mushaf-list':case'mushaf-surah':return'mushaf';case'hadith':return'hadith';case'azkar-list':case'category':case'favorites':return'azkar';case'tasbih':case'settings':case'more':return'more';default:return null}}
 const DIACRITICS=/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D4-\u08E1\u08D3-\u08FF]/g
