@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HadithView } from './HadithView'
-import { HADITH_COLLECTION, clearEditionCache } from './hadithData'
+import { HADITH_COLLECTION, clearEditionCache, dailyHadithIndex } from './hadithData'
 import { HADITH_SOURCE_URLS } from './hadithSources'
 import { shareQuoteCard as shareQuoteCardReal } from '../azkar/shareActions'
 vi.mock('../azkar/shareActions', () => ({ shareQuoteCard: vi.fn().mockResolvedValue(undefined), shareText: vi.fn() }))
 const shareQuoteCard = vi.mocked(shareQuoteCardReal)
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, isBackupKey } from '../../settings'
+import { toArabicDigits } from '../../constants'
 
 const sample = { hadiths: [{ hadithnumber: 1, text: 'نص تجريبي أول' }, { hadithnumber: 2, text: 'نص تجريبي ثانٍ' }, { hadithnumber: 3, text: 'نص تجريبي ثالث' }] }
 const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 404, json: async () => body }) as Response
@@ -192,5 +193,50 @@ describe('edition loading messages', () => {
     expect(screen.getAllByRole('button', { name: 'إعادة المحاولة' }).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByTestId('hadith-group-curated'))
     expect(screen.getByTestId('hadith-position')).toBeTruthy()
+  })
+})
+
+describe('hadith of the day hero', () => {
+  it('shows today\'s curated hadith with its source', async () => {
+    render(<HadithView onBack={vi.fn()} />)
+    const daily = screen.getByTestId('hadith-daily')
+    const index = dailyHadithIndex(new Date(), HADITH_COLLECTION.length)
+    const picked = HADITH_COLLECTION[index]
+    expect(daily.textContent).toContain('حديث اليوم')
+    expect(daily.textContent).toContain(picked.text.slice(0, 25))
+    expect(daily.textContent).toContain(picked.source ? toArabicDigits(picked.source) : '')
+  })
+  it('tapping the hero opens المختارات at that hadith', async () => {
+    render(<HadithView onBack={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('hadith-daily'))
+    const index = dailyHadithIndex(new Date(), HADITH_COLLECTION.length)
+    expect(screen.getByTestId('hadith-position').textContent).toContain(ar(index + 1))
+    expect(screen.getByTestId('hadith-reader').textContent).toContain(HADITH_COLLECTION[index].text.slice(0, 25))
+  })
+})
+
+describe('collection accent identity and motion', () => {
+  it('each group card carries its accent class and the count pill', async () => {
+    render(<HadithView onBack={vi.fn()} />)
+    const groups = screen.getByTestId('hadith-groups')
+    expect(groups.querySelector('.hadith-accent-gold [data-testid="hadith-group-curated"]')).toBeTruthy()
+    expect(groups.querySelector('.hadith-accent-teal [data-testid="hadith-group-nawawi"]')).toBeTruthy()
+    expect(groups.querySelector('.hadith-accent-olive [data-testid="hadith-group-qudsi"]')).toBeTruthy()
+    expect(groups.querySelector('.hadith-accent-plum [data-testid="hadith-group-dehlawi"]')).toBeTruthy()
+    expect(groups.querySelectorAll('.hadith-group-card.hadith-anim .hadith-count-pill').length).toBe(4)
+  })
+  it('reader card uses the group accent and animates between hadiths', async () => {
+    render(<HadithView onBack={vi.fn()} />)
+    await waitFor(() => expect(screen.getByTestId('hadith-count-qudsi').textContent).toContain(ar(3)))
+    fireEvent.click(screen.getByTestId('hadith-group-qudsi'))
+    await waitFor(() => expect(screen.getByTestId('hadith-position')).toBeTruthy())
+    const card = document.querySelector('.hadith-reader-card') as HTMLElement
+    expect(card.className).toContain('hadith-accent-olive')
+    expect(card.className).toContain('hadith-anim')
+    expect(card.querySelector('.hadith-num-chip')).toBeTruthy()
+    next()
+    await waitFor(() => expect(screen.getByTestId('hadith-position').textContent).toContain(ar(2)))
+    const card2 = document.querySelector('.hadith-reader-card') as HTMLElement
+    expect(card2.className).toContain('hadith-accent-olive')
   })
 })
