@@ -51,7 +51,7 @@ export type DownloadJobSnapshot = {
   reciter: QuranAudioReciter
   kind: 'surah' | 'reciter'
   state: 'running' | 'paused'
-  pauseReason?: 'user' | 'wifi'
+  pauseReason?: 'user'
   pendingCount: number
   completedCount: number
   failed: FailedSurah[]
@@ -65,7 +65,6 @@ export type DownloadJobResult = {
 }
 
 export type DownloadOptions = {
-  wifiOnly?: boolean
 }
 
 type StoredAudio = {
@@ -484,9 +483,8 @@ type Job = {
   completed: number[]
   failed: FailedSurah[]
   state: 'running' | 'paused'
-  pauseReason?: 'user' | 'wifi'
+  pauseReason?: 'user'
   cancelled: boolean
-  wifiOnly: boolean
   controller: AbortController
   current?: SurahProgress & { startedAt: number }
   promise: Promise<DownloadJobResult>
@@ -574,13 +572,6 @@ export function subscribeToDownloadJobs(
   }
 }
 
-function wifiStatus(): 'wifi' | 'not-wifi' | 'unknown' {
-  if (typeof navigator === 'undefined') return 'unknown'
-  const connection = (navigator as Navigator & { connection?: { type?: string } }).connection
-  if (!connection || typeof connection.type !== 'string' || connection.type === '') return 'unknown'
-  return connection.type === 'wifi' ? 'wifi' : 'not-wifi'
-}
-
 function finishJob(job: Job): void {
   const status = job.cancelled ? 'cancelled' : job.state === 'paused' ? 'paused' : 'completed'
   if (status !== 'paused') jobs.delete(job.reciter)
@@ -590,11 +581,6 @@ function finishJob(job: Job): void {
 
 async function runJob(job: Job): Promise<void> {
   while (!job.cancelled && job.state === 'running' && job.pending.length > 0) {
-    if (job.wifiOnly && wifiStatus() !== 'wifi') {
-      job.state = 'paused'
-      job.pauseReason = 'wifi'
-      break
-    }
     const surahNumber = job.pending[0]
     await acquireSlot()
     if (job.cancelled || job.state !== 'running') {
@@ -682,7 +668,6 @@ function startJob(
     failed: [],
     state: 'running',
     cancelled: false,
-    wifiOnly: options?.wifiOnly ?? false,
     controller: new AbortController(),
     promise,
     resolve,

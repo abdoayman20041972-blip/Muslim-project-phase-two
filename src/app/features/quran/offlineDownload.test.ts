@@ -474,17 +474,16 @@ describe('Quran offline download manager', () => {
     expect(snapshots.at(-1)).toEqual([])
   })
 
-  it('pauses instead of downloading when Wi-Fi-only is set and the connection is not Wi-Fi', async () => {
+  it('downloads on any connection, including cellular or an unknown type', async () => {
     vi.stubGlobal('navigator', {
       storage: { persist: vi.fn().mockResolvedValue(true), estimate: vi.fn().mockResolvedValue({}) },
       connection: { type: 'cellular' },
     })
 
-    const result = await downloadReciterAll('ar.minshawi', { wifiOnly: true })
+    const result = await downloadReciterAll('ar.minshawi')
 
-    expect(result.status).toBe('paused')
-    expect(getDownloadJobs()[0]?.pauseReason).toBe('wifi')
-    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+    expect(result.status).toBe('completed')
+    expect(vi.mocked(fetch)).toHaveBeenCalled()
   })
 
   it('deletes a surah and then an entire reciter cleanly', async () => {
