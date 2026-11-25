@@ -218,7 +218,7 @@ export function HomeView({
             <span className="home-sky-star home-sky-star-c" />
             <span className="home-sky-glow" />
           </div>
-          <div className="home-prayer-top relative z-10 flex items-start justify-between px-4">
+          <div className="home-prayer-top relative z-10 flex items-baseline justify-between px-4">
             <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
             <span className="home-reference-location"><Compass className="h-4 w-4" /><span>{locationLabel}</span></span>
           </div>
