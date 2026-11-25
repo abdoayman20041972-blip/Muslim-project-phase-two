@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BookOpen, ChevronLeft, ChevronRight, Copy, ExternalLink, Search, Share2, Sparkles, X } from 'lucide-react'
+import { shareQuoteCard } from '../azkar/shareActions'
+import { BookOpen, ChevronLeft, ChevronRight, ExternalLink, Search, Share2, Sparkles, X } from 'lucide-react'
 import {
   API_EDITIONS,
   HADITH_COLLECTION,
@@ -164,26 +165,14 @@ export function HadithView({ onBack }: { onBack: () => void }) {
     const edition = openGroup === 'curated' ? null : editions[openGroup]
     const items = itemsOf(openGroup)
     const item = items[Math.min(index, Math.max(items.length - 1, 0))]
-    const shareText = item ? `«${item.text}»${item.source ? `\n${toArabicDigits(item.source)}` : ''}` : ''
-    const copy = async () => {
-      try {
-        await navigator.clipboard.writeText(shareText)
-        setStatus('تم نسخ الحديث')
-      } catch {
-        setStatus('تعذّر النسخ على هذا الجهاز')
-      }
-    }
     const share = async () => {
-      if (typeof navigator.share === 'function') {
-        try {
-          await navigator.share({ text: shareText })
-          return
-        } catch (cause) {
-          if (cause instanceof DOMException && cause.name === 'AbortError') return
-          // Sharing failed: copy is the supported fallback.
-        }
-      }
-      await copy()
+      if (!item) return
+      await shareQuoteCard({
+        text: item.text,
+        reference: item.source ? toArabicDigits(item.source) : undefined,
+        heading: item.group === 'curated' ? 'حديث شريف' : `حديث ${toArabicDigits(item.number)}`,
+        filename: 'hadith.png',
+      })
     }
     return (
       <section dir="rtl" className="hadith-screen" data-testid="hadith-reader">
@@ -227,7 +216,6 @@ export function HadithView({ onBack }: { onBack: () => void }) {
               )}
               {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[0.6875rem] leading-relaxed text-azkar-ink-soft"><span className="block font-bold">ملاحظة توضيحية</span>{item.note}</p>}
               <div className="mt-3 flex gap-2 border-t border-azkar-hairline pt-3">
-                <button type="button" onClick={copy} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[0.6875rem] font-bold text-azkar-teal-ink"><Copy className="h-3.5 w-3.5" aria-hidden="true" /> نسخ</button>
                 <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[0.6875rem] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
               </div>
               <p role="status" className="mt-1 min-h-4 text-center text-[0.6875rem] text-azkar-ink-faint">{status}</p>
