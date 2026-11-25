@@ -11,7 +11,7 @@ describe('QuranOfflinePlayer availability hint', () => {
     const { container } = render(<QuranOfflinePlayer {...props} />)
     await waitFor(() => expect(screen.getByTestId('quran-offline-player')).toBeTruthy())
     expect(container.querySelector('audio')).toBeNull()
-    expect(screen.getByText(/تلقائيًا/)).toBeTruthy()
+    expect(screen.getByText(/بدون إنترنت/)).toBeTruthy()
   })
   it('hides when storage is unavailable', async () => {
     vi.mocked(isSurahDownloaded).mockRejectedValue(new Error('no storage'))
