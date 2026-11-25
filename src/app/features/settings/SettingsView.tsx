@@ -278,6 +278,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     setCategory(id)
   }
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
+  const TONE_IDS = CATEGORY_GROUPS.flatMap(([, items]) => items.map((item) => item[0]))
   if (category === 'main')
     return (
       <div dir="rtl">
@@ -301,7 +302,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
                   onClick={() => openCategory(id)}
                   className={`u-pressable flex min-h-[3.75rem] w-full items-center gap-3 px-3 py-2.5 text-right ${i > 0 ? 'border-t border-azkar-gold-soft' : ''}`}
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-azkar-teal-tint text-azkar-teal-ink">
+                  <span className={`settings-tone tone-${TONE_IDS.indexOf(id) % 6} flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-azkar-teal-tint text-azkar-teal-ink`}>
                     <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
