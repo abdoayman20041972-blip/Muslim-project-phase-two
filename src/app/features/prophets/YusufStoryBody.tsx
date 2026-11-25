@@ -33,16 +33,6 @@ function useYusufAyahs() {
   return { ayahs, failed }
 }
 
-function Ornament({ side }: { side: 'open' | 'close' }) {
-  return (
-    <svg className={`ys-orn ys-orn-${side}`} viewBox="0 0 16 44" aria-hidden="true" focusable="false">
-      <path d="M3 3 Q14 22 3 41" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8 8 Q14 22 8 36" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".6" />
-      <circle cx="12.5" cy="22" r="1.4" fill="currentColor" />
-    </svg>
-  )
-}
-
 export function ayahReference(from: number, to: number): string {
   return from === to
     ? `سورة يوسف، الآية ${toArabicDigits(from)}`
@@ -56,7 +46,6 @@ function VerseBlock({ range, ayahs, failed }: { range: [number, number]; ayahs: 
     <figure className="ys-verse" data-testid="ys-verse">
       <figcaption className="ys-verse-label">قال تعالى</figcaption>
       <div className="ys-verse-row">
-        <Ornament side="open" />
         {ayahs ? (
           <p className="ys-verse-text font-amiri">
             {numbers.map((n) => (
@@ -69,7 +58,6 @@ function VerseBlock({ range, ayahs, failed }: { range: [number, number]; ayahs: 
         ) : (
           <p className="ys-verse-text ys-verse-wait">{failed ? 'تعذّر تحميل الآيات. افتح المصحف لقراءتها.' : 'جارٍ تحميل الآيات'}</p>
         )}
-        <Ornament side="close" />
       </div>
       <cite className="ys-verse-ref">{ayahReference(range[0], range[1])}</cite>
     </figure>
