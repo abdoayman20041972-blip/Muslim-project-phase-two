@@ -5,7 +5,7 @@ import { PrayerTimesView } from "./features/prayer/PrayerTimesView";
 import { QiblaView } from "./features/qibla/QiblaView";
 import { ProphetsView } from "./features/prophets/ProphetsView";
 import { HadithView } from "./features/hadith/HadithView";
-import { type View, type Section } from "./constants";
+import { type View, type Section, hasBottomNav } from "./constants";
 import { Splash } from "./components/app-chrome";
 import { AppContent, BottomNav } from "./components/app-shell";
 import { HomeView } from "./features/home/HomeView";
@@ -516,10 +516,7 @@ export function App() {
     ),
     [lastSurahMeta, darkMode, setAppearance],
   );
-  const moreScreen = useMemo(
-    () => <MoreView onOpen={goView} />,
-    [goView],
-  );
+  const moreScreen = useMemo(() => <MoreView />, []);
   const settingsScreen = useMemo(
     () => (
       <SettingsView
@@ -680,7 +677,7 @@ export function App() {
             more={moreScreen}
           />
         <QuranMiniPlayer />
-        {view.name !== "mushaf-surah" && view.name !== "settings" && (
+        {hasBottomNav(view) && (
           <BottomNav view={view} onNavigate={go} />
         )}
       </div>
