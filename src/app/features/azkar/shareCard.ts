@@ -102,38 +102,38 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-/** Android app: writes the PNG to the cache folder and opens the native share sheet with it. */
-async function shareNative(input: ShareCardInput): Promise<boolean> {
-  const blob = await renderShareCard(input)
-  if (!blob) return false
-  try {
-    const { Filesystem, Directory } = await import('@capacitor/filesystem')
-    const { Share } = await import('@capacitor/share')
-    const path = `share/${Date.now()}-${input.filename ?? 'muslim-card.png'}`
-    await Filesystem.writeFile({ path, data: await blobToBase64(blob), directory: Directory.Cache, recursive: true })
-    const { uri } = await Filesystem.getUri({ path, directory: Directory.Cache })
-    await Share.share({ files: [uri], dialogTitle: input.heading })
-    return true
-  } catch (error) {
-    // Dismissing the sheet is normal. Any other failure lets the caller fall back to text.
-    if (error instanceof Error && /cancel/i.test(error.message)) return true
-    console.debug('[share] Native card share failed', error)
-    return false
+/** Shares a ready PNG: native sheet in the app (file in the cache folder), Web Share API in a browser. Returns false when image sharing is unavailable. */
+export async function shareImageBlob(blob: Blob, filename: string, title?: string): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem')
+      const { Share } = await import('@capacitor/share')
+      const path = `share/${Date.now()}-${filename}`
+      await Filesystem.writeFile({ path, data: await blobToBase64(blob), directory: Directory.Cache, recursive: true })
+      const { uri } = await Filesystem.getUri({ path, directory: Directory.Cache })
+      await Share.share({ files: [uri], dialogTitle: title })
+      return true
+    } catch (error) {
+      // Dismissing the sheet is normal. Any other failure lets the caller fall back.
+      if (error instanceof Error && /cancel/i.test(error.message)) return true
+      console.debug('[share] Native card share failed', error)
+      return false
+    }
   }
-}
-
-/** Shares the card image (native sheet in the app, Web Share API in a browser). Resolves false when image sharing is not available here. */
-export async function shareCardImage(input: ShareCardInput): Promise<boolean> {
-  if (Capacitor.isNativePlatform()) return shareNative(input)
   if (typeof navigator === 'undefined' || typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return false
-  const blob = await renderShareCard(input)
-  if (!blob) return false
-  const file = new File([blob], input.filename ?? 'muslim-card.png', { type: 'image/png' })
+  const file = new File([blob], filename, { type: 'image/png' })
   if (!navigator.canShare({ files: [file] })) return false
   try {
-    await navigator.share({ files: [file], title: input.heading })
+    await navigator.share({ files: [file], title })
   } catch (error) {
     console.debug('[share] Card share cancelled or unavailable', error)
   }
   return true
+}
+
+/** Renders the card and shares it as an image. Resolves false when image sharing is not available here. */
+export async function shareCardImage(input: ShareCardInput): Promise<boolean> {
+  const blob = await renderShareCard(input)
+  if (!blob) return false
+  return shareImageBlob(blob, input.filename ?? 'muslim-card.png', input.heading)
 }
