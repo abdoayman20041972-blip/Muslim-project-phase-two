@@ -57,12 +57,12 @@ describe('MoreView', () => {
 })
 
 describe('DailyAyahCard decorative lines', () => {
-  it('keeps the gold lines in a bottom strip so they never overlay the ayah text', async () => {
+  it('keeps the gold lines in a top strip so they never overlay the ayah text', async () => {
     const { readFileSync } = await import('node:fs')
     const css = readFileSync('src/styles.css', 'utf8')
     const rule = css.match(/\.home-ayah-lines\{[^}]*\}/)?.[0] ?? ''
-    expect(rule).toMatch(/bottom:0/)
-    expect(rule).toMatch(/height:3\.1rem/)
+    expect(rule).toMatch(/top:0/)
+    expect(rule).toMatch(/height:2\.4rem/)
     expect(rule).not.toMatch(/inset:0/)
     const { container } = render(<DailyAyahCard ayah={DAILY_AYAHS[0]} />)
     const lines = container.querySelector('.home-ayah-lines')
