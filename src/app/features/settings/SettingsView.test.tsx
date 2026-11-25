@@ -78,4 +78,15 @@ describe('SettingsView main grid grouping', () => {
       r.unmount()
     }
   })
+  it('puts the list back at its scroll position after opening a section and going back', () => {
+    const calls: number[] = []
+    window.scrollTo = ((_x: number, y: number) => { calls.push(y) }) as typeof window.scrollTo
+    Object.defineProperty(window, 'scrollY', { value: 640, configurable: true })
+    const r = render(ui(null))
+    fireEvent.click(r.getByText('الصلاة'))
+    expect(calls[calls.length - 1]).toBe(0)
+    fireEvent.click(r.getAllByText('‹')[0])
+    r.getByText('كل التفضيلات في مكان واحد')
+    expect(calls[calls.length - 1]).toBe(640)
+  })
 })
