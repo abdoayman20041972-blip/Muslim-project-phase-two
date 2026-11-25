@@ -85,6 +85,24 @@ describe('App user journeys', () => {
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'التنقل الرئيسي' })).toBeTruthy())
   })
 
+  it('opens Azkar at the top even when Home was scrolled down, and restores Home on return', async () => {
+    let y = 0
+    const scrollTo = vi.fn((_x: number, top: number) => { y = top })
+    vi.stubGlobal('scrollTo', scrollTo)
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => y })
+    render(<App />)
+    await finishBoot()
+    y = 640 // user scrolled Home down to the tiles
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الأذكار' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
+    expect(y).toBe(0)
+    y = 300
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الرئيسية' }))
+    await waitFor(() => expect(y).toBe(640))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الأذكار' }))
+    await waitFor(() => expect(y).toBe(0))
+  })
+
   it('shows the fixed bottom navigation and navigates to all core sections', async () => {
     render(<App />)
     await finishBoot()
