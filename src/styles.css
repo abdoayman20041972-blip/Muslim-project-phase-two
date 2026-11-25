@@ -1844,6 +1844,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .app-content{padding-bottom:max(4.75rem,calc(4.2rem + env(safe-area-inset-bottom)))}
 .app-content.home-spacing,.app-content.azkar-list-spacing,.app-content.mushaf-list-spacing,.app-content.mushaf-surah-spacing,.app-content.hadith-spacing,.app-content.more-spacing{padding-bottom:max(6.75rem,calc(5.9rem + env(safe-area-inset-bottom)))}
 .app-content.home-spacing{padding-bottom:max(7rem,calc(6.2rem + env(safe-area-inset-bottom)))}
+.app-content.hadith-spacing.hadith-detail{padding-bottom:max(4.75rem,calc(4.2rem + env(safe-area-inset-bottom)))}
 .home-reference-content{padding-bottom:0}
 
 .home-prayer-top{margin-top:-2.9rem}
