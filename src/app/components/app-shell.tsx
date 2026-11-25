@@ -1,4 +1,4 @@
-import { Component, useEffect, useState, type ReactNode } from 'react'
+import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { hasBottomNav, type Section, type View } from '../constants'
 import { ConfirmDialogProvider } from './confirm-dialog'
 
@@ -83,6 +83,27 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   const [visited, setVisited] = useState<Set<string>>(() => new Set(['home', view.name]))
   useEffect(() => {
     setVisited((previous) => (previous.has(view.name) ? previous : new Set(previous).add(view.name)))
+  }, [view.name])
+  // All kept-alive screens share ONE document scroll, so without this a screen
+  // opened from a scrolled Home inherited Home's scroll offset (Azkar opening
+  // mid-list). Each screen now remembers its own offset: a screen is entered at
+  // the top, and only a return to its parent restores where the user was.
+  const scrollMemory = useRef<Record<string, number>>({})
+  const lastView = useRef<string>(view.name)
+  useLayoutEffect(() => {
+    const prev = lastView.current
+    if (prev === view.name) return
+    if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') { lastView.current = view.name; return }
+    scrollMemory.current[prev] = window.scrollY || 0
+    const restoreFrom: Record<string, string[]> = {
+      home: ['prayer-times', 'mushaf-list', 'mushaf-surah', 'azkar-list', 'category', 'tasbih', 'qibla', 'prophets', 'hadith', 'more', 'settings', 'favorites'],
+      'azkar-list': ['category', 'favorites'],
+      'mushaf-list': ['mushaf-surah'],
+      more: ['tasbih', 'settings', 'qibla', 'prophets'],
+    }
+    const back = restoreFrom[view.name]?.includes(prev)
+    window.scrollTo(0, back ? scrollMemory.current[view.name] || 0 : 0)
+    lastView.current = view.name
   }, [view.name])
   const keep = (name: View['name']) => view.name === name || (name !== 'qibla' && visited.has(name))
   const shell = (name: View['name'], content: ReactNode) => (
