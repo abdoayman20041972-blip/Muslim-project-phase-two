@@ -218,55 +218,55 @@ export function HomeView({
             <span className="home-sky-star home-sky-star-c" />
             <span className="home-sky-glow" />
           </div>
-          <div className="home-prayer-top relative z-10 flex items-baseline justify-between px-4">
+          <div className="home-prayer-top pointer-events-none relative z-10 flex items-baseline justify-between px-4">
             <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
             <span className="home-reference-location"><Compass className="h-4 w-4" /><span>{locationLabel}</span></span>
           </div>
-          <div className="relative z-10 flex items-end justify-between pb-3 pt-2">
+          <div className="pointer-events-none relative z-10 flex items-end justify-between pb-3 pt-2">
             <div className="home-prayer-name-block text-center">
-              <div className="font-amiri text-[2.1rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
-              <div className="mt-1.5 text-[1.15rem] font-bold tabular-nums leading-none text-white/90">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
+              <div className="font-amiri text-[1.9rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
+              <div className="mt-1 text-[1.05rem] font-bold tabular-nums leading-none text-white/90">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
             </div>
             <div className="home-prayer-remaining-block text-center">
               <div className="text-[0.75rem] font-semibold leading-none text-white/80">متبقي</div>
-              <div dir="ltr" className="mt-1.5 text-[1.45rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
+              <div dir="ltr" className="mt-1 text-[1.3rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
             </div>
           </div>
           <span className="sr-only" role="status">{next ? `الصلاة القادمة ${PRAYER_LABELS[next.key]}` : ''}</span>
-          <div className="home-prayer-chips relative z-10 mx-2.5 mb-1.5 grid grid-cols-5 gap-0.5 rounded-2xl p-1.5">
+          <div className="home-prayer-chips pointer-events-none relative z-10 mx-2.5 mb-1 grid grid-cols-5 gap-0.5 rounded-2xl p-1">
             {(['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const).map((key) => {
               const active = next?.key === key
               const time = timings?.[key]
               return (
-                <button key={key} onClick={onOpenPrayer} aria-label={`${PRAYER_LABELS[key]} ${time ? formatPrayerTime(time) : ''}`} className={`u-pressable flex min-w-0 flex-col items-center justify-center rounded-xl px-0.5 py-1.5 ${active ? 'home-prayer-chip-active' : 'text-white'}`}>
+                <button key={key} onClick={onOpenPrayer} aria-label={`${PRAYER_LABELS[key]} ${time ? formatPrayerTime(time) : ''}`} className={`u-pressable pointer-events-auto flex min-w-0 flex-col items-center justify-center rounded-xl px-0.5 py-1 ${active ? 'home-prayer-chip-active' : 'text-white'}`}>
                   <span className="whitespace-nowrap text-[0.6875rem] font-bold">{PRAYER_LABELS[key]}</span>
                   <span className="mt-1 whitespace-nowrap text-[0.8125rem] font-bold tabular-nums">{time ? formatPrayerTime(time) : '—:—'}</span>
                 </button>
               )
             })}
           </div>
-          {!coords && <div className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
-          {coords && prayerLoading && !timings && <div role="status" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">جارٍ حساب المواقيت…</div>}
-          {coords && prayerError && !timings && <div role="alert" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
-        </section>
-
-        <section className="mt-3 grid grid-cols-3 gap-2" data-reveal aria-label="تقدمك اليوم">
-          <ProgressCard onClick={lastSurahMeta ? onContinueReading : onOpenMushaf} title="تابع القراءة" ring={null} sub={lastSurahMeta ? [lastSurahMeta.shortName, readingLabel].filter(Boolean).join(' · ') : 'افتح المصحف'} icon={<BookOpen className="h-6 w-6" />} />
-          <ProgressCard onClick={onOpenEveningAzkar || onOpenAzkar} title="أذكار المساء" ring={progress.evening} sub={wirdSub(progress.evening)} />
-          <ProgressCard onClick={onOpenMorningAzkar || onOpenAzkar} title="أذكار الصباح" ring={progress.morning} sub={wirdSub(progress.morning)} />
+          {!coords && <div className="pointer-events-none relative z-10 px-4 pb-1.5 text-center text-[0.6875rem] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
+          {coords && prayerLoading && !timings && <div role="status" className="pointer-events-none relative z-10 px-4 pb-1.5 text-center text-[0.6875rem] text-white/80">جارٍ حساب المواقيت…</div>}
+          {coords && prayerError && !timings && <div role="alert" className="pointer-events-none relative z-10 px-4 pb-1.5 text-center text-[0.6875rem] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
         </section>
 
         <div id="home-daily-ayah" className="mt-3" data-reveal>
           <DailyAyahCard ayah={dailyAyah} onOpenSurah={onOpenSurah} />
         </div>
 
-        <section className="mt-4 grid grid-cols-2 gap-2.5" data-reveal aria-label="الأقسام">
-          <HomeTile onClick={onOpenMushaf} title="المصحف" subtitle="القرآن الكريم" tone="quran" icon={<BookOpen className="h-6 w-6" />} reveal={false} />
-          <HomeTile onClick={onOpenHadith} title="الأحاديث" subtitle="من السنة النبوية" tone="hadith" icon={<BookMarked className="h-6 w-6" />} reveal={false} />
-          <HomeTile onClick={onOpenAzkar} title="الأذكار" subtitle="أذكار اليوم والليلة" tone="azkar" icon={<Sparkles className="h-6 w-6" />} reveal={false} />
-          <HomeTile onClick={onOpenProphets} title="قصص الأنبياء" subtitle="دروس وعِبر" tone="prophets" icon={<ScrollText className="h-6 w-6" />} reveal={false} />
-          <HomeTile onClick={onOpenTasbih} title="السبحة" subtitle="تسبيح وذكر" tone="tasbih" icon={<CircleDot className="h-6 w-6" />} reveal={false} />
-          <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} reveal={false} />
+        <section className="mt-4 grid grid-cols-2 gap-2.5" aria-label="الأقسام">
+          <HomeTile onClick={onOpenMushaf} title="المصحف" subtitle="القرآن الكريم" tone="quran" icon={<BookOpen className="h-6 w-6" />} delay={0} />
+          <HomeTile onClick={onOpenHadith} title="الأحاديث" subtitle="من السنة النبوية" tone="hadith" icon={<BookMarked className="h-6 w-6" />} delay={1} />
+          <HomeTile onClick={onOpenAzkar} title="الأذكار" subtitle="أذكار اليوم والليلة" tone="azkar" icon={<Sparkles className="h-6 w-6" />} delay={2} />
+          <HomeTile onClick={onOpenProphets} title="قصص الأنبياء" subtitle="دروس وعِبر" tone="prophets" icon={<ScrollText className="h-6 w-6" />} delay={3} />
+          <HomeTile onClick={onOpenTasbih} title="السبحة" subtitle="تسبيح وذكر" tone="tasbih" icon={<CircleDot className="h-6 w-6" />} delay={4} />
+          <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} delay={5} />
+        </section>
+
+        <section className="mt-4 grid grid-cols-3 gap-2" aria-label="تقدمك اليوم">
+          <ProgressCard delay={0} onClick={lastSurahMeta ? onContinueReading : onOpenMushaf} title="تابع القراءة" ring={null} sub={lastSurahMeta ? [lastSurahMeta.shortName, readingLabel].filter(Boolean).join(' · ') : 'افتح المصحف'} icon={<BookOpen className="h-6 w-6" />} />
+          <ProgressCard delay={1} onClick={onOpenEveningAzkar || onOpenAzkar} title="أذكار المساء" ring={progress.evening} sub={wirdSub(progress.evening)} />
+          <ProgressCard delay={2} onClick={onOpenMorningAzkar || onOpenAzkar} title="أذكار الصباح" ring={progress.morning} sub={wirdSub(progress.morning)} />
         </section>
       </main>
     </div>
@@ -280,10 +280,10 @@ function wirdSub(p: WirdProgress | null) {
   return `${toArabicNumber(p.completed)} من ${toArabicNumber(p.total)}`
 }
 
-function ProgressCard({ onClick, title, sub, ring, icon }: { onClick: () => void; title: string; sub: string; ring: WirdProgress | null; icon?: React.ReactNode }) {
+function ProgressCard({ onClick, title, sub, ring, icon, delay = 0 }: { onClick: () => void; title: string; sub: string; ring: WirdProgress | null; icon?: React.ReactNode; delay?: number }) {
   const pct = ring && ring.total > 0 ? Math.min(100, Math.round((ring.completed / ring.total) * 100)) : 0
   return (
-    <button onClick={onClick} aria-label={`${title}: ${sub}`} className="home-reference-quick home-progress-card u-pressable flex flex-col items-start rounded-[1.2rem] border border-white/60 p-3 text-right">
+    <button onClick={onClick} aria-label={`${title}: ${sub}`} data-reveal style={{ ['--reveal-delay' as string]: `${delay * 60}ms` }} className="home-reference-quick home-progress-card u-pressable flex flex-col items-start rounded-[1.2rem] border border-white/60 p-3 text-right">
       {ring ? (
         <span className="home-progress-ring" style={{ ['--pct' as string]: `${pct}%` }} role="img" aria-label={`${toArabicNumber(pct)}٪`} />
       ) : (
