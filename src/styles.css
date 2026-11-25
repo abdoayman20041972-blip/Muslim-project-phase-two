@@ -1624,7 +1624,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 /* ===== Qibla page (clean rewrite — replaces the legacy .qibla-screen layers) ===== */
 .q2-page{position:fixed;top:0;bottom:0;left:0;right:0;margin-inline:auto;z-index:40;box-sizing:border-box;width:100%;max-width:28rem;overflow:hidden;display:flex;flex-direction:column;align-items:center;
   padding:max(.7rem,env(safe-area-inset-top)) 1rem calc(4.4rem + env(safe-area-inset-bottom));
-  background:linear-gradient(180deg,rgba(3,20,17,.6),rgba(3,20,17,.12) 24%,rgba(3,20,17,0) 42%),url("/img/qibla-mobile.jpg") center 50%/auto 150% no-repeat,#0d2a24;}
+  background:linear-gradient(180deg,rgba(3,20,17,.6),rgba(3,20,17,.12) 24%,rgba(3,20,17,0) 42%),url("/img/azkar-evening-wide-sunset-mosque.jpg") center 50%/auto 150% no-repeat,#0d2a24;}
 .q2-back{position:absolute;top:max(.7rem,env(safe-area-inset-top));inset-inline-start:1rem;z-index:2;display:flex;align-items:center;justify-content:center;width:2.75rem;height:2.75rem;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.9);color:hsl(var(--azkar-teal-deep));box-shadow:0 6px 16px rgba(0,0,0,.25);}
 .q2-title{display:flex;flex-direction:column;align-items:center;gap:.15rem;margin-top:1.9rem;flex:none;}
 .q2-title h1{margin:0;font-size:2.1rem;line-height:1.2;color:#f6e7b8;text-shadow:0 2px 10px rgba(0,0,0,.65);}
