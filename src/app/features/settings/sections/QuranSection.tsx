@@ -21,6 +21,7 @@ import {
 } from '../../quran/offlineDownload'
 import { surahList } from '../../../../quran-meta'
 import { APP_SETTINGS_KEYS } from '../../../settings'
+import { ReciterPicker } from '../../quran/ReciterPicker'
 import { Row, Section, Choice } from '../settingsPrimitives'
 
 const RECITER_SIZE_ESTIMATES: Record<QuranAudioReciter, string> = {
@@ -150,9 +151,7 @@ export function QuranSection({
           </div>
         </Row>
         <Row title="القارئ" description="يُستخدم في التلاوة الصوتية">
-          <select aria-label="قارئ المصحف" value={reciter} onChange={(e) => setReciter(e.target.value)} className="max-w-[10rem] rounded-xl border px-2 py-2 text-[0.6875rem]">
-            {QURAN_AUDIO_RECITERS.map((id) => <option key={id} value={id}>{QURAN_AUDIO_RECITER_LABELS[id]}</option>)}
-          </select>
+          <ReciterPicker label="قارئ المصحف" value={reciter} onChange={setReciter} className="h-10 w-[10rem]" />
         </Row>
         <Row title="طريقة عرض الآيات" description={layout === 'scroll' ? 'تمرير متصل' : 'صفحات من 10 آيات'} last stacked>
           <Choice current={layout} onChange={(v) => setLayout(v as 'scroll' | 'pages')} labels={{ scroll: 'تمرير', pages: 'صفحات' }} />
