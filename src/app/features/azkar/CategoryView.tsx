@@ -5,6 +5,7 @@ import { BackButton } from '../../components/app-chrome'
 import { useConfirmDialog } from '../../components/confirm-dialog'
 import { favoriteKey, legacyFavoriteKey } from './useFavorites'
 import { toArabicDigits, toArabicNumber } from '../../constants'
+import { TasbihPad } from './TasbihPad'
 import { APP_SETTINGS_KEYS,emitSettingsChanged,readSetting,writeSetting } from '../../settings'
 import { AZKAR_PROGRESS_KEY, completedItemCount, completionPercent, readAzkarProgress, saveAzkarProgress, todayKey, migrateLegacyProgress, isCountedZikr, countedItems, isOccasionalCategory, readOccasionProgress, resetOccasionProgress, saveOccasionProgress } from './azkarProgress'
 import { clearJourneyPosition } from './journeyPosition'
@@ -228,7 +229,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
 
     <div className="azkar-category-filters mt-4 overflow-x-auto pb-1" role="group" aria-label="تصفية الأذكار"><div className="flex min-w-max gap-2">{(countedTotal > 0 ? (Object.keys(filterLabels) as Filter[]) : fadlOnlyFilters).map(value => <button key={value} onClick={() => setFilter(value)} aria-pressed={filter === value} className={"rounded-full border px-3 py-2 text-[0.6875rem] font-bold transition " + (filter === value ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-hairline bg-azkar-card text-azkar-ink-soft')}>{filterLabels[value]}</button>)}</div></div>
 
-    <div className="azkar-list-cards mt-3 divide-y divide-azkar-hairline overflow-hidden rounded-[var(--r-lg)] border border-azkar-hairline bg-azkar-card u-shadow-1">
+    <div className="azkar-list-cards mt-3 flex flex-col gap-4">
       {visibleItems.length === 0 ? <div className="px-5 py-10 text-center"><div className="font-amiri text-[1.125rem] font-bold text-azkar-ink">لا توجد أذكار في هذا العرض</div><div className="mt-1 text-[0.6875rem] text-azkar-ink-faint">جرّب فلترًا آخر أو أضف أذكارًا إلى المفضلة.</div></div> : visibleItems.map((item) => {
         const key = favoriteKey(category, item)
         const saved = favorites.includes(key)
@@ -251,30 +252,28 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
           if (current <= 0) return
           saveProgress({...progress,[key]:current-1})
         }
-        const countRing = { radius: 26, circumference: 2 * Math.PI * 26 }
         const isHighlighted = highlightedItem === item.id
-        return <article key={key} data-item-id={item.id} data-highlighted={isHighlighted ? 'true' : undefined} className={"relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6 transition-colors duration-500 " + (item.kind === 'fadl' ? "azkar-fadl-card " : item.kind === 'guidance' ? "azkar-guidance-card " : "") + (isHighlighted ? "bg-azkar-gold-tint/60 ring-2 ring-inset ring-azkar-gold/70" : "")}>
+        return <article key={key} data-item-id={item.id} data-highlighted={isHighlighted ? 'true' : undefined} className={"relative overflow-hidden px-4 py-3 sm:px-5 sm:py-4 transition-colors duration-500 " + (item.kind === 'fadl' ? "azkar-fadl-card " : item.kind === 'guidance' ? "azkar-guidance-card " : "") + (isHighlighted ? "bg-azkar-gold-tint/60 ring-2 ring-inset ring-azkar-gold/70" : "")}>
           <CornerOrnament />
 
-          <div className="relative mb-4 flex items-center justify-between gap-3">
+          <div className="relative mb-1 flex items-center justify-between gap-3">
             {counted && item.repeat ? <span className="rounded-full border border-azkar-teal/15 bg-azkar-teal-tint px-2.5 py-1 text-[0.6875rem] font-bold text-azkar-teal-ink">الهدف {toArabicNumber(item.repeat)} مرة</span> : kindLabel ? <span className={"rounded-full border px-2.5 py-1 text-[0.6875rem] font-bold " + (item.kind === 'fadl' ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span> : <span />}
-            <button data-sound="none" onClick={() => onToggleFavorite(key)} aria-label={saved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'} className={`u-pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${saved ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal`}>
+            <button data-sound="none" onClick={() => onToggleFavorite(key)} aria-label={saved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'} className={`u-pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${saved ? 'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold' : 'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal`}>
               <StarIcon filled={saved}/>
             </button>
           </div>
 
           <p className="relative u-reading-text text-[1.1875rem] leading-[2] text-azkar-ink whitespace-pre-line" style={{ ['--zikr-scale' as string]: ZIKR_FONT_SCALE[zikrFontSize] }}>{toArabicDigits(item.text)}</p>
 
-          {counterEnabled && counted && <div className="relative mt-5 rounded-2xl border border-azkar-hairline bg-azkar-surface-1 p-3"><div className="flex items-center gap-3"><button data-sound="tasbih" onClick={increment} disabled={completed} aria-label={completed ? 'تم إكمال الذكر' : 'تسجيل مرة من الذكر'} className={"azkar-count-button u-pressable relative flex min-h-[84px] flex-1 items-center justify-center gap-4 rounded-[1rem] px-4 text-[0.8125rem] font-bold transition " + (completed ? 'bg-azkar-teal text-azkar-card' : 'bg-azkar-teal-tint text-azkar-teal-ink hover:bg-azkar-teal/20') + ' disabled:cursor-default'} style={completed ? { backgroundColor: 'hsl(var(--azkar-teal))', color: 'hsl(var(--azkar-card))' } : undefined}><span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center" role="progressbar" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current} aria-label={"تقدم الذكر: " + current + " من " + target}><svg viewBox="0 0 64 64" className="absolute inset-0 h-14 w-14" aria-hidden="true"><circle cx="32" cy="32" r={countRing.radius} fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="5"/><circle cx="32" cy="32" r={countRing.radius} fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeDasharray={countRing.circumference} strokeDashoffset={countRing.circumference * (1 - current / target)} transform="rotate(-90 32 32)" className="transition-all duration-300"/></svg><span className="relative text-[0.8125rem] font-bold tabular-nums">{toArabicNumber(current)}<span className="text-[0.6875rem] opacity-70">/{toArabicNumber(target)}</span></span></span><span>{completed ? '✓ تم الإكمال' : 'اضغط للتسجيل'}</span></button><div className="flex w-[76px] shrink-0 flex-col items-center gap-2"><div className="text-center"><div className="text-[0.6875rem] text-azkar-ink-faint">المتبقي</div><div className="text-[0.9375rem] font-bold text-azkar-ink">{toArabicNumber(target-current)}</div></div>{current > 0 && <button data-sound="none" onClick={decrement} aria-label="تراجع عن آخر نقرة" className="u-pressable rounded-full border border-azkar-hairline bg-azkar-card px-3 py-1.5 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">↩ تراجع</button>}</div></div></div>}
+          {counterEnabled && counted && <TasbihPad variant="list" current={current} target={target} onTap={increment} onUndo={decrement} />}
 
-          {(displaySource || item.reference) && <div className="relative mt-4 flex flex-wrap items-center gap-2">
-            {displaySource && <p className="text-[0.6875rem] text-azkar-ink-faint">{toArabicDigits(displaySource)}</p>}
+          <div className="relative mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {displaySource && <p className="text-[0.6875rem] text-azkar-ink-faint">{toArabicDigits(displaySource)}</p>}
             {item.reference?.grade && <span className="rounded-full border border-azkar-hairline bg-azkar-surface-1 px-2 py-0.5 text-[0.6875rem] font-bold text-azkar-ink-soft">{item.reference.grade}</span>}
             {item.reference?.url && <a href={item.reference.url} target="_blank" rel="noreferrer" className="inline-flex min-h-[2.5rem] items-center px-1 text-[0.6875rem] font-bold text-azkar-teal underline underline-offset-2">المصدر</a>}
-          </div>}
-
-          <div className="relative mt-5 flex items-center gap-2 border-t border-azkar-hairline pt-4">
-            <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), reference: displaySource ? toArabicDigits(displaySource) : undefined, heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable inline-flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
+            </div>
+            <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), reference: displaySource ? toArabicDigits(displaySource) : undefined, heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable inline-flex h-8 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
               <ShareIcon />
               <span>مشاركة</span>
             </button>
