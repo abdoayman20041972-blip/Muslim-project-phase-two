@@ -16,6 +16,7 @@ export type AppContentProps = {
   qibla?: ReactNode
   prophets?: ReactNode
   hadith?: ReactNode
+  hadithDetailOpen?: boolean
   tasbih: ReactNode
   more?: ReactNode
   onHome: () => void
@@ -73,7 +74,7 @@ function wrapScreen(content: ReactNode, resetKey: string, onHome: () => void, sh
   return <ScreenErrorBoundary resetKey={resetKey} onHome={onHome} showHome={showHome}>{content}</ScreenErrorBoundary>
 }
 
-export function AppContent({ view, home, settings, azkarList, favorites, category, mushafList, mushafReader, mushafReaderActive, prayer, qibla, prophets, hadith, tasbih, more, onHome }: AppContentProps) {
+export function AppContent({ view, home, settings, azkarList, favorites, category, mushafList, mushafReader, mushafReaderActive, prayer, qibla, prophets, hadith, tasbih, more, onHome, hadithDetailOpen }: AppContentProps) {
   // Keep-alive: a screen that has been visited once stays MOUNTED (hidden)
   // afterwards, so going back to a tab is instant — no remount, no data
   // reload, no loading indicator, and the scroll position survives too.
@@ -91,10 +92,11 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   )
   // Bottom padding follows the chrome: screens with the bar clear it, inner
   // screens (no bar) only need a small end margin.
-  const pad = view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : hasBottomNav(view) ? 'pt-5 pb-24' : 'pt-5 pb-8'
+  const barVisible = hasBottomNav(view) && !(view.name === 'hadith' && hadithDetailOpen)
+  const pad = view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : barVisible ? 'pt-5 pb-24' : 'pt-5 pb-8'
   return (
     <ConfirmDialogProvider>
-      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${pad}`}>
+      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${view.name === 'hadith' && hadithDetailOpen ? 'hadith-detail' : ''} ${pad}`}>
       {keep('home') && shell('home', wrapScreen(home, 'home', onHome, false))}
       {keep('settings') && shell('settings', wrapScreen(settings, 'settings', onHome))}
       {keep('azkar-list') && shell('azkar-list', wrapScreen(azkarList, 'azkar-list', onHome))}
