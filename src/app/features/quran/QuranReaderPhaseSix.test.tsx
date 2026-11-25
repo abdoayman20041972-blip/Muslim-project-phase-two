@@ -110,23 +110,12 @@ describe('Quran reader phase six', () => {
     delete (window.HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView
   })
 
-  it('confirms a successful copy with a visible message', async () => {
-    const writeText = vi.fn(async () => undefined)
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+  it('has no copy action on an ayah, only share and tafsir', async () => {
     renderReader()
     const options = await screen.findAllByLabelText(/خيارات الآية/)
     fireEvent.click(options[1])
-    fireEvent.click(await screen.findByRole('button', { name: 'نسخ الآية' }))
-    expect(await screen.findByRole('status')).toHaveTextContent('تم نسخ الآية')
-    expect(writeText).toHaveBeenCalled()
-  })
-
-  it('reports failure instead of success when the Clipboard API is unavailable', async () => {
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
-    renderReader()
-    const options = await screen.findAllByLabelText(/خيارات الآية/)
-    fireEvent.click(options[1])
-    fireEvent.click(await screen.findByRole('button', { name: 'نسخ الآية' }))
-    expect(await screen.findByRole('status')).toHaveTextContent('تعذّر النسخ، جرّب مرة أخرى')
+    expect(await screen.findByRole('button', { name: 'مشاركة الآية' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'نسخ الآية' })).toBeNull()
+    expect(screen.queryByText('نسخ نص الآية')).toBeNull()
   })
 })
