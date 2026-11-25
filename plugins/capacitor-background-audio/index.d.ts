@@ -9,6 +9,8 @@ export interface BackgroundAudioStartOptions {
   /** Show previous/next buttons (whole-surah playback only). Default false. */
   skipPrevious?: boolean
   skipNext?: boolean
+  /** Live radio stream: no seek bar or seeking, "live" badge on the cover. Default false. */
+  live?: boolean
 }
 export type BackgroundAudioAction =
   | 'play' | 'pause' | 'stop' | 'seek' | 'next' | 'previous'
