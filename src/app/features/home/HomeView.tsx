@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BookOpen, ChevronLeft, Compass, Moon, ScrollText, Settings, Sun, Sparkles, BookMarked, CircleDot } from 'lucide-react'
 import { formatLocalizedDate, toArabicNumber } from '../../constants'
 import { formatCountdown, formatPrayerTime, PRAYER_LABELS, useNextPrayer, usePrayerCoords } from '../prayer/prayerTimes'
@@ -134,11 +134,13 @@ export function HomeView({
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          // Elements fade in as they enter the viewport and softly fade out as they leave it.
-          entry.target.classList.toggle('reveal-in', entry.isIntersecting)
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-in')
+            observer.unobserve(entry.target)
+          }
         }
       },
-      { threshold: 0.08, rootMargin: '-4% 0px -8% 0px' },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
     )
     elements.forEach((el) => observer.observe(el))
     const fallback = window.setTimeout(revealInViewport, 900)
@@ -146,6 +148,30 @@ export function HomeView({
       cancelAnimationFrame(raf)
       window.clearTimeout(fallback)
       observer.disconnect()
+    }
+  }, [])
+
+  const headerRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    // The prayer card rises over the header: the header stays pinned behind it and fades as the card covers it.
+    const header = headerRef.current
+    if (!header) return
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      // Header stays pinned and untouched while the prayer card slides up over it; it only fades once fully covered.
+      const covered = header.offsetHeight + 8
+      const p = Math.min(1, Math.max(0, (window.scrollY - covered) / 40))
+      header.style.opacity = String(1 - p)
+      header.style.pointerEvents = window.scrollY > header.offsetHeight * 0.5 ? 'none' : ''
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update) }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) cancelAnimationFrame(frame)
     }
   }, [])
 
@@ -189,8 +215,12 @@ export function HomeView({
 
   return (
     <div className="home-reference-page home-v4 relative w-full min-w-0 pb-6">
+      <div className="home-bg" aria-hidden="true">
+        <div className="home-bg-image" style={{ backgroundImage: `url("${HOME_HERO_IMAGE}")` }} />
+        <div className="home-bg-fade" />
+      </div>
       <main className="home-reference-content mx-auto w-full max-w-md px-3.5">
-        <header className="flex items-center justify-between pb-5 pt-[max(.8rem,env(safe-area-inset-top))]">
+        <header ref={headerRef} className="home-rise-header flex items-center justify-between pb-5 pt-[max(.8rem,env(safe-area-inset-top))]">
           <div className="text-right" data-reveal>
             <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
             <div className="font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
@@ -206,7 +236,7 @@ export function HomeView({
           </div>
         </header>
 
-        <section className="home-prayer-photo" data-testid="home-prayer-photo" data-reveal>
+        <section className="home-prayer-photo home-rise-card" data-testid="home-prayer-photo" data-reveal>
           <div className="home-prayer-photo-img" style={photoSrc ? { backgroundImage: `url("${photoSrc}")` } : undefined} aria-hidden="true" />
           <div className="home-prayer-photo-shade" aria-hidden="true" />
           <button type="button" onClick={onOpenPrayer} aria-label="مواقيت الصلاة" className="absolute inset-0 z-[5] h-full w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold" />
@@ -248,11 +278,11 @@ export function HomeView({
           {coords && prayerError && !timings && <div role="alert" className="pointer-events-none relative z-10 px-4 pb-1.5 text-center text-[0.6875rem] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
         </section>
 
-        <div id="home-daily-ayah" className="mt-5" data-reveal>
+        <div id="home-daily-ayah" className="mt-6" data-reveal>
           <DailyAyahCard ayah={dailyAyah} onOpenSurah={onOpenSurah} />
         </div>
 
-        <section className="mt-6 grid grid-cols-2 gap-3.5" aria-label="الأقسام">
+        <section className="mt-7 grid grid-cols-2 gap-4" aria-label="الأقسام">
           <HomeTile onClick={onOpenMushaf} title="المصحف" subtitle="القرآن الكريم" tone="quran" icon={<BookOpen className="h-6 w-6" />} delay={0} />
           <HomeTile onClick={onOpenHadith} title="الأحاديث" subtitle="من السنة النبوية" tone="hadith" icon={<BookMarked className="h-6 w-6" />} delay={1} />
           <HomeTile onClick={onOpenAzkar} title="الأذكار" subtitle="أذكار اليوم والليلة" tone="azkar" icon={<Sparkles className="h-6 w-6" />} delay={2} />
