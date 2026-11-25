@@ -86,12 +86,12 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
   const primary = `${pill} home-ayah-act-primary`
 
   return (
-    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-3 pt-11 text-center" data-testid="daily-ayah-card">
+    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-4 pb-2.5 pt-7 text-center" data-testid="daily-ayah-card">
       <span className="home-tile-shape home-tile-shape-a" aria-hidden="true" />
       <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
       <span className="home-ayah-lines" aria-hidden="true" />
       <div className="relative z-10">
-      <div className="mb-4 mt-5 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
+      <div className="mb-2 mt-2 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
       <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
 
       {panel === 'full' && (
@@ -107,7 +107,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       )}
       {panel === 'tafsir' && surah && <TafsirPanel ayah={ayah} surah={surah} fullText={fullText} />}
 
-      <div className="mt-4 flex items-center gap-1 px-3" role="group" aria-label="إجراءات آية اليوم">
+      <div className="mt-2.5 flex items-center gap-1 px-3" role="group" aria-label="إجراءات آية اليوم">
         <button type="button" className={primary} aria-expanded={panel === 'full'} onClick={toggleFull}>الآية كاملة</button>
         <button type="button" className={quiet} aria-expanded={panel === 'tafsir'} onClick={toggleTafsir}>التفسير</button>
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
