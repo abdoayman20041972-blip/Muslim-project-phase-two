@@ -67,8 +67,8 @@ final class NotificationLook {
         return bitmap;
     }
 
-    static RemoteViews views(Context context, String title, String body) {
-        int layout = context.getResources().getIdentifier("muslim_notification", "layout", context.getPackageName());
+    static RemoteViews views(Context context, String title, String body, boolean expanded) {
+        int layout = context.getResources().getIdentifier(expanded ? "muslim_notification" : "muslim_notification_compact", "layout", context.getPackageName());
         int bg = context.getResources().getIdentifier("muslim_notif_bg", "id", context.getPackageName());
         int titleId = context.getResources().getIdentifier("muslim_notif_title", "id", context.getPackageName());
         int bodyId = context.getResources().getIdentifier("muslim_notif_body", "id", context.getPackageName());
