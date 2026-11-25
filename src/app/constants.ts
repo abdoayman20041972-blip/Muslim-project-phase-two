@@ -41,18 +41,20 @@ export function getTasbihWords():TasbihWord[]{
 export const BISMILLAH='بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'
 export const AUDIO_CDN='https://cdn.islamic.network/quran/audio'
 export const QURAN_SURAH_AUDIO_SERVERS: Record<QuranAudioReciter, string> = {
-  'ar.minshawi': 'https://server10.mp3quran.net/minsh',
-  'ar.alafasy': 'https://server8.mp3quran.net/afs',
-  'ar.husary': 'https://server13.mp3quran.net/husr',
-  'ar.abdulbasitmurattal': 'https://server7.mp3quran.net/basit',
-  'ar.abdurrahmaansudais': 'https://server11.mp3quran.net/sds',
-  'ar.mahermuaiqly': 'https://server12.mp3quran.net/maher',
-  'ar.hudhaify': 'https://server9.mp3quran.net/hthfi',
-  'ar.saoodshuraym': 'https://server7.mp3quran.net/shur',
-  'ar.ahmedajamy': 'https://server10.mp3quran.net/ajm',
-  'ar.shaatree': 'https://server11.mp3quran.net/shatri',
+  'ar.minshawi': 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1',
+  'ar.alafasy': 'https://cdn.mp3quran.net/audio/mishary-alafasy/r1',
+  'ar.husary': 'https://cdn.mp3quran.net/audio/mahmoud-husary/r1',
+  'ar.abdulbasitmurattal': 'https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3',
+  'ar.abdurrahmaansudais': 'https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1',
+  'ar.mahermuaiqly': 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1',
+  'ar.hudhaify': 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r1',
+  'ar.saoodshuraym': 'https://cdn.mp3quran.net/audio/saud-shuraim/r1',
+  'ar.ahmedajamy': 'https://cdn.mp3quran.net/audio/ahmad-ajmi/r1',
+  'ar.shaatree': 'https://cdn.mp3quran.net/audio/abubakr-shatri/r1',
 }
-export function quranAudioUrl(reciter:string,ayahNumber:number,withBismillah=false){const bitrate=reciter==='ar.abdulbasitmurattal'||reciter==='ar.abdurrahmaansudais'?192:128;const edition=withBismillah&&ayahNumber>0?`${reciter}-2`:reciter;return AUDIO_CDN+'/'+bitrate+'/'+edition+'/'+ayahNumber+'.mp3'}
+// Verified against the CDN: Basit and Sudais exist only at 192, Shuraym only at 64 (128 answers 403).
+const AYAH_AUDIO_BITRATE:Record<string,number>={'ar.abdulbasitmurattal':192,'ar.abdurrahmaansudais':192,'ar.saoodshuraym':64}
+export function quranAudioUrl(reciter:string,ayahNumber:number,withBismillah=false){const bitrate=AYAH_AUDIO_BITRATE[reciter]??128;const edition=withBismillah&&ayahNumber>0?`${reciter}-2`:reciter;return AUDIO_CDN+'/'+bitrate+'/'+edition+'/'+ayahNumber+'.mp3'}
 export function quranSurahAudioUrl(reciter: QuranAudioReciter, surahNumber: number){
   if (!Number.isInteger(surahNumber) || surahNumber < 1 || surahNumber > 114) throw new RangeError('surahNumber must be between 1 and 114')
   return QURAN_SURAH_AUDIO_SERVERS[reciter] + '/' + String(surahNumber).padStart(3, '0') + '.mp3'
