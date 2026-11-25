@@ -166,7 +166,7 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
   })
 
   return (
-    <nav className={`nav-float z-50 ${view.name === 'home' ? 'nav-home' : 'nav-docked'}`}
+    <nav className="nav-float z-50 nav-docked"
       aria-label="التنقل الرئيسي">
       {/* v1.2.6: flat opaque nav surface — the old backdrop-blur-lg was a permanent GPU cost on every
           screen for a blur invisible at 98% alpha, and the infinite indicator animations now run on
