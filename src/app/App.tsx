@@ -10,11 +10,13 @@ import { Splash } from "./components/app-chrome";
 import { AppContent, BottomNav } from "./components/app-shell";
 import { HomeView } from "./features/home/HomeView";
 import { MoreView } from "./features/home/MoreView";
+import { consumeMoreBack } from "./features/home/moreNav";
 import { AzkarListView } from "./features/azkar/AzkarListView";
 import { CategoryView } from "./features/azkar/CategoryView";
 import { FavoritesView } from "./features/azkar/FavoritesView";
 import { QuranReaderView } from "./features/quran/QuranReaderView";
 import { QuranAudioProvider } from "./features/quran/QuranAudioProvider";
+import { RadioProvider } from "./features/radio/RadioProvider";
 import { QuranMiniPlayer } from "./features/quran/QuranMiniPlayer";
 import { QuranListView } from "./features/quran/QuranListView";
 import { useViewPersistence } from "./features/quran/useViewPersistence";
@@ -134,6 +136,8 @@ export function App() {
         const { App: NativeApp } = await import("@capacitor/app");
         if (cancelled) return;
         const subscription = await NativeApp.addListener("backButton", () => {
+          // A sub-screen inside More (radio) closes first, back to the More list.
+          if (lastViewRef.current.name === "more" && consumeMoreBack()) return;
           const previous = viewHistoryRef.current.pop();
           if (previous) {
             lastViewRef.current = previous;
@@ -653,6 +657,7 @@ export function App() {
 
   return (
     <QuranAudioProvider setView={setView}>
+      <RadioProvider>
       <div
         dir="rtl"
         className="app-viewport min-h-[100dvh] w-full min-w-0 flex flex-col items-center overflow-x-hidden font-['Cairo',sans-serif] text-azkar-ink"
@@ -686,6 +691,7 @@ export function App() {
           <BottomNav view={view} onNavigate={go} />
         )}
       </div>
+      </RadioProvider>
     </QuranAudioProvider>
   );
 }
