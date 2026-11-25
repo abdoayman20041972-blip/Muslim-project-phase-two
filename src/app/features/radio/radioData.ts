@@ -1,23 +1,35 @@
 export type RadioStation = { id: number; name: string; url: string }
-export type RadioGroup = 'all' | 'reciters' | 'learn'
+export type RadioGroup = 'all' | 'reciters' | 'mixed' | 'seerah' | 'tafsir' | 'hadith' | 'adhkar' | 'fatwa' | 'occasions'
 
 export const RADIO_API_URL = 'https://www.mp3quran.net/api/v3/radios?language=ar'
 const CACHE_KEY = 'azkar_radio_stations_v1'
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
 // Stations pinned at the top of "all": the general mix, then well known reciters.
+const UNAVAILABLE_RADIO_IDS = new Set([94, 109084])
+
 export const FEATURED_RADIO_IDS = [108, 79, 32, 74, 69, 63, 17, 33, 58, 123]
 // Pinned spoken stations on "all", so they are visible without opening the chip.
 export const FEATURED_LEARN_IDS = [21114, 10903, 109083, 109069, 10904, 109067, 109073]
-// Seerah, companions, tafsir, fatwa and similar spoken stations.
-export const LEARN_RADIO_IDS = [21114, 21115, 10903, 10904, 21117, 116, 109083, 109069, 109073, 113, 109066, 109067, 109076, 10906, 10907]
+// Categories below follow the station titles published by MP3Quran. Ids not listed are reciters.
+const GROUP_IDS: Record<Exclude<RadioGroup, 'all' | 'reciters'>, number[]> = {
+  mixed: [108, 109, 115, 123, 109060, 109082, 10902],
+  seerah: [21114, 21115, 10903, 109083, 109069],
+  tafsir: [116, 10904, 21117, 109076],
+  hadith: [109066, 109067, 109073],
+  adhkar: [10906, 10907, 114],
+  fatwa: [113, 21116],
+  occasions: [110, 109061],
+}
+export const LEARN_RADIO_IDS = [...GROUP_IDS.seerah, ...GROUP_IDS.tafsir, ...GROUP_IDS.hadith, ...GROUP_IDS.fatwa]
 
 export function cleanStationName(raw: string) {
   return raw.replace(/\*+/g, '').replace(/[\s-]+$/g, '').replace(/^[\s-]+/g, '').replace(/\s+/g, ' ').trim()
 }
 
 export function stationGroup(station: RadioStation): Exclude<RadioGroup, 'all'> {
-  return LEARN_RADIO_IDS.includes(station.id) ? 'learn' : 'reciters'
+  for (const [group, ids] of Object.entries(GROUP_IDS)) if (ids.includes(station.id)) return group as Exclude<RadioGroup, 'all'>
+  return 'reciters'
 }
 
 export function normalizeStations(payload: unknown): RadioStation[] {
@@ -32,6 +44,8 @@ export function normalizeStations(payload: unknown): RadioStation[] {
     const name = cleanStationName(row.name)
     // Translations of the meanings are not part of this section.
     if (!name || name.startsWith('ترجمة')) continue
+    // Stations whose stream URL answered 404 when checked on 2026-11-25 (ids 94 and 109084).
+    if (UNAVAILABLE_RADIO_IDS.has(row.id)) continue
     if (seen.has(row.url)) continue
     seen.add(row.url)
     out.push({ id: row.id, name, url: row.url })

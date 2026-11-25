@@ -22,7 +22,7 @@ describe('radio data', () => {
     const all = orderedStations(list, 'all', '')
     expect(all.featured.map((s) => s.id)).toEqual([108, 79])
     expect(all.learn.map((s) => s.id)).toEqual([21114])
-    expect(orderedStations(list, 'learn', '').rest.map((s) => s.id)).toEqual([21114])
+    expect(orderedStations(list, 'seerah', '').rest.map((s) => s.id)).toEqual([21114])
     expect(orderedStations(list, 'all', 'مشاري').rest.map((s) => s.id)).toEqual([79])
   })
 })

@@ -6,7 +6,13 @@ import { loadStations, orderedStations, type RadioGroup, type RadioStation } fro
 const GROUPS: Array<{ id: RadioGroup; label: string }> = [
   { id: 'all', label: 'الكل' },
   { id: 'reciters', label: 'القرّاء' },
-  { id: 'learn', label: 'سيرة وتفسير وحديث' },
+  { id: 'mixed', label: 'تلاوات متنوعة' },
+  { id: 'seerah', label: 'السيرة والقصص' },
+  { id: 'tafsir', label: 'التفسير' },
+  { id: 'hadith', label: 'الحديث' },
+  { id: 'adhkar', label: 'أذكار ورقية' },
+  { id: 'fatwa', label: 'فتاوى وفقه' },
+  { id: 'occasions', label: 'مناسبات' },
 ]
 
 export function useRadioStations() {
