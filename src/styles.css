@@ -155,7 +155,7 @@ html[data-theme="amber"]{--azkar-teal:31 62% 38%;--azkar-teal-deep:30 66% 25%;--
 .home-reference-brand .font-amiri{font-size:3.95rem;letter-spacing:-.025em}
 .home-reference-brand>div:last-child{margin-top:.65rem;font-size:.96rem;opacity:.88}
 .home-reference-date{margin-top:.15rem;padding:.55rem .85rem;border-color:rgba(255,255,255,.28);background:rgba(7,25,21,.30);box-shadow:0 8px 22px rgba(0,0,0,.14)}
-.home-reference-ayah{margin-top:0;padding:1rem 1.25rem 1rem;min-height:7.25rem;border-color:rgba(255,255,255,.72);background:rgba(255,255,255,.88);box-shadow:0 14px 32px rgba(18,48,40,.16)}
+.home-reference-ayah{margin-top:0;padding:1rem 1.25rem 1rem;min-height:5rem;border-color:rgba(255,255,255,.72);background:rgba(255,255,255,.88);box-shadow:0 14px 32px rgba(18,48,40,.16)}
 .home-reference-ayah .font-amiri{font-size:1.38rem;line-height:1.95}
 .home-ayah-ornament{right:.55rem;font-size:2.35rem;opacity:.55}
 .home-reference-content{padding-inline:.7rem}
@@ -211,7 +211,7 @@ html[data-theme="amber"]{--azkar-teal:31 62% 38%;--azkar-teal-deep:30 66% 25%;--
 .home-reference-quick>div:first-child{margin-bottom:.6rem}
 .home-reference-quick .home-quick-icon{height:2.5rem;width:2.5rem}
 .home-reference-quick .home-quick-label{font-size:.54rem;line-height:1.25}
-.home-reference-page .dashboard-nav-indicator{width:4.68rem;height:3.02rem;right:calc((var(--nav-index) + .5) * 20% - 2.34rem)}
+/* home-reference-page indicator geometry now lives in the .nav-float rules below */
 @media (max-width:380px){
   .home-reference-hero{min-height:22.75rem}
   .home-reference-content{max-width:23.5rem;margin-top:-1.15rem;padding-inline:.45rem}
@@ -977,7 +977,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .hadith-card{padding:1rem 1.05rem;border:1px solid hsl(var(--azkar-teal)/.09);border-radius:var(--app-radius);background:var(--app-panel);box-shadow:var(--app-panel-shadow);}
 .hadith-card-top{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem;color:hsl(var(--azkar-ink-faint));font-size:.6875rem;font-weight:700;}
 .hadith-source{color:hsl(var(--azkar-gold-deep));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.hadith-text{margin:0;font-size:1.25rem;line-height:2.05;color:hsl(var(--azkar-ink));text-align:right;}
+.hadith-text{margin:0;font-size:1.25rem;line-height:2.05;color:hsl(var(--azkar-ink));text-align:right;white-space:pre-line;}
+.hadith-reader-body{display:grid;gap:.75rem;}
+.hadith-reader-card .hadith-card-top{padding-bottom:.55rem;margin-bottom:.8rem;border-bottom:1px solid hsl(var(--azkar-hairline));}
+.hadith-reader-nav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+.hadith-progress{height:.28rem;overflow:hidden;border-radius:999px;background:hsl(var(--azkar-teal)/.12);}
+.hadith-progress>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,hsl(var(--azkar-gold-deep)/.75),hsl(var(--azkar-gold)/.9));transition:width .25s ease;}
+.hadith-empty-icon{margin:0 auto .35rem;height:1.4rem;width:1.4rem;color:hsl(var(--azkar-gold-deep));}
 
 .prayer-screen>div,.qibla-screen>div{border-color:hsl(var(--azkar-teal)/.1);}
 .qibla-screen .rounded-\[var\(--r-lg\)\]{background:var(--app-panel);}
@@ -1767,7 +1773,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 
 /* Visible focus for phrase-picker options during keyboard navigation. */
 .tasbih-word-menu-option:focus-visible{outline:2px solid hsl(var(--azkar-gold));outline-offset:-2px;background:hsl(var(--azkar-gold)/.09);}
-.hadith-empty{padding:2.2rem 1.2rem;border:1px solid hsl(var(--azkar-hairline));border-radius:var(--r-lg);background:hsl(var(--azkar-card));text-align:center;font-size:.75rem;color:hsl(var(--azkar-ink-soft));}
+.hadith-empty{display:flex;min-height:12rem;flex-direction:column;align-items:center;justify-content:center;padding:2.2rem 1.2rem;border:1px dashed hsl(var(--azkar-teal)/.18);border-radius:var(--r-lg);background:hsl(var(--azkar-card)/.6);text-align:center;font-size:.75rem;color:hsl(var(--azkar-ink-soft));}
 .hadith-mark-hit{background:hsl(var(--azkar-gold)/.28);color:inherit;border-radius:.25rem;padding:0 .1rem;}
 
 /* Phase 5: visual distinction between counted dhikr and non-counted cards. */
@@ -1781,7 +1787,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .dark .home-v4{background:linear-gradient(180deg,#0d211c 0%,#091713 100%)}
 .home-v4-round{display:flex;height:2.75rem;width:2.75rem;align-items:center;justify-content:center;border-radius:999px;background:rgba(255,255,255,.88);color:#173c35;box-shadow:0 6px 16px rgba(18,48,40,.14)}
 .dark .home-v4-round{background:rgba(20,39,34,.91);color:#e9eee7}
-.home-prayer-photo{position:relative;overflow:hidden;border-radius:1.6rem;min-height:15rem;background:#0b1815;color:#fff;box-shadow:0 14px 32px rgba(12,48,40,.22);display:flex;flex-direction:column;justify-content:space-between}
+.home-prayer-photo{position:relative;overflow:hidden;border-radius:1.45rem;min-height:13.5rem;background:#0b1815;color:#fff;box-shadow:0 14px 32px rgba(12,48,40,.22);display:flex;flex-direction:column;justify-content:space-between}
 .home-prayer-photo-img{position:absolute;inset:0;background-size:cover;background-position:center}
 .home-prayer-photo-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,22,18,.55) 0%,rgba(7,22,18,.12) 40%,rgba(7,22,18,.62) 78%,rgba(7,22,18,.82) 100%)}
 .home-tile-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(0,0,0,.26) 0%,rgba(0,0,0,.12) 45%,rgba(0,0,0,0) 75%)}
@@ -1810,8 +1816,8 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .home-ayah-green{background:radial-gradient(circle at 12% 10%,rgba(86,148,118,.65),transparent 46%),radial-gradient(circle at 92% 88%,rgba(8,30,24,.75),transparent 50%),radial-gradient(circle at 80% 15%,rgba(10,36,29,.55),transparent 40%),linear-gradient(135deg,#1c5444 0%,#2d6652 45%,#123329 100%);border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 24px rgba(20,45,38,.2);margin-top:0}
 .home-ayah-green .home-tile-shape{opacity:.7}
 .home-ayah-lines{position:absolute;left:0;right:0;top:0;height:1.7rem;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200' preserveAspectRatio='none'%3E%3Cpath d='M-10 70 C60 5 110 135 190 70 S320 5 410 60' fill='none' stroke='%23e9c875' stroke-width='4' stroke-opacity='.9'/%3E%3Cpath d='M-10 140 C70 75 130 195 215 135 S330 80 410 130' fill='none' stroke='%23e9c875' stroke-width='3' stroke-opacity='.7'/%3E%3C/svg%3E") center top/100% 100% no-repeat}
-.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:2.1rem;line-height:1.8}
-@media (max-width:380px){.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.85rem}}
+.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.45rem;line-height:1.8}
+@media (max-width:380px){.home-reference-ayah.home-ayah-green .home-ayah-text{font-size:1.28rem}}
 .home-ayah-act{min-height:1.45rem;color:#fff}
 .home-ayah-act::after{content:"";position:absolute;inset:-.5rem -.15rem}
 .home-ayah-act-quiet{background:rgba(255,255,255,.14)}
@@ -1819,19 +1825,24 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 .home-ayah-panel{background:rgba(0,0,0,.2)}
 .home-ayah-green .home-reference-ayah{margin-top:0}
 
-/* Bottom bar v5: the floating dark-green bar from the approved concept (dark #0B2C23 rounded bar, five tabs,
-   Home raised in gold while active, other active tab as a lighter green pill). */
+/* Bottom bar v6: Home keeps the approved floating dark-green bar; every other main tab gets the same bar
+   docked flush to the bottom edge at full width. The gold bubble is the sliding indicator: it moves to the
+   active tab on every screen (transition on `right` in the base indicator rule). */
 .nav-float{position:fixed;left:50%;bottom:max(.6rem,env(safe-area-inset-bottom));width:min(calc(100% - 1.6rem),27rem);transform:translateX(-50%);height:4.4rem;border-radius:1.9rem;background:#0b2c23;border:1px solid rgba(255,255,255,.07);box-shadow:0 10px 24px rgba(0,0,0,.3)}
 .nav-float>div{height:100%;display:flex;align-items:center}
 .nav-float .dashboard-nav-main{height:100%}
 .nav-float .dashboard-nav-item{color:#b9c9bf;min-height:3.4rem;background:transparent}
-.nav-float .dashboard-nav-item-active{color:#fff;transform:none}
-.nav-float .dashboard-nav-indicator{top:.5rem;height:3.3rem;border-radius:1.2rem;background:#1f6b57;box-shadow:0 4px 12px rgba(0,0,0,.25);animation:none!important}
+.nav-float .dashboard-nav-item-active{color:hsl(var(--azkar-gold));transform:none}
+.nav-float .dashboard-nav-icon{transition:transform .38s cubic-bezier(.22,1.2,.36,1),color .25s ease}
+.nav-float .dashboard-nav-item-active .dashboard-nav-icon{transform:translateY(-1.1rem);color:#10382c}
+.nav-float .dashboard-nav-indicator{top:-1.05rem;width:3.1rem;height:3.1rem;right:calc((var(--nav-index) + .5) * 20% - 1.55rem);border-radius:999px;background:linear-gradient(160deg,#ecc96f,#c39a3a);border:4px solid hsl(var(--azkar-bg));box-sizing:border-box;box-shadow:0 6px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.35);animation:none!important}
+.dark .nav-float .dashboard-nav-indicator{border-color:#0d211c}
 .nav-float .dashboard-nav-indicator::before,.nav-float .dashboard-nav-indicator::after{display:none}
-.nav-float[data-home-active="true"] .dashboard-nav-indicator{display:none}
-.nav-float .dashboard-nav-home.dashboard-nav-item-active{width:4rem;height:4rem;min-height:4rem;margin:-1.5rem auto 0;border-radius:999px;background:linear-gradient(#ecc96f,#c39a3a);color:#10382c;border:4px solid hsl(var(--azkar-bg));box-shadow:0 6px 14px rgba(0,0,0,.3);gap:0}
-.dark .nav-float .dashboard-nav-home.dashboard-nav-item-active{border-color:#0d211c}
-.app-content{padding-bottom:max(6.75rem,calc(5.9rem + env(safe-area-inset-bottom)))}
+/* Docked variant (non-Home tabs): not floating — flush to the bottom edge, full width, square corners. */
+.nav-float.nav-docked{left:0;right:0;bottom:0;transform:none;width:100%;max-width:none;border-radius:0;border-width:1px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.22);height:calc(4.4rem + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
+.nav-float.nav-docked>div{height:4.4rem}
+.app-content{padding-bottom:max(4.75rem,calc(4.2rem + env(safe-area-inset-bottom)))}
+.app-content.home-spacing,.app-content.azkar-list-spacing,.app-content.mushaf-list-spacing,.app-content.mushaf-surah-spacing,.app-content.hadith-spacing,.app-content.more-spacing{padding-bottom:max(6.75rem,calc(5.9rem + env(safe-area-inset-bottom)))}
 .app-content.home-spacing{padding-bottom:max(7rem,calc(6.2rem + env(safe-area-inset-bottom)))}
 .home-reference-content{padding-bottom:0}
 
