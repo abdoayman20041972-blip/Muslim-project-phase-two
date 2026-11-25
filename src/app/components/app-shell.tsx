@@ -140,7 +140,7 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
   })
 
   return (
-    <nav className={`fixed inset-x-0 bottom-0 z-50 border-t border-azkar-hairline bg-azkar-card pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-5px_20px_hsl(var(--azkar-ink)/0.06)] ${view.name === 'home' ? 'nav-home' : ''}`}
+    <nav className={`nav-float z-50 ${view.name === 'home' ? 'nav-home' : ''}`} data-home-active={view.name === 'home' ? 'true' : 'false'}
       aria-label="التنقل الرئيسي">
       {/* v1.2.6: flat opaque nav surface — the old backdrop-blur-lg was a permanent GPU cost on every
           screen for a blur invisible at 98% alpha, and the infinite indicator animations now run on
@@ -152,7 +152,7 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
           const active = index === activeIndex
           return (
             <button key={section} type="button" aria-current={active ? 'page' : undefined} onClick={() => onNavigate(section)}
-              className={`dashboard-nav-item u-pressable relative z-10 flex min-h-12 flex-col items-center justify-center gap-1 rounded-[1rem] text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold ${active ? 'dashboard-nav-item-active text-azkar-card' : 'text-azkar-ink-soft hover:text-azkar-teal-ink'}`}>
+              className={`dashboard-nav-item u-pressable relative z-10 flex min-h-12 flex-col items-center justify-center gap-1 rounded-[1rem] text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold ${section === 'home' ? 'dashboard-nav-home' : ''} ${active ? 'dashboard-nav-item-active' : ''}`}>
               <span className="dashboard-nav-icon relative z-10"><NavIcon section={section} /></span>
               <span className="relative z-10">{label}</span>
             </button>
