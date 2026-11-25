@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
 import { setMoreBackHandler } from './moreNav'
-import { Pause, Play, Radio } from 'lucide-react'
+import { BookOpen, Pause, Play, Radio } from 'lucide-react'
+import { SeerahView } from '../seerah/SeerahView'
 import { RadioView } from '../radio/RadioView'
 import { useRadio } from '../radio/RadioProvider'
 
 /** The "More" tab: sections that don't have a place on Home. Radio is the first. */
 export function MoreView() {
-  const [screen, setScreen] = useState<'list' | 'radio'>('list')
+  const [screen, setScreen] = useState<'list' | 'radio' | 'seerah'>('list')
   const { station, status, toggle } = useRadio()
   const live = status === 'playing' || status === 'loading'
   useEffect(() => {
-    if (screen !== 'radio') return
+    if (screen === 'list') return
     setMoreBackHandler(() => { setScreen('list'); return true })
     return () => setMoreBackHandler(null)
   }, [screen])
 
   if (screen === 'radio') return <RadioView onBack={() => setScreen('list')} />
+  if (screen === 'seerah') return <SeerahView onBack={() => setScreen('list')} />
 
   return (
     <div className="w-full min-w-0" data-testid="more-view">
@@ -40,6 +42,13 @@ export function MoreView() {
           <span className="radio-live relative"><i aria-hidden="true" />مباشر</span>
         )}
       </div>
+      <button type="button" onClick={() => setScreen('seerah')} aria-label="فتح السيرة النبوية" data-testid="more-seerah-card" className="u-pressable mt-4 flex w-full items-center gap-3 rounded-2xl border border-azkar-hairline bg-azkar-card px-4 py-3.5 text-right u-shadow-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-azkar-teal-tint text-azkar-teal-ink" aria-hidden="true"><BookOpen className="h-6 w-6" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-azkar-teal-ink">السيرة النبوية</span>
+          <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">قراءة ودروس من حياة النبي ﷺ</span>
+        </span>
+      </button>
     </div>
   )
 }
