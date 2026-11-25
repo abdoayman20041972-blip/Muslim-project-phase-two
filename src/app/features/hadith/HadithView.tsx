@@ -175,20 +175,25 @@ export function HadithView({ onBack }: { onBack: () => void }) {
       })
     }
     return (
-      <section dir="rtl" className="hadith-screen" data-testid="hadith-reader">
+      <section dir="rtl" className="hadith-screen hadith-reader-screen" data-testid="hadith-reader">
         {header(group.name, edition?.state === 'ready' ? (edition.origin === 'bundled' ? 'من ملف مضمّن، يعمل دون إنترنت' : 'حُمّل من الإنترنت لتعذر الملف المضمّن') : group.blurb, () => setOpenGroup(null))}
-        {edition?.state === 'loading' && <div className="hadith-empty">جارٍ تحميل الأحاديث...</div>}
+        {edition?.state === 'loading' && (
+          <div className="hadith-empty" data-testid="hadith-loading">
+            <BookOpen className="hadith-empty-icon" aria-hidden="true" />
+            <p className="text-xs text-azkar-ink-soft">جارٍ تحميل الأحاديث...</p>
+          </div>
+        )}
         {edition?.state === 'error' && (
           <div className="hadith-empty">
-            <BookOpen className="mx-auto mb-2 h-5 w-5 text-azkar-gold-deep" aria-hidden="true" />
+            <BookOpen className="hadith-empty-icon" aria-hidden="true" />
             <p className="text-xs text-azkar-ink-soft">{edition.error}</p>
             <p className="mt-1 text-[0.6875rem] text-azkar-ink-faint">تبويب «مختارات» مضمّن في التطبيق ويعمل دون إنترنت.</p>
             <button type="button" className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[0.6875rem] font-bold text-azkar-teal-ink" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
           </div>
         )}
         {item && (
-          <>
-            <article key={item.key} className="hadith-card">
+          <div className="hadith-reader-body">
+            <article key={item.key} className="hadith-card hadith-reader-card">
               <div className="hadith-card-top">
                 <span>
                   {item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}
@@ -220,12 +225,13 @@ export function HadithView({ onBack }: { onBack: () => void }) {
               </div>
               <p role="status" className="mt-1 min-h-4 text-center text-[0.6875rem] text-azkar-ink-faint">{status}</p>
             </article>
-            <nav className="mt-3 flex items-center justify-between gap-2" aria-label="التنقل بين الأحاديث">
+            <nav className="hadith-reader-nav" aria-label="التنقل بين الأحاديث">
               <button type="button" onClick={() => { setIndex(index - 1); setStatus('') }} disabled={index <= 0} aria-label="الحديث السابق" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
               <span className="text-[0.6875rem] font-bold text-azkar-ink-soft" data-testid="hadith-position">حديث {toArabicNumber(index + 1)} من {toArabicNumber(items.length)}</span>
               <button type="button" onClick={() => { setIndex(index + 1); setStatus('') }} disabled={index >= items.length - 1} aria-label="الحديث التالي" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
             </nav>
-          </>
+            <div className="hadith-progress" aria-hidden="true"><span style={{ width: `${((index + 1) / items.length) * 100}%` }} /></div>
+          </div>
         )}
       </section>
     )
@@ -254,7 +260,12 @@ export function HadithView({ onBack }: { onBack: () => void }) {
               {hits.length > 20 && <p className="px-1 text-[0.6875rem] text-azkar-ink-faint">يظهر أول {toArabicNumber(20)} نتيجة. دقّق البحث لتضييق النتائج.</p>}
             </div>
           ))}
-          {!results.length && <div className="hadith-empty">{API_EDITIONS.some((entry) => !editions[entry.key] || editions[entry.key].state === 'loading') ? 'جارٍ تحميل بقية الأقسام للبحث...' : 'لا يوجد حديث يطابق بحثك.'}</div>}
+          {!results.length && (
+            <div className="hadith-empty" data-testid="hadith-empty-state">
+              <BookOpen className="hadith-empty-icon" aria-hidden="true" />
+              <p className="text-xs text-azkar-ink-soft">{API_EDITIONS.some((entry) => !editions[entry.key] || editions[entry.key].state === 'loading') ? 'جارٍ تحميل بقية الأقسام للبحث...' : 'لا يوجد حديث يطابق بحثك. جرّب كلمة أبسط أو بدون تشكيل.'}</p>
+            </div>
+          )}
           {API_EDITIONS.some((entry) => editions[entry.key]?.state === 'error') && <p role="status" className="hadith-empty">البحث غير مكتمل: تعذّر تحميل بعض الأقسام. <button type="button" onClick={() => setAttempt((n) => n + 1)} className="underline">إعادة المحاولة</button></p>}
         </div>
       ) : (
