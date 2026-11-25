@@ -58,8 +58,11 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   )
 }
 
-export function HadithView({ onBack }: { onBack: () => void }) {
+export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onDetailChange?: (open: boolean) => void }) {
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(null)
+  useEffect(() => {
+    onDetailChange?.(openGroup !== null)
+  }, [openGroup, onDetailChange])
   const [index, setIndex] = useState(0)
   const [query, setQuery] = useState('')
   const [editions, setEditions] = useState<Record<string, EditionState>>({})
