@@ -10,6 +10,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.IBinder;
@@ -19,19 +22,24 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
-import androidx.media.AudioAttributesCompat;
-import androidx.media.AudioFocusRequestCompat;
-import androidx.media.AudioManagerCompat;
 
 /**
- * Foreground service with an active MediaSession, MediaStyle notification,
- * Audio Focus and a partial wake lock while audio is playing.
+ * Foreground service with an active MediaSession, MediaStyle notification
+ * and a partial wake lock while audio is playing.
  *
  * The web layer owns the real audio element and is the source of truth for
  * play/pause state. This service never changes its displayed state by itself:
- * a button press, media key or audio-focus change is forwarded to the web layer
- * as an event, and the web layer answers with a new start() call carrying the
- * resulting state.
+ * a button press, media key or the headphone-unplug broadcast is forwarded to
+ * the web layer as an event, and the web layer answers with a new start() call
+ * carrying the resulting state.
+ *
+ * This service deliberately does NOT request audio focus. The WebView's
+ * Chromium engine holds audio focus for the real audio element, and a second
+ * app-side focus request made both clients fight: the later request delivered
+ * AUDIOFOCUS_LOSS to the service, the forwarded event paused the web element,
+ * and every recitation stopped a second after it started. Calls and other apps
+ * still pause playback through Chromium's own focus handling, which reaches the
+ * web layer as the element's pause event.
  */
 public class MediaPlaybackService extends Service {
 
@@ -46,13 +54,13 @@ public class MediaPlaybackService extends Service {
 
     private static final String CHANNEL_ID = "muslim_background_audio";
     private static final int NOTIFICATION_ID = 72001;
+    // Same brand gold as the prayer/adhan notifications (AlarmFireReceiver.GOLD).
+    private static final int GOLD = 0xFFE6C86E;
     private static volatile boolean running = false;
     private static volatile Listener listener;
 
     private MediaSessionCompat mediaSession;
     private PowerManager.WakeLock wakeLock;
-    private AudioManager audioManager;
-    private AudioFocusRequestCompat focusRequest;
     private boolean receiverRegistered = false;
     private boolean foregroundStarted = false;
 
@@ -83,26 +91,6 @@ public class MediaPlaybackService extends Service {
         }
     }
 
-    private final AudioManager.OnAudioFocusChangeListener focusListener = change -> {
-        switch (change) {
-            case AudioManager.AUDIOFOCUS_GAIN:
-                dispatch("focusGain");
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS:
-                // Another app took audio for good. Pause; never resume automatically.
-                abandonFocus();
-                dispatch("focusLoss");
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                // Calls, alarms and navigation prompts. Pause, resume on gain.
-                dispatch("focusLossTransient");
-                break;
-            default:
-                break;
-        }
-    };
-
     private final BroadcastReceiver noisyReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -116,7 +104,6 @@ public class MediaPlaybackService extends Service {
     public void onCreate() {
         super.onCreate();
         running = true;
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaSession = new MediaSessionCompat(this, "MuslimAudio");
         mediaSession.setCallback(
             new MediaSessionCompat.Callback() {
@@ -173,9 +160,6 @@ public class MediaPlaybackService extends Service {
             durationMs = intent.getLongExtra("durationMs", -1L);
         }
         applyWakeLock();
-        if (playing) {
-            requestFocus();
-        }
         startForegroundInternal();
         return START_NOT_STICKY;
     }
@@ -197,39 +181,6 @@ public class MediaPlaybackService extends Service {
             } catch (Exception ignored) {
             }
         }
-    }
-
-    private void requestFocus() {
-        if (audioManager == null || focusRequest != null) {
-            return;
-        }
-        AudioAttributesCompat attributes = new AudioAttributesCompat.Builder()
-            .setUsage(AudioAttributesCompat.USAGE_MEDIA)
-            .setContentType(AudioAttributesCompat.CONTENT_TYPE_SPEECH)
-            .build();
-        // Pause (not duck) on transient loss so recitation is never talked over.
-        AudioFocusRequestCompat request = new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
-            .setAudioAttributes(attributes)
-            .setWillPauseWhenDucked(true)
-            .setOnAudioFocusChangeListener(focusListener)
-            .build();
-        int result = AudioManagerCompat.requestAudioFocus(audioManager, request);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            focusRequest = request;
-        } else {
-            // Denied (for example during a call): let the web layer pause.
-            dispatch("focusLossTransient");
-        }
-    }
-
-    private void abandonFocus() {
-        if (audioManager != null && focusRequest != null) {
-            try {
-                AudioManagerCompat.abandonAudioFocusRequest(audioManager, focusRequest);
-            } catch (Exception ignored) {
-            }
-        }
-        focusRequest = null;
     }
 
     private PendingIntent actionIntent(String action, int requestCode) {
@@ -262,7 +213,9 @@ public class MediaPlaybackService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(artist)
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(smallIcon())
+            .setColor(GOLD)
+            .setColorized(true)
             .setContentIntent(contentIntent)
             .setOngoing(playing)
             .setOnlyAlertOnce(true)
@@ -270,6 +223,10 @@ public class MediaPlaybackService extends Service {
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setDeleteIntent(actionIntent(ACTION_STOP, 3));
+        Bitmap large = largeIcon();
+        if (large != null) {
+            builder.setLargeIcon(large);
+        }
         if (playing) {
             builder.addAction(android.R.drawable.ic_media_pause, "إيقاف مؤقت", actionIntent(ACTION_PAUSE, 1));
         } else {
@@ -292,6 +249,27 @@ public class MediaPlaybackService extends Service {
         }
         foregroundStarted = true;
         updateSession();
+    }
+
+    /** White status-bar glyph shipped in res/drawable (see scripts/patch-android.mjs). */
+    private int smallIcon() {
+        Resources resources = getResources();
+        int id = resources.getIdentifier("muslim_stat_icon", "drawable", getPackageName());
+        if (id == 0) id = resources.getIdentifier("ic_launcher", "mipmap", getPackageName());
+        if (id == 0) id = android.R.drawable.ic_media_play;
+        return id;
+    }
+
+    /** Full-colour brand icon shown beside the reciter name. */
+    private Bitmap largeIcon() {
+        try {
+            Resources resources = getResources();
+            int id = resources.getIdentifier("muslim_large_icon", "drawable", getPackageName());
+            if (id == 0) return null;
+            return BitmapFactory.decodeResource(resources, id);
+        } catch (RuntimeException decodeFailure) {
+            return null;
+        }
     }
 
     private void updateSession() {
@@ -329,7 +307,6 @@ public class MediaPlaybackService extends Service {
     public void onDestroy() {
         running = false;
         foregroundStarted = false;
-        abandonFocus();
         if (receiverRegistered) {
             try {
                 unregisterReceiver(noisyReceiver);
