@@ -46,6 +46,8 @@ public class MediaPlaybackService extends Service {
     public static final String ACTION_PLAY = "com.muslim.backgroundaudio.action.PLAY";
     public static final String ACTION_PAUSE = "com.muslim.backgroundaudio.action.PAUSE";
     public static final String ACTION_STOP = "com.muslim.backgroundaudio.action.STOP";
+    public static final String ACTION_NEXT = "com.muslim.backgroundaudio.action.NEXT";
+    public static final String ACTION_PREVIOUS = "com.muslim.backgroundaudio.action.PREVIOUS";
 
     /** Receives user and system requests that the web layer must apply to the audio element. */
     public interface Listener {
@@ -69,6 +71,8 @@ public class MediaPlaybackService extends Service {
     private boolean playing = true;
     private long positionMs = 0L;
     private long durationMs = -1L;
+    private boolean skipPrevious = false;
+    private boolean skipNext = false;
 
     public static boolean isRunning() {
         return running;
@@ -123,6 +127,16 @@ public class MediaPlaybackService extends Service {
                 }
 
                 @Override
+                public void onSkipToNext() {
+                    dispatch("next");
+                }
+
+                @Override
+                public void onSkipToPrevious() {
+                    dispatch("previous");
+                }
+
+                @Override
                 public void onSeekTo(long positionMs) {
                     // Expanded-notification seek bar. The web element owns the real position.
                     dispatch("seek:" + positionMs);
@@ -148,7 +162,8 @@ public class MediaPlaybackService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
-        if (ACTION_PLAY.equals(action) || ACTION_PAUSE.equals(action) || ACTION_STOP.equals(action)) {
+        if (ACTION_PLAY.equals(action) || ACTION_PAUSE.equals(action) || ACTION_STOP.equals(action)
+            || ACTION_NEXT.equals(action) || ACTION_PREVIOUS.equals(action)) {
             // Notification button. If the web layer is gone nothing can act on it.
             boolean delivered = dispatch(action.substring(action.lastIndexOf('.') + 1).toLowerCase());
             if (!delivered || !foregroundStarted) {
@@ -164,6 +179,8 @@ public class MediaPlaybackService extends Service {
             playing = intent.getBooleanExtra("playing", true);
             positionMs = Math.max(0L, intent.getLongExtra("positionMs", 0L));
             durationMs = intent.getLongExtra("durationMs", -1L);
+            skipPrevious = intent.getBooleanExtra("skipPrevious", false);
+            skipNext = intent.getBooleanExtra("skipNext", false);
         }
         applyWakeLock();
         startForegroundInternal();
@@ -221,7 +238,6 @@ public class MediaPlaybackService extends Service {
             .setContentText(artist)
             .setSmallIcon(smallIcon())
             .setColor(GOLD)
-            .setColorized(true)
             .setContentIntent(contentIntent)
             .setOngoing(playing)
             .setOnlyAlertOnce(true)
@@ -233,14 +249,26 @@ public class MediaPlaybackService extends Service {
         if (large != null) {
             builder.setLargeIcon(large);
         }
+        int compactCount = 0;
+        int[] compact = new int[3];
+        int actionIndex = 0;
+        if (skipPrevious) {
+            builder.addAction(android.R.drawable.ic_media_previous, "السابق", actionIntent(ACTION_PREVIOUS, 4));
+            compact[compactCount++] = actionIndex++;
+        }
+        compact[compactCount++] = actionIndex++;
         if (playing) {
             builder.addAction(android.R.drawable.ic_media_pause, "إيقاف مؤقت", actionIntent(ACTION_PAUSE, 1));
         } else {
             builder.addAction(android.R.drawable.ic_media_play, "تشغيل", actionIntent(ACTION_PLAY, 2));
         }
+        if (skipNext) {
+            builder.addAction(android.R.drawable.ic_media_next, "التالي", actionIntent(ACTION_NEXT, 5));
+            compact[compactCount++] = actionIndex++;
+        }
         builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "إغلاق", actionIntent(ACTION_STOP, 3));
         androidx.media.app.NotificationCompat.MediaStyle style = new androidx.media.app.NotificationCompat.MediaStyle()
-            .setShowActionsInCompactView(0, 1)
+            .setShowActionsInCompactView(java.util.Arrays.copyOf(compact, compactCount))
             .setShowCancelButton(true)
             .setCancelButtonIntent(actionIntent(ACTION_STOP, 3));
         if (mediaSession != null) {
@@ -286,6 +314,12 @@ public class MediaPlaybackService extends Service {
             MediaMetadataCompat.Builder metadata = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
+            Bitmap art = largeIcon();
+            if (art != null) {
+                metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art);
+                metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, art);
+                metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, art);
+            }
             if (durationMs > 0) {
                 metadata.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, durationMs);
             }
@@ -298,6 +332,8 @@ public class MediaPlaybackService extends Service {
                             | PlaybackStateCompat.ACTION_PLAY_PAUSE
                             | PlaybackStateCompat.ACTION_STOP
                             | PlaybackStateCompat.ACTION_SEEK_TO
+                            | (skipNext ? PlaybackStateCompat.ACTION_SKIP_TO_NEXT : 0L)
+                            | (skipPrevious ? PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS : 0L)
                     )
                     .setState(
                         playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED,
