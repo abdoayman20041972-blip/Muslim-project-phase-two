@@ -68,7 +68,7 @@ describe('big counting button with ring indicator', () => {
   it('renders a thumb-sized button whose ring reports current progress', () => {
     renderCategory(counted)
     const button = screen.getByRole('button', { name: 'تسجيل مرة من الذكر' })
-    expect(button.className).toContain('min-h-[84px]')
+    expect(button.className).toContain('dpad-pad')
     expect(screen.getByRole('progressbar', { name: 'تقدم الذكر: 0 من 2' })).toBeTruthy()
     fireEvent.click(button)
     expect(screen.getByRole('progressbar', { name: 'تقدم الذكر: 1 من 2' })).toBeTruthy()
