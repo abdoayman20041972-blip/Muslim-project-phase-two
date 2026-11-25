@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { surahList } from '../../../quran-meta'
 import { getDownloadedSurahBlob } from './offlineDownload'
 import { QuranAudioProvider, useQuranAudio } from './QuranAudioProvider'
 const native = vi.hoisted(() => {
@@ -25,7 +26,7 @@ class AudioMock extends EventTarget {
 }
 function Controls() {
   const audio = useQuranAudio()
-  return <><button onClick={() => audio.playSingleAyah({ number: 1, numberInSurah: 1, text: '' }, 'ar.minshawi', 1)}>play</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 1)}>offline</button><button onClick={audio.toggleCurrent}>pause</button><button onClick={audio.stop}>stop</button></>
+  return <><button onClick={() => audio.playSingleAyah({ number: 1, numberInSurah: 1, text: '' }, 'ar.minshawi', 1)}>play</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 1)}>offline</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 2)}>c2</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 114)}>c114</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 1)}>c1</button><button onClick={audio.toggleCurrent}>pause</button><button onClick={audio.stop}>stop</button></>
 }
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); native.state.handler = null; AudioMock.instances = []; native.requestNotificationPermission.mockResolvedValue({ granted: true }); vi.stubGlobal('Audio', AudioMock) })
 describe('native background integration (mock bridge, not a device)', () => {
@@ -60,6 +61,49 @@ describe('native background integration (mock bridge, not a device)', () => {
     expect(native.stop).not.toHaveBeenCalled()
     finish()
     await waitFor(() => expect(native.stop).toHaveBeenCalledTimes(1))
+  })
+  describe('notification previous/next (whole-surah only)', () => {
+    const blob = { size: 20, slice: () => ({ arrayBuffer: async () => new TextEncoder().encode('ID3abcdefghi').buffer }) } as Blob
+    const start = async (label: string) => {
+      vi.mocked(getDownloadedSurahBlob).mockResolvedValue(blob)
+      URL.createObjectURL = vi.fn(() => 'blob:local'); URL.revokeObjectURL = vi.fn()
+      render(<QuranAudioProvider setView={vi.fn()}><Controls /></QuranAudioProvider>)
+      await waitFor(() => expect(native.addListener).toHaveBeenCalledWith('mediaAction', expect.any(Function)))
+      await act(async () => fireEvent.click(screen.getByText(label)))
+      await waitFor(() => expect(native.start).toHaveBeenCalled())
+    }
+    it('single-ayah playback offers no skip buttons and ignores skip events', async () => {
+      render(<QuranAudioProvider setView={vi.fn()}><Controls /></QuranAudioProvider>)
+      await waitFor(() => expect(native.addListener).toHaveBeenCalled())
+      await act(async () => fireEvent.click(screen.getByText('play')))
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ skipPrevious: false, skipNext: false })))
+      const before = AudioMock.instances.length
+      await emit('next'); await emit('previous')
+      expect(AudioMock.instances.length).toBe(before)
+    })
+    it('surah 2 offers both and next moves to surah 3 with one audio element playing', async () => {
+      await start('c2')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ skipPrevious: true, skipNext: true })))
+      await emit('next')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ title: surahList.find((x) => x.number === 3)!.name, skipPrevious: true, skipNext: true })))
+      const playing = AudioMock.instances.filter((a) => a.src && a.src !== '')
+      await waitFor(() => expect(AudioMock.instances.filter((a) => a.play.mock.calls.length > 0 && a.pause.mock.calls.length === 0).length).toBeLessThanOrEqual(1))
+      expect(playing.length).toBeGreaterThan(0)
+    })
+    it('surah 1 has no previous and surah 114 no next; boundary events are no-ops', async () => {
+      await start('c1')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ skipPrevious: false, skipNext: true })))
+      const n = AudioMock.instances.length
+      await emit('previous')
+      expect(AudioMock.instances.length).toBe(n)
+    })
+    it('surah 114 has no next', async () => {
+      await start('c114')
+      await waitFor(() => expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ skipPrevious: true, skipNext: false })))
+      const n = AudioMock.instances.length
+      await emit('next')
+      expect(AudioMock.instances.length).toBe(n)
+    })
   })
   describe('media actions from the notification, lock screen and audio focus', () => {
     const setup = async () => {
