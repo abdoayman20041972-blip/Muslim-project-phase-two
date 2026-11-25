@@ -29,8 +29,7 @@ describe('App user journeys', () => {
   it('navigates home → tasbih and records a tap in localStorage', async () => {
     render(<App />)
     await finishBoot()
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'السبحة' }))
+    fireEvent.click(screen.getByRole('button', { name: 'السبحة' }))
     await waitFor(() => expect(screen.getByText(/إجمالي اليوم:/)).toBeTruthy())
     const countButton = screen.getByText('من ٣٣').closest('button')
     expect(countButton).toBeTruthy()
@@ -89,6 +88,9 @@ describe('App user journeys', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
 
     fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
+    await waitFor(() => expect(screen.getByText('قريبًا')).toBeTruthy())
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الرئيسية' }))
     fireEvent.click(await screen.findByRole('button', { name: 'السبحة' }))
     await waitFor(() => expect(screen.getAllByText('السبحة').length).toBeGreaterThan(0))
   }, 10000)
