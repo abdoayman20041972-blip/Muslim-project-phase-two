@@ -57,7 +57,7 @@ export function HomeTile({
       aria-label={title}
       {...(reveal ? { 'data-reveal': true } : {})}
       style={{ ['--reveal-delay' as string]: `${delay * 60}ms` }}
-      className={`home-reference-tile home-reference-tile-${tone} u-pressable group relative min-h-[7.6rem] overflow-hidden rounded-[1.35rem] border p-3.5 text-right u-shadow-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold`}
+      className={`home-reference-tile home-reference-tile-${tone} u-pressable group relative min-h-[8.4rem] overflow-hidden rounded-[1.35rem] border p-4 text-right u-shadow-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold`}
     >
       <span className="home-tile-scrim" aria-hidden="true" />
       <span className="home-tile-shape home-tile-shape-a" aria-hidden="true" />
@@ -65,7 +65,7 @@ export function HomeTile({
       <span className="home-tile-icon relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/10 backdrop-blur-sm">
         {icon}
       </span>
-      <span className="relative z-10 mt-7 block">
+      <span className="relative z-10 mt-9 block">
         <span className="block font-amiri text-[1.125rem] font-bold leading-none text-white">{title}</span>
         <span className="mt-1.5 block text-[0.6875rem] font-semibold text-white">{subtitle}</span>
       </span>
@@ -134,13 +134,11 @@ export function HomeView({
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('reveal-in')
-            observer.unobserve(entry.target)
-          }
+          // Elements fade in as they enter the viewport and softly fade out as they leave it.
+          entry.target.classList.toggle('reveal-in', entry.isIntersecting)
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0.08, rootMargin: '-4% 0px -8% 0px' },
     )
     elements.forEach((el) => observer.observe(el))
     const fallback = window.setTimeout(revealInViewport, 900)
@@ -190,20 +188,20 @@ export function HomeView({
   const readingLabel = lastSurahMeta ? readingPositionLabel(progress.reading?.surah === lastSurahMeta.number ? progress.reading : null, toArabicNumber) : null
 
   return (
-    <div className="home-reference-page home-v4 relative w-full min-w-0 pb-2">
+    <div className="home-reference-page home-v4 relative w-full min-w-0 pb-6">
       <main className="home-reference-content mx-auto w-full max-w-md px-3.5">
-        <header className="flex items-center justify-between pb-3 pt-[max(.8rem,env(safe-area-inset-top))]">
+        <header className="flex items-center justify-between pb-5 pt-[max(.8rem,env(safe-area-inset-top))]">
           <div className="text-right" data-reveal>
             <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
             <div className="font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
             {hijriDate && <div className="text-[0.75rem] font-semibold text-azkar-gold-deep">{hijriDate}</div>}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onOpenSettings} aria-label="الإعدادات" className="home-v4-round u-pressable">
-              <Settings className="h-5 w-5" />
-            </button>
             <button onClick={onToggleDarkMode} aria-label="تبديل الوضع الليلي" className="home-v4-round u-pressable">
               {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
+            <button onClick={onOpenSettings} aria-label="الإعدادات" className="home-v4-round u-pressable">
+              <Settings className="h-5 w-5" />
             </button>
           </div>
         </header>
@@ -250,11 +248,11 @@ export function HomeView({
           {coords && prayerError && !timings && <div role="alert" className="pointer-events-none relative z-10 px-4 pb-1.5 text-center text-[0.6875rem] text-white/80">تعذر تحميل المواقيت حاليًا</div>}
         </section>
 
-        <div id="home-daily-ayah" className="mt-3" data-reveal>
+        <div id="home-daily-ayah" className="mt-5" data-reveal>
           <DailyAyahCard ayah={dailyAyah} onOpenSurah={onOpenSurah} />
         </div>
 
-        <section className="mt-4 grid grid-cols-2 gap-2.5" aria-label="الأقسام">
+        <section className="mt-6 grid grid-cols-2 gap-3.5" aria-label="الأقسام">
           <HomeTile onClick={onOpenMushaf} title="المصحف" subtitle="القرآن الكريم" tone="quran" icon={<BookOpen className="h-6 w-6" />} delay={0} />
           <HomeTile onClick={onOpenHadith} title="الأحاديث" subtitle="من السنة النبوية" tone="hadith" icon={<BookMarked className="h-6 w-6" />} delay={1} />
           <HomeTile onClick={onOpenAzkar} title="الأذكار" subtitle="أذكار اليوم والليلة" tone="azkar" icon={<Sparkles className="h-6 w-6" />} delay={2} />
@@ -263,7 +261,7 @@ export function HomeView({
           <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} delay={5} />
         </section>
 
-        <section className="mt-4 grid grid-cols-3 gap-2" aria-label="تقدمك اليوم">
+        <section className="mt-6 grid grid-cols-3 gap-3" aria-label="تقدمك اليوم">
           <ProgressCard delay={0} onClick={lastSurahMeta ? onContinueReading : onOpenMushaf} title="تابع القراءة" ring={null} sub={lastSurahMeta ? [lastSurahMeta.shortName, readingLabel].filter(Boolean).join(' · ') : 'افتح المصحف'} icon={<BookOpen className="h-6 w-6" />} />
           <ProgressCard delay={1} onClick={onOpenEveningAzkar || onOpenAzkar} title="أذكار المساء" ring={progress.evening} sub={wirdSub(progress.evening)} />
           <ProgressCard delay={2} onClick={onOpenMorningAzkar || onOpenAzkar} title="أذكار الصباح" ring={progress.morning} sub={wirdSub(progress.morning)} />
