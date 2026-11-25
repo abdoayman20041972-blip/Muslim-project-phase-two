@@ -1,5 +1,5 @@
 import { useEffect,useMemo,useState } from 'react'
-import { copyText, shareText } from './shareActions'
+import { shareQuoteCard } from './shareActions'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
 import { useConfirmDialog } from '../../components/confirm-dialog'
@@ -28,9 +28,6 @@ function StarIcon({ filled = false }: { filled?: boolean }) {
   return <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill={filled ? 'currentColor' : 'none'} aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
 }
 
-function CopyIcon() {
-  return <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" strokeWidth="1.7"/></svg>
-}
 
 function ShareIcon() {
   return <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="2.3" stroke="currentColor" strokeWidth="1.7"/><circle cx="6" cy="12" r="2.3" stroke="currentColor" strokeWidth="1.7"/><circle cx="18" cy="19" r="2.3" stroke="currentColor" strokeWidth="1.7"/><path d="m8 11 7.7-4.5M8 13l7.7 4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
@@ -277,11 +274,7 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
           </div>}
 
           <div className="relative mt-5 flex items-center gap-2 border-t border-azkar-hairline pt-4">
-            <button onClick={() => void copyText(item.text)} aria-label="نسخ الذكر" className="u-pressable inline-flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
-              <CopyIcon />
-              <span>نسخ</span>
-            </button>
-            <button onClick={() => void shareText(item.text, { title: category.label, source: displaySource })} aria-label="مشاركة الذكر" className="u-pressable inline-flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
+            <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), reference: displaySource ? toArabicDigits(displaySource) : undefined, heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable inline-flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
               <ShareIcon />
               <span>مشاركة</span>
             </button>
