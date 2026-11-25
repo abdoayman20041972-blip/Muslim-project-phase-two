@@ -21,21 +21,22 @@ describe('Quran text helpers', () => {
   it('uses the live editions and supported bitrates for Quran audio', () => {
     expect(quranAudioUrl('ar.abdulbasitmurattal', 1)).toBe('https://cdn.islamic.network/quran/audio/192/ar.abdulbasitmurattal/1.mp3')
     expect(quranAudioUrl('ar.abdurrahmaansudais', 1)).toBe('https://cdn.islamic.network/quran/audio/192/ar.abdurrahmaansudais/1.mp3')
+    expect(quranAudioUrl('ar.saoodshuraym', 1)).toBe('https://cdn.islamic.network/quran/audio/64/ar.saoodshuraym/1.mp3')
     expect(quranAudioUrl('ar.alafasy', 1)).toBe('https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3')
   })
 
   it('builds the verified complete-surah URL for every approved reciter', () => {
     const expected = {
-      'ar.minshawi': 'https://server10.mp3quran.net/minsh/001.mp3',
-      'ar.alafasy': 'https://server8.mp3quran.net/afs/001.mp3',
-      'ar.husary': 'https://server13.mp3quran.net/husr/001.mp3',
-      'ar.abdulbasitmurattal': 'https://server7.mp3quran.net/basit/001.mp3',
-      'ar.abdurrahmaansudais': 'https://server11.mp3quran.net/sds/001.mp3',
-      'ar.mahermuaiqly': 'https://server12.mp3quran.net/maher/001.mp3',
-      'ar.hudhaify': 'https://server9.mp3quran.net/hthfi/001.mp3',
-      'ar.saoodshuraym': 'https://server7.mp3quran.net/shur/001.mp3',
-      'ar.ahmedajamy': 'https://server10.mp3quran.net/ajm/001.mp3',
-      'ar.shaatree': 'https://server11.mp3quran.net/shatri/001.mp3',
+      'ar.minshawi': 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/001.mp3',
+      'ar.alafasy': 'https://cdn.mp3quran.net/audio/mishary-alafasy/r1/001.mp3',
+      'ar.husary': 'https://cdn.mp3quran.net/audio/mahmoud-husary/r1/001.mp3',
+      'ar.abdulbasitmurattal': 'https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3/001.mp3',
+      'ar.abdurrahmaansudais': 'https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1/001.mp3',
+      'ar.mahermuaiqly': 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/001.mp3',
+      'ar.hudhaify': 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r1/001.mp3',
+      'ar.saoodshuraym': 'https://cdn.mp3quran.net/audio/saud-shuraim/r1/001.mp3',
+      'ar.ahmedajamy': 'https://cdn.mp3quran.net/audio/ahmad-ajmi/r1/001.mp3',
+      'ar.shaatree': 'https://cdn.mp3quran.net/audio/abubakr-shatri/r1/001.mp3',
     } as const
 
     for (const [reciter, url] of Object.entries(expected)) {
