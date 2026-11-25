@@ -245,7 +245,8 @@ public class MediaPlaybackService extends Service {
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setDeleteIntent(actionIntent(ACTION_STOP, 3));
-        Bitmap large = largeIcon();
+        Bitmap large = coverFor(title);
+        if (large == null) large = largeIcon();
         if (large != null) {
             builder.setLargeIcon(large);
         }
@@ -294,6 +295,62 @@ public class MediaPlaybackService extends Service {
         return id;
     }
 
+    private Bitmap coverCache;
+    private String coverCacheTitle;
+
+    /** Cover drawn per title: brand-colour gradient, thin gold waves and the surah name. */
+    private Bitmap coverFor(String text) {
+        if (text == null || text.length() == 0) return null;
+        if (coverCache != null && text.equals(coverCacheTitle)) return coverCache;
+        try {
+            int[][] palettes = {
+                { 0xFF12324A, 0xFF1F6070 }, { 0xFF0F5A45, 0xFF33905F }, { 0xFF4B5A1C, 0xFF8B8B2B },
+                { 0xFF5A2F3F, 0xFF9A5A3A }, { 0xFF1D2147, 0xFF38327A }
+            };
+            int[] pal = palettes[(text.hashCode() & 0x7FFFFFFF) % palettes.length];
+            final int size = 512;
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+            android.graphics.Paint fill = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            fill.setShader(new android.graphics.LinearGradient(0, 0, size, size, pal[0], pal[1], android.graphics.Shader.TileMode.CLAMP));
+            canvas.drawRect(0, 0, size, size, fill);
+            android.graphics.Paint line = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            line.setStyle(android.graphics.Paint.Style.STROKE);
+            line.setStrokeCap(android.graphics.Paint.Cap.ROUND);
+            line.setColor(0xFFE6C86E);
+            line.setStrokeWidth(4f);
+            for (int i = 0; i < 4; i++) {
+                line.setAlpha(i % 2 == 0 ? 150 : 90);
+                android.graphics.Path path = new android.graphics.Path();
+                for (int x = 0; x <= size; x += 8) {
+                    float y = 100f + i * 100f + (float) Math.sin(x / 90.0 + i) * 18f;
+                    if (x == 0) path.moveTo(x, y); else path.lineTo(x, y);
+                }
+                canvas.drawPath(path, line);
+            }
+            String name = text;
+            int dash = name.indexOf(" - ");
+            if (dash > 0) name = name.substring(0, dash);
+            android.graphics.Paint label = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            label.setColor(0xFFFFFFFF);
+            label.setTextAlign(android.graphics.Paint.Align.CENTER);
+            label.setFakeBoldText(true);
+            float textSize = 84f;
+            label.setTextSize(textSize);
+            while (label.measureText(name) > size - 60 && textSize > 28f) {
+                textSize -= 4f;
+                label.setTextSize(textSize);
+            }
+            label.setShadowLayer(8f, 0f, 2f, 0x99000000);
+            canvas.drawText(name, size / 2f, size / 2f + textSize / 3f, label);
+            coverCache = bmp;
+            coverCacheTitle = text;
+            return bmp;
+        } catch (RuntimeException failure) {
+            return null;
+        }
+    }
+
     /** Full-colour brand icon shown beside the reciter name. */
     private Bitmap largeIcon() {
         try {
@@ -314,7 +371,8 @@ public class MediaPlaybackService extends Service {
             MediaMetadataCompat.Builder metadata = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
-            Bitmap art = largeIcon();
+            Bitmap art = coverFor(title);
+            if (art == null) art = largeIcon();
             if (art != null) {
                 metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art);
                 metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, art);
