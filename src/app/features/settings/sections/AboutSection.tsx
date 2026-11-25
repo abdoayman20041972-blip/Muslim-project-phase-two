@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Row, Section } from '../settingsPrimitives'
+import { PRAYER_PHOTOS } from '../../home/prayerPhotos'
 
 /** The real installed version (versionName and versionCode) read from the Android package. */
 function useInstalledVersion() {
@@ -27,6 +28,17 @@ export function AboutSection() {
   </Row>
   <Row title="الإصدار">
     <span className="text-[0.6875rem]">{version}</span>
+  </Row>
+  <Row title="صور بطاقة الصلاة">
+    <ul dir="ltr" className="space-y-1 text-left text-[0.6875rem]" data-testid="photo-credits">
+      {Object.values(PRAYER_PHOTOS).map((photo) => (
+        <li key={photo.sourceUrl}>
+          <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.artist}</a>
+          {' / Wikimedia Commons / '}
+          <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.license}</a>
+        </li>
+      ))}
+    </ul>
   </Row>
   <Row title="التواصل والملاحظات" last>
     <a
