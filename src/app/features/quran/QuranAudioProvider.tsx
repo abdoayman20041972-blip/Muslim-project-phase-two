@@ -106,13 +106,14 @@ function useAudioValue() {
     let remove: (() => Promise<void>) | undefined
     let disposed = false
     void loadAudioPlugin().then(async ({ BackgroundAudio }) => {
-      const handle = await BackgroundAudio.addListener('mediaAction', ({ action }) => {
+      const handle = await BackgroundAudio.addListener('mediaAction', ({ action, position }) => {
         const status = session.state.status
         const running = status === 'playing' || status === 'loading'
         switch (action) {
           case 'play': pausedByFocus.current = false; if (status === 'paused' || status === 'error') session.toggle(); break
           case 'pause': pausedByFocus.current = false; if (running) session.toggle(); break
           case 'stop': pausedByFocus.current = false; session.stop(); break
+          case 'seek': if (typeof position === 'number') session.seek(position / 1000); break
           case 'focusLossTransient': if (running) { pausedByFocus.current = true; session.toggle() } break
           case 'focusLoss': case 'noisy': pausedByFocus.current = false; if (running) session.toggle(); break
           case 'focusGain': if (pausedByFocus.current && status === 'paused') { pausedByFocus.current = false; session.toggle() } break
@@ -128,6 +129,20 @@ function useAudioValue() {
       try { const { BackgroundAudio } = await loadAudioPlugin(); await BackgroundAudio.stop() } catch { /* App is closing. */ }
     })
   }, [])
+
+  // Keep the notification's seek bar moving: Android interpolates between updates,
+  // so a push every few seconds is enough. Play/pause/title changes use the main
+  // effect above; this one only follows playback position.
+  const lastPositionPush = useRef(-1)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !serviceNeeded || state.status !== 'playing') { lastPositionPush.current = -1; return }
+    if (lastPositionPush.current >= 0 && Math.abs(state.seconds - lastPositionPush.current) < 4) return
+    lastPositionPush.current = state.seconds
+    nativeQueue.current = nativeQueue.current.catch(() => {}).then(async () => {
+      const { BackgroundAudio } = await loadAudioPlugin()
+      await BackgroundAudio.start({ title, artist, playing: true, position: state.seconds, duration: state.duration })
+    }).catch(() => { /* Position sync is best-effort; controls use the main effect. */ })
+  }, [state.seconds, serviceNeeded, state.status, title, artist, state.duration])
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return
