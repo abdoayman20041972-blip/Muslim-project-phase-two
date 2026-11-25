@@ -247,7 +247,7 @@ export function AzkarListView({ categories, favoritesCount, onBack, setView }: P
                   <ChevronIcon />
                 </div>
                 <div className="relative mt-3 font-amiri text-[1rem] font-bold leading-tight text-azkar-ink">{category.label}</div>
-                <div className="relative mt-1 text-[0.6875rem] text-azkar-ink-faint">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</div>
+                <div className="relative mt-1.5"><span className="azkar-num-chip">{arabicCount(stats.total, ZIKR_COUNT_FORMS)}</span></div>
               </button>
             )
           })}
