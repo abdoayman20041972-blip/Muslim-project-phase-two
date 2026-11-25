@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDownloadedSurahBlob } from './offlineDownload'
 import { QuranAudioProvider, useQuranAudio } from './QuranAudioProvider'
 const native = vi.hoisted(() => {
-  const state = { handler: null as null | ((event: { action: string }) => void), remove: vi.fn(async () => {}) }
+  const state = { handler: null as null | ((event: { action: string; position?: number }) => void), remove: vi.fn(async () => {}) }
   return {
     state,
     start: vi.fn(async (_options?: unknown) => {}), stop: vi.fn(async () => {}),
     requestNotificationPermission: vi.fn(async () => ({ granted: true })),
-    addListener: vi.fn(async (_name: string, handler: (event: { action: string }) => void) => { state.handler = handler; return { remove: state.remove } }),
+    addListener: vi.fn(async (_name: string, handler: (event: { action: string; position?: number }) => void) => { state.handler = handler; return { remove: state.remove } }),
   }
 })
 const emit = (action: string) => act(async () => { native.state.handler?.({ action }) })
@@ -16,7 +16,9 @@ vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => true } 
 vi.mock('@muslim/background-audio', () => ({ BackgroundAudio: native }))
 vi.mock('./offlineDownload', () => ({ getDownloadedSurahBlob: vi.fn(async () => undefined) }))
 class AudioMock extends EventTarget {
+  static instances: AudioMock[] = []
   src = ''; currentTime = 0; duration = 20; preload = ''
+  constructor() { super(); AudioMock.instances.push(this) }
   play = vi.fn(async () => { this.dispatchEvent(new Event('playing')) })
   pause = vi.fn(() => this.dispatchEvent(new Event('pause')))
   removeAttribute = vi.fn(); load = vi.fn()
@@ -25,7 +27,7 @@ function Controls() {
   const audio = useQuranAudio()
   return <><button onClick={() => audio.playSingleAyah({ number: 1, numberInSurah: 1, text: '' }, 'ar.minshawi', 1)}>play</button><button onClick={() => audio.playConnected(0, [{ number: 1, numberInSurah: 1, text: '' }], 'ar.minshawi', 1)}>offline</button><button onClick={audio.toggleCurrent}>pause</button><button onClick={audio.stop}>stop</button></>
 }
-beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); native.state.handler = null; native.requestNotificationPermission.mockResolvedValue({ granted: true }); vi.stubGlobal('Audio', AudioMock) })
+beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); native.state.handler = null; AudioMock.instances = []; native.requestNotificationPermission.mockResolvedValue({ granted: true }); vi.stubGlobal('Audio', AudioMock) })
 describe('native background integration (mock bridge, not a device)', () => {
   it('uses the same native service for a decoded local recording', async () => {
     vi.mocked(getDownloadedSurahBlob).mockResolvedValueOnce({ size: 20, slice: () => ({ arrayBuffer: async () => new TextEncoder().encode('ID3abcdefghi').buffer }) } as Blob)
@@ -77,6 +79,13 @@ describe('native background integration (mock bridge, not a device)', () => {
       await setup()
       await emit('stop')
       await waitFor(() => expect(native.stop).toHaveBeenCalled())
+    })
+    it('applies seek-bar moves from the notification to the audio element', async () => {
+      await setup()
+      const audio = AudioMock.instances.at(-1)
+      expect(audio).toBeTruthy()
+      await act(async () => { native.state.handler?.({ action: 'seek', position: 12000 }) })
+      expect(audio!.currentTime).toBe(12)
     })
     it('pauses on a transient focus loss (call) and resumes only after focus gain', async () => {
       await setup()
