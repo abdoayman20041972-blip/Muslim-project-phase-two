@@ -97,6 +97,17 @@ public class AlarmFireReceiver extends BroadcastReceiver {
         }
         for (int attempt = 1; attempt <= 2; attempt++) {
             try {
+                if (entry.channelId.endsWith("-adhan") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    try {
+                        // The full adhan plays inside a foreground service; only its "إيقاف" action stops it.
+                        AdhanService.start(context, entry);
+                        log.add(entry.id, entry.title, entry.at, "posted", lateNote + ", adhan service");
+                        return;
+                    } catch (RuntimeException serviceRefused) {
+                        log.add(entry.id, entry.title, entry.at, "adhan_service_failed", String.valueOf(serviceRefused.getMessage()));
+                        // Falls through to the ordinary notification so the adhan is never silent.
+                    }
+                }
                 ensureChannel(context, entry.channelId);
                 postNotification(context, entry);
                 log.add(entry.id, entry.title, entry.at, "posted", lateNote + (attempt > 1 ? ", second attempt" : ""));
@@ -168,6 +179,7 @@ public class AlarmFireReceiver extends BroadcastReceiver {
 
         // Green gradient card with gold wavy lines. Title/text above stay set for
         // accessibility and as the fallback when a device ignores custom views.
+        boolean cardBuilt = false;
         try {
             android.widget.RemoteViews card = NotificationLook.views(context, entry.title, entry.body, false);
             android.widget.RemoteViews bigCard = NotificationLook.views(context, entry.title, entry.body, true);
@@ -175,6 +187,7 @@ public class AlarmFireReceiver extends BroadcastReceiver {
                 builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
                 builder.setCustomContentView(card);
                 builder.setCustomBigContentView(bigCard);
+                cardBuilt = true;
             }
         } catch (RuntimeException ignored) {
             // Keep the plain notification (BigTextStyle) when the card cannot be built.
@@ -185,8 +198,12 @@ public class AlarmFireReceiver extends BroadcastReceiver {
         // notifications used to pile up in the shade.
         if (entry.ttl > 0) builder.setTimeoutAfter(entry.ttl);
 
-        Bitmap large = largeIcon(context);
-        if (large != null) builder.setLargeIcon(large);
+        // With the artwork card there is no separate large icon: DecoratedCustomViewStyle would draw it
+        // as a square to the left of the card. It is only set for the plain fallback notification.
+        if (!cardBuilt) {
+            Bitmap large = largeIcon(context);
+            if (large != null) builder.setLargeIcon(large);
+        }
         if (entry.group.length() > 0) {
             builder.setGroup(entry.group);
         }
