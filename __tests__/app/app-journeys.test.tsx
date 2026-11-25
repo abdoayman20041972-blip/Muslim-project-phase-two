@@ -118,7 +118,7 @@ describe('App user journeys', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'أذكار الصباح' })).toBeTruthy())
 
     fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
-    await waitFor(() => expect(screen.getByText('قريبًا')).toBeTruthy())
+    await waitFor(() => expect(screen.getByTestId('more-radio-card')).toBeTruthy())
 
     fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'الرئيسية' }))
     fireEvent.click(await screen.findByRole('button', { name: 'السبحة' }))
