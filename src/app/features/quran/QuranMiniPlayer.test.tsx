@@ -39,23 +39,25 @@ describe('QuranMiniPlayer', () => {
     render(<QuranMiniPlayer />)
     expect(screen.getByText(/تلاوة متصلة/)).toBeTruthy()
   })
-  it('switches reciter from the mini player', () => {
+  it('switches reciter from the app-styled list, not a system dropdown', () => {
     const setReciter = vi.fn()
     mockedUseQuranAudio.mockReturnValue(value({ setReciter }))
     render(<QuranMiniPlayer />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'القارئ في المشغل المصغر' }), { target: { value: 'ar.alafasy' } })
+    expect(screen.queryByRole('combobox')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'القارئ في المشغل المصغر' }))
+    fireEvent.click(screen.getByRole('option', { name: 'مشاري العفاسي' }))
     expect(setReciter).toHaveBeenCalledWith('ar.alafasy')
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('starts above the bottom navigation and can be dragged', () => {
+  it('is docked to the bottom edge by stylesheet and cannot be dragged to the middle', () => {
     mockedUseQuranAudio.mockReturnValue(value({}))
     render(<QuranMiniPlayer />)
     const player = screen.getByTestId('quran-mini-player')
-    expect(player).toHaveStyle({ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)', left: '50%' })
+    expect(player.className).toContain('quran-mini-player')
     fireEvent.pointerDown(player, { pointerId: 1, clientX: 100, clientY: 30 })
     fireEvent.pointerMove(player, { pointerId: 1, clientX: 180, clientY: 120 })
-    fireEvent.pointerUp(player, { pointerId: 1, clientX: 180, clientY: 120 })
-    expect(player).toHaveStyle({ top: '90px', left: '80px' })
+    expect(player.style.top).toBe('')
   })
 
   it('closes the mini player by stopping the active audio session', () => {
