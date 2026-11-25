@@ -123,6 +123,7 @@ export function HomeView({
     const elements = Array.from((page ?? document).querySelectorAll<HTMLElement>('[data-reveal]'))
     const reducedOs = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const revealInViewport = () => {
+      if (typeof window === 'undefined') return
       for (const el of elements) {
         if (el.classList.contains('reveal-in')) continue
         const rect = el.getBoundingClientRect()
