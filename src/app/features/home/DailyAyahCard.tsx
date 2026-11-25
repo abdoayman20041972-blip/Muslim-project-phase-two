@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toArabicNumber } from '../../constants'
 import type { DailyAyah } from '../../../daily-ayahs'
-import { copyText, shareText } from '../azkar/shareActions'
+import { shareText } from '../azkar/shareActions'
+import { shareCardImage } from '../azkar/shareCard'
 import { useQuranTafsir } from '../quran/useQuranTafsir'
 import { dailyAyahReference, fullTextForDailyAyah, surahNumberForDailyAyah } from './dailyAyahFull'
 
@@ -13,14 +14,14 @@ function TafsirPanel({ ayah, surah, fullText }: { ayah: DailyAyah; surah: number
     openTafsir({ number: 0, numberInSurah: ayah.number, text: fullText ?? ayah.text })
   }, [openTafsir, ayah.number, ayah.text, fullText])
   return (
-    <div data-testid="daily-ayah-tafsir" className="mt-2.5 rounded-xl bg-azkar-teal-tint px-3 py-2.5 text-right">
-      <div className="text-[0.6875rem] font-bold text-azkar-teal-ink">{tafsirLabel}</div>
+    <div data-testid="daily-ayah-tafsir" className="home-ayah-panel mt-2.5 rounded-xl px-3 py-2.5 text-right">
+      <div className="text-[0.6875rem] font-bold text-[#e9c875]">{tafsirLabel}</div>
       {tafsirLoading ? (
-        <div role="status" className="mt-1 text-[0.75rem] text-azkar-ink-soft">جارٍ تحميل التفسير…</div>
+        <div role="status" className="mt-1 text-[0.75rem] text-white/75">جارٍ تحميل التفسير…</div>
       ) : tafsirError || !tafsirText ? (
-        <div role="alert" className="mt-1 text-[0.75rem] text-azkar-ink-soft">تعذر تحميل التفسير الآن. جرّب مرة أخرى عند توفر الإنترنت.</div>
+        <div role="alert" className="mt-1 text-[0.75rem] text-white/75">تعذر تحميل التفسير الآن. جرّب مرة أخرى عند توفر الإنترنت.</div>
       ) : (
-        <div className="mt-1 text-[0.8125rem] leading-[1.9] text-azkar-ink">{tafsirText}</div>
+        <div className="mt-1 text-[0.8125rem] leading-[1.9] text-white">{tafsirText}</div>
       )}
     </div>
   )
@@ -70,55 +71,53 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
     const full = await ensureFull()
     return { text: full ?? ayah.text, complete: Boolean(full) }
   }
-  async function onCopy() {
-    const { text, complete } = await payload()
-    const ok = await copyText(`${text}\n\n${reference}`)
-    flash(ok ? (complete ? 'تم نسخ الآية كاملة' : 'تم نسخ المقتطف فقط') : 'تعذر النسخ')
-  }
   async function onShare() {
     const { text } = await payload()
     try {
-      await shareText(text, { title: 'آية اليوم', source: `${reference}\nمن تطبيق مسلم` })
+      const shared = await shareCardImage({ text, reference, heading: 'آية اليوم', footer: 'مسلم', filename: 'ayah-of-the-day.png' })
+      if (!shared) await shareText(text, { title: 'آية اليوم', source: `${reference}\nمن تطبيق مسلم` })
     } catch {
       flash('تعذرت المشاركة')
     }
   }
 
-  const pill = 'u-pressable flex min-h-10 flex-1 items-center justify-center whitespace-nowrap rounded-full px-2 py-1.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
-  const quiet = `${pill} bg-azkar-teal-tint text-azkar-teal-ink`
-  const primary = `${pill} bg-azkar-gold-tint text-azkar-gold-deep`
+  const pill = 'home-ayah-act u-pressable relative flex flex-1 items-center justify-center whitespace-nowrap rounded-full px-2 py-0.5 text-[0.6875rem] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold'
+  const quiet = `${pill} home-ayah-act-quiet`
+  const primary = `${pill} home-ayah-act-primary`
 
   return (
-    <div className="home-reference-ayah rounded-[1.5rem] border border-white/60 bg-white/85 px-5 py-3.5 text-center shadow-2xl backdrop-blur-md" data-testid="daily-ayah-card">
-      <div className="home-ayah-ornament" aria-hidden="true">❧</div>
-      <div className="mb-1 text-[0.6875rem] font-bold text-azkar-gold-deep">آية اليوم · مقتطف</div>
-      <div className="font-amiri text-[1.5rem] font-bold leading-[1.8] text-[#173c35]">{ayah.text}</div>
-      <div className="mt-1 text-[0.6875rem] font-semibold text-azkar-ink-soft">{reference}</div>
+    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-4 pt-8 text-center" data-testid="daily-ayah-card">
+      <span className="home-tile-shape home-tile-shape-a" aria-hidden="true" />
+      <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
+      <span className="home-ayah-lines" aria-hidden="true" />
+      <div className="relative z-10">
+      <div className="mb-3 mt-1 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
+      <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
+      <div className="mt-2 text-[0.6875rem] font-semibold text-white/75">{reference}</div>
 
       {panel === 'full' && (
-        <div data-testid="daily-ayah-full" className="mt-2.5 rounded-xl bg-azkar-gold-tint px-3 py-2.5">
+        <div data-testid="daily-ayah-full" className="home-ayah-panel mt-2.5 rounded-xl px-3 py-2.5">
           {fullText ? (
-            <div className="font-amiri text-[1.25rem] font-bold leading-[2] text-[#173c35]">{fullText}</div>
+            <div className="font-amiri text-[1.35rem] font-bold leading-[2] text-white">{fullText}</div>
           ) : fullFailed ? (
-            <div role="alert" className="text-[0.75rem] text-azkar-ink-soft">تعذر تحميل نص الآية الكامل.</div>
+            <div role="alert" className="text-[0.75rem] text-white/75">تعذر تحميل نص الآية الكامل.</div>
           ) : (
-            <div role="status" className="text-[0.75rem] text-azkar-ink-soft">جارٍ التحميل…</div>
+            <div role="status" className="text-[0.75rem] text-white/75">جارٍ التحميل…</div>
           )}
         </div>
       )}
       {panel === 'tafsir' && surah && <TafsirPanel ayah={ayah} surah={surah} fullText={fullText} />}
 
-      <div className="mt-3 flex items-center gap-1.5" role="group" aria-label="إجراءات آية اليوم">
+      <div className="mt-2.5 flex items-center gap-1.5 px-3" role="group" aria-label="إجراءات آية اليوم">
         <button type="button" className={primary} aria-expanded={panel === 'full'} onClick={toggleFull}>الآية كاملة</button>
         <button type="button" className={quiet} aria-expanded={panel === 'tafsir'} onClick={toggleTafsir}>التفسير</button>
-        <button type="button" className={quiet} onClick={onCopy}>نسخ</button>
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
       {surah && onOpenSurah && (
-        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-10 items-center text-[0.6875rem] font-bold text-azkar-teal-ink underline underline-offset-2">فتح السورة في المصحف</button>
+        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-10 items-center text-[0.6875rem] font-bold text-white/85 underline underline-offset-2">فتح السورة في المصحف</button>
       )}
-      <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.6875rem] font-semibold text-azkar-teal-ink">{notice}</div>
-      <div className="home-ayah-divider mt-1" aria-hidden="true" />
+      <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.6875rem] font-semibold text-[#e9c875]">{notice}</div>
+      </div>
     </div>
   )
 }
