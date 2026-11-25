@@ -86,14 +86,13 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
   const primary = `${pill} home-ayah-act-primary`
 
   return (
-    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-12 pt-8 text-center" data-testid="daily-ayah-card">
+    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-3 pt-11 text-center" data-testid="daily-ayah-card">
       <span className="home-tile-shape home-tile-shape-a" aria-hidden="true" />
       <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
       <span className="home-ayah-lines" aria-hidden="true" />
       <div className="relative z-10">
       <div className="mb-3 mt-1 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
       <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
-      <div className="mt-2 text-[0.6875rem] font-semibold text-white/75">{reference}</div>
 
       {panel === 'full' && (
         <div data-testid="daily-ayah-full" className="home-ayah-panel mt-2.5 rounded-xl px-3 py-2.5">
@@ -113,8 +112,9 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
         <button type="button" className={quiet} aria-expanded={panel === 'tafsir'} onClick={toggleTafsir}>التفسير</button>
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
+      <div className="mt-2 text-[0.6875rem] font-semibold text-white/75">{reference}</div>
       {surah && onOpenSurah && (
-        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-10 items-center text-[0.6875rem] font-bold text-white/85 underline underline-offset-2">فتح السورة في المصحف</button>
+        <button type="button" onClick={() => onOpenSurah(surah)} className="u-pressable mt-1 inline-flex min-h-8 items-center text-[0.6875rem] font-bold text-white/85 underline underline-offset-2">فتح السورة في المصحف</button>
       )}
       <div role="status" aria-live="polite" className="min-h-[1rem] text-[0.6875rem] font-semibold text-[#e9c875]">{notice}</div>
       </div>
