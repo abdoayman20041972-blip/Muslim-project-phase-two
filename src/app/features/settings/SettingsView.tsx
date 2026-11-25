@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { getNotificationPermission, requestNotificationPermission } from '../notifications/notificationPermission'
 import {
@@ -262,6 +262,21 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     }
     location.reload()
   }
+  // The page scrolls on the window. Remember where the list was when a section
+  // opens, show the section from its top, and put the list back where it was.
+  const listScroll = useRef(0)
+  const lastCategory = useRef<Category>(category)
+  useLayoutEffect(() => {
+    const prev = lastCategory.current
+    lastCategory.current = category
+    if (prev === category || typeof window === 'undefined' || typeof window.scrollTo !== 'function') return
+    if (category === 'main') window.scrollTo(0, listScroll.current)
+    else window.scrollTo(0, 0)
+  }, [category])
+  const openCategory = (id: Category) => {
+    if (typeof window !== 'undefined') listScroll.current = window.scrollY || 0
+    setCategory(id)
+  }
   const back = () => (category === 'main' ? onBack() : setCategory('main'))
   if (category === 'main')
     return (
@@ -279,18 +294,21 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         {CATEGORY_GROUPS.map(([groupTitle, items]) => (
           <section key={groupTitle} className="mb-5" aria-label={groupTitle}>
             <h2 className="mb-2 px-1 font-amiri text-sm font-bold text-azkar-teal-ink">{groupTitle}</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {items.map(([id, t, d, Icon]) => (
+            <div className="overflow-hidden rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card shadow-sm">
+              {items.map(([id, t, d, Icon], i) => (
                 <button
                   key={id}
-                  onClick={() => setCategory(id)}
-                  className="u-pressable flex min-h-[6.2rem] flex-col items-start gap-2 rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card px-3 py-3 text-right shadow-sm"
+                  onClick={() => openCategory(id)}
+                  className={`u-pressable flex min-h-[3.75rem] w-full items-center gap-3 px-3 py-2.5 text-right ${i > 0 ? 'border-t border-azkar-gold-soft' : ''}`}
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-azkar-teal-tint text-azkar-teal-ink">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-azkar-teal-tint text-azkar-teal-ink">
                     <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
-                  <b className="font-amiri text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
-                  <span className="text-[0.6875rem] leading-4 text-azkar-ink-soft">{d}</span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block font-amiri text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
+                    <span className="block text-[0.6875rem] leading-4 text-azkar-ink-soft">{d}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-lg text-azkar-ink-faint">‹</span>
                 </button>
               ))}
             </div>
