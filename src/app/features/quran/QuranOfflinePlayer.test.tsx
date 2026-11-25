@@ -13,6 +13,11 @@ describe('QuranOfflinePlayer availability hint', () => {
     expect(container.querySelector('audio')).toBeNull()
     expect(screen.getByText(/بدون إنترنت/)).toBeTruthy()
   })
+  it('names the reciter whose recording is available offline', async () => {
+    vi.mocked(isSurahDownloaded).mockResolvedValue(true)
+    render(<QuranOfflinePlayer {...props} reciter="ar.husary" />)
+    await waitFor(() => expect(screen.getByTestId('quran-offline-player').textContent).toContain('محمود خليل الحصري'))
+  })
   it('hides when storage is unavailable', async () => {
     vi.mocked(isSurahDownloaded).mockRejectedValue(new Error('no storage'))
     render(<QuranOfflinePlayer {...props} />)
