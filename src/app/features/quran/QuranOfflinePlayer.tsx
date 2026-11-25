@@ -14,7 +14,7 @@ export function QuranOfflinePlayer({ reciter, surahNumber }: Props) {
     return () => { current = false }
   }, [reciter, surahNumber])
   if (!available) return null
-  return <div data-testid="quran-offline-player" className="mb-3 rounded-2xl border border-azkar-teal-soft bg-azkar-card p-3 text-xs text-azkar-teal-ink">
-    نسخة منزّلة متاحة. تشغيل السورة يستخدمها تلقائيًا إن كانت قابلة للتشغيل، من بداية السورة.
+  return <div data-testid="quran-offline-player" className="mb-3 inline-flex rounded-full border border-azkar-teal-soft bg-azkar-card px-3 py-1 text-xs font-bold text-azkar-teal-ink">
+    منزّلة للاستماع بدون إنترنت
   </div>
 }
