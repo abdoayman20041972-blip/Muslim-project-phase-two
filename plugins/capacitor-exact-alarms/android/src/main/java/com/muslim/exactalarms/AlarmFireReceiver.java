@@ -160,11 +160,24 @@ public class AlarmFireReceiver extends BroadcastReceiver {
             .setContentTitle(entry.title)
             .setContentText(entry.body)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(entry.body))
-            .setColor(GOLD)
+            .setColor(NotificationLook.paletteFor(entry.title)[2])
             .setAutoCancel(true)
             .setWhen(System.currentTimeMillis())
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(tapIntent(context, entry));
+
+        // Green gradient card with gold wavy lines. Title/text above stay set for
+        // accessibility and as the fallback when a device ignores custom views.
+        try {
+            android.widget.RemoteViews card = NotificationLook.views(context, entry.title, entry.body);
+            if (card != null) {
+                builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+                builder.setCustomContentView(card);
+                builder.setCustomBigContentView(card);
+            }
+        } catch (RuntimeException ignored) {
+            // Keep the plain notification (BigTextStyle) when the card cannot be built.
+        }
 
         // Stale notifications remove themselves: the pre-prayer reminder is
         // meaningless once the adhan fires, and a week of untapped
