@@ -117,8 +117,11 @@ export function HomeView({
     }
   }, [])
 
+  const pageRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
-    const elements = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'))
+    const page = pageRef.current
+    const elements = Array.from((page ?? document).querySelectorAll<HTMLElement>('[data-reveal]'))
+    const reducedOs = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const revealInViewport = () => {
       for (const el of elements) {
         if (el.classList.contains('reveal-in')) continue
@@ -126,28 +129,61 @@ export function HomeView({
         if (rect.top < window.innerHeight * 0.94 && rect.bottom > 0) el.classList.add('reveal-in')
       }
     }
-    const raf = requestAnimationFrame(() => requestAnimationFrame(revealInViewport))
-    if (!('IntersectionObserver' in window)) {
-      revealInViewport()
-      return () => cancelAnimationFrame(raf)
+    const hasIO = 'IntersectionObserver' in window
+    const observer = hasIO
+      ? new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('reveal-in')
+                observer!.unobserve(entry.target)
+              }
+            }
+          },
+          { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+        )
+      : null
+    const watch = () => {
+      if (!observer) return
+      for (const el of elements) if (!el.classList.contains('reveal-in')) observer.observe(el)
     }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('reveal-in')
-            observer.unobserve(entry.target)
-          }
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
-    )
-    elements.forEach((el) => observer.observe(el))
+    // Replays the entrance: used when the splash finishes and each time Home becomes visible again,
+    // because Home stays mounted while other tabs are open. Reduced motion (OS or app) skips the replay.
+    const replay = () => {
+      if (reducedOs() || document.documentElement.classList.contains('reduce-motion')) return
+      observer?.disconnect()
+      for (const el of elements) {
+        el.style.transition = 'none'
+        el.classList.remove('reveal-in')
+      }
+      void document.body.offsetHeight
+      for (const el of elements) el.style.removeProperty('transition')
+      window.setTimeout(() => {
+        revealInViewport()
+        watch()
+      }, 60)
+    }
+    const raf = requestAnimationFrame(() => requestAnimationFrame(revealInViewport))
+    watch()
     const fallback = window.setTimeout(revealInViewport, 900)
+    const onSplashDone = () => replay()
+    window.addEventListener('muslim-splash-done', onSplashDone)
+    let visibility: IntersectionObserver | null = null
+    let wasVisible = true
+    if (hasIO && page) {
+      visibility = new IntersectionObserver((entries) => {
+        const visible = entries.some((e) => e.isIntersecting)
+        if (visible && !wasVisible) replay()
+        wasVisible = visible
+      })
+      visibility.observe(page)
+    }
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(fallback)
-      observer.disconnect()
+      window.removeEventListener('muslim-splash-done', onSplashDone)
+      observer?.disconnect()
+      visibility?.disconnect()
     }
   }, [])
 
@@ -214,7 +250,7 @@ export function HomeView({
   const readingLabel = lastSurahMeta ? readingPositionLabel(progress.reading?.surah === lastSurahMeta.number ? progress.reading : null, toArabicNumber) : null
 
   return (
-    <div className="home-reference-page home-v4 relative w-full min-w-0 pb-6">
+    <div ref={pageRef} className="home-reference-page home-v4 relative w-full min-w-0 pb-6">
       <div className="home-bg" aria-hidden="true">
         <div className="home-bg-image" style={{ backgroundImage: `url("${HOME_HERO_IMAGE}")` }} />
         <div className="home-bg-fade" />
