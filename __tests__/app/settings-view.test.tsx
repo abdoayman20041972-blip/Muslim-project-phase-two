@@ -87,11 +87,12 @@ describe('SettingsView smoke coverage', () => {
     expect(screen.getByRole('button', { name: 'داكن' })).toBeTruthy()
   })
 
-  it('opens the Quran category and exposes the reciter select', () => {
+  it('opens the Quran category and lists every reciter in the app-styled picker', () => {
     fireEvent.click(screen.getByText('المصحف', { selector: 'b' }).closest('button')!)
     expect(screen.getAllByText('المصحف')[0]).toBeTruthy()
-    const select = screen.getByRole('combobox', { name: 'قارئ المصحف' }) as HTMLSelectElement
-    expect(Array.from(select.options).map((option) => option.value)).toEqual([...QURAN_AUDIO_RECITERS])
+    expect(screen.queryByRole('combobox', { name: 'قارئ المصحف' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'قارئ المصحف' }))
+    expect(screen.getAllByRole('option')).toHaveLength(QURAN_AUDIO_RECITERS.length)
   })
 
   it('opens the azkar category and exposes the internal settings categories', () => {
