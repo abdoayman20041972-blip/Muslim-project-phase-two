@@ -82,7 +82,6 @@ export function QuranSection({
   const [jobs, setJobs] = useState<DownloadJobSnapshot[]>([])
   const [openReciter, setOpenReciter] = useState<QuranAudioReciter | null>(null)
   const [confirmReciter, setConfirmReciter] = useState<QuranAudioReciter | null>(null)
-  const [wifiOnly, setWifiOnly] = useState(true)
   const [freeSpace, setFreeSpace] = useState<number | undefined>(undefined)
   const [persistenceNote, setPersistenceNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -127,12 +126,12 @@ export function QuranSection({
   const startReciterDownload = (id: QuranAudioReciter) => {
     setError(null)
     setConfirmReciter(null)
-    void downloadReciterAll(id, { wifiOnly }).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
+    void downloadReciterAll(id).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
   }
 
   const retryFailed = (id: QuranAudioReciter) => {
     setError(null)
-    void retryFailedDownloads(id, { wifiOnly }).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
+    void retryFailedDownloads(id).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
   }
 
   const startSurahDownload = (id: QuranAudioReciter, surahNumber: number) => {
@@ -190,9 +189,7 @@ export function QuranSection({
                           {job.state === 'paused' ? 'متوقف مؤقتًا' : 'يجري الآن'} · {QURAN_AUDIO_RECITER_LABELS[job.reciter]}
                         </div>
                         <div className="mt-1 text-xs text-azkar-ink-soft">
-                          {job.pauseReason === 'wifi'
-                            ? 'بانتظار اتصال Wi-Fi للمتابعة.'
-                            : currentName
+                          {currentName
                               ? `سورة ${currentName}${percent !== undefined ? ` · ${toArabicNumber(percent)}٪` : ''} · ${formatBytes(job.current?.receivedBytes ?? 0)}${job.current?.bytesPerSecond ? ` · ${formatBytes(Math.round(job.current.bytesPerSecond))}/ث` : ''}`
                               : 'جاري التحضير…'}
                         </div>
@@ -286,10 +283,6 @@ export function QuranSection({
                       تنزيل المكتبة كاملة يستهلك حوالي {RECITER_SIZE_ESTIMATES[id]} من بيانات الهاتف والمساحة.
                       {freeSpace !== undefined ? ` المتاح التقريبي الآن: ${formatBytes(freeSpace)}.` : ''}
                     </p>
-                    <label className="mt-2 flex items-center gap-2 text-xs">
-                      <input type="checkbox" checked={wifiOnly} onChange={(e) => setWifiOnly(e.target.checked)} />
-                      التنزيل عبر Wi-Fi فقط (يتوقف مؤقتًا خارج Wi-Fi)
-                    </label>
                     <div className="mt-2 flex gap-2">
                       <button type="button" onClick={() => startReciterDownload(id)} className="rounded-xl bg-azkar-teal px-3 py-2 text-xs text-white">
                         بدء التنزيل

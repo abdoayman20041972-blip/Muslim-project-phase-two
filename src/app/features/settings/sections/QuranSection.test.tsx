@@ -75,7 +75,7 @@ describe('QuranSection download manager', () => {
     expect(screen.getAllByText('التخزين الثابت مفعّل: لن يحذف المتصفح التنزيلات تلقائيًا.').length).toBe(1)
   })
 
-  it('asks for confirmation with size, space and Wi-Fi option before a full download', async () => {
+  it('asks for confirmation with size and space, with no Wi-Fi restriction, before a full download', async () => {
     mocks.getDownloadStatus.mockResolvedValue({ completed: [], failed: [], total: 114 })
     render(<QuranSection {...props} />)
     await waitFor(() => screen.getAllByText('تنزيل القارئ كاملًا'))
@@ -83,11 +83,11 @@ describe('QuranSection download manager', () => {
     fireEvent.click(screen.getAllByText('تنزيل القارئ كاملًا')[0])
     expect(screen.getByText(/تنزيل المكتبة كاملة يستهلك حوالي/)).toBeTruthy()
     expect(screen.getByText(/المتاح التقريبي الآن/)).toBeTruthy()
-    expect(screen.getByText('التنزيل عبر Wi-Fi فقط (يتوقف مؤقتًا خارج Wi-Fi)')).toBeTruthy()
+    expect(screen.queryByText(/Wi-Fi/)).toBeNull()
 
     fireEvent.click(screen.getByText('بدء التنزيل'))
     await waitFor(() =>
-      expect(mocks.downloadReciterAll).toHaveBeenCalledWith(QURAN_AUDIO_RECITERS[0], { wifiOnly: true }),
+      expect(mocks.downloadReciterAll).toHaveBeenCalledWith(QURAN_AUDIO_RECITERS[0]),
     )
   })
 
@@ -143,7 +143,7 @@ describe('QuranSection download manager', () => {
 
     fireEvent.click(screen.getByText('إعادة الفاشل (١)'))
     await waitFor(() =>
-      expect(mocks.retryFailedDownloads).toHaveBeenCalledWith(QURAN_AUDIO_RECITERS[0], { wifiOnly: true }),
+      expect(mocks.retryFailedDownloads).toHaveBeenCalledWith(QURAN_AUDIO_RECITERS[0]),
     )
   })
 
