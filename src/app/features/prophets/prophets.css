@@ -11,8 +11,6 @@
 .ys-verse{margin:.8rem 0;padding:.8rem .6rem;border-radius:.9rem;border:1px solid hsl(var(--azkar-gold)/.35);background:hsl(var(--azkar-gold)/.08);color:hsl(var(--azkar-gold-deep))}
 .ys-verse-label{margin-bottom:.4rem;text-align:center;font-size:.72rem;font-weight:700}
 .ys-verse-row{display:flex;align-items:center;gap:.2rem}
-.ys-orn{flex:none;width:1rem;height:2.75rem}
-.ys-orn-close{transform:scaleX(-1)}
 .ys-verse-text{flex:1;min-width:0;margin:0;text-align:center;font-size:1.2rem;line-height:2.3;color:hsl(var(--azkar-ink));overflow-wrap:anywhere}
 .ys-verse-wait{font-size:.8rem;color:hsl(var(--azkar-ink-faint))}
 .ys-ayah-no{display:inline-flex;align-items:center;justify-content:center;unicode-bidi:isolate;direction:rtl;min-width:1.7em;height:1.7em;box-sizing:border-box;padding:0 .2em;margin:0 .15em;border:1.5px solid currentColor;border-radius:999px;font-size:.62em;line-height:1;font-weight:700;vertical-align:middle;color:hsl(var(--azkar-gold-deep))}
