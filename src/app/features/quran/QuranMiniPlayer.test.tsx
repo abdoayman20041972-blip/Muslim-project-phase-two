@@ -13,13 +13,30 @@ const value = (overrides: Partial<ReturnType<typeof useQuranAudio>>) => ({
   repeat: 'off' as const, setRepeat: vi.fn(), selectAyah: vi.fn(), setReciter: vi.fn(), ...overrides,
 })
 describe('QuranMiniPlayer', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => { vi.clearAllMocks(); localStorage.removeItem('azkar_hide_mini_player') })
   it('appears while an active audio session exists', () => {
     mockedUseQuranAudio.mockReturnValue(value({}))
     render(<QuranMiniPlayer />)
     expect(screen.getByTestId('quran-mini-player')).toBeTruthy()
     expect(screen.getByText('محمد صديق المنشاوي')).toBeTruthy()
     expect(screen.getByText(/الآية/)).toBeTruthy()
+  })
+  it('hides the floating player when the setting is on, and shows it again when off', () => {
+    mockedUseQuranAudio.mockReturnValue(value({}))
+    localStorage.setItem('azkar_hide_mini_player', '1')
+    const { unmount } = render(<QuranMiniPlayer />)
+    expect(screen.queryByTestId('quran-mini-player')).toBeNull()
+    unmount()
+    localStorage.setItem('azkar_hide_mini_player', '0')
+    render(<QuranMiniPlayer />)
+    expect(screen.getByTestId('quran-mini-player')).toBeTruthy()
+  })
+  it('keeps the resume-listening bar when the floating player is hidden', () => {
+    mockedUseQuranAudio.mockReturnValue(value({ current: null, currentSurah: null, playing: false, audio: null, saved: { surah: 1, reciter: 'ar.minshawi', seconds: 5 } as never }))
+    localStorage.setItem('azkar_hide_mini_player', '1')
+    render(<QuranMiniPlayer />)
+    expect(screen.getByTestId('quran-resume-player')).toBeTruthy()
+    localStorage.removeItem('azkar_hide_mini_player')
   })
   it('does not render when there is no active audio session', () => {
     mockedUseQuranAudio.mockReturnValue(value({ current: null, currentSurah: null, playing: false, audio: null }))
