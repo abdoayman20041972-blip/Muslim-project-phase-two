@@ -20,7 +20,8 @@ import {
   type StatusSummary,
 } from '../../quran/offlineDownload'
 import { surahList } from '../../../../quran-meta'
-import { APP_SETTINGS_KEYS } from '../../../settings'
+import { APP_SETTINGS_KEYS, readSetting } from '../../../settings'
+import { Toggle } from '../../../components/app-chrome'
 import { ReciterPicker } from '../../quran/ReciterPicker'
 import { Row, Section, Choice } from '../settingsPrimitives'
 
@@ -139,6 +140,7 @@ export function QuranSection({
     void downloadSurah(id, surahNumber).catch(() => setError('تعذر إكمال التنزيل. يمكنك المحاولة مرة أخرى.'))
   }
 
+  const [hideMini, setHideMini] = useState(() => readSetting(APP_SETTINGS_KEYS.hideMiniPlayer, '0') === '1')
   const totalStored = Object.values(storageBytes).reduce((sum, value) => sum + (value ?? 0), 0)
 
   return (
@@ -152,6 +154,9 @@ export function QuranSection({
         </Row>
         <Row title="القارئ" description="يُستخدم في التلاوة الصوتية">
           <ReciterPicker label="قارئ المصحف" value={reciter} onChange={setReciter} className="h-10 w-[10rem]" />
+        </Row>
+        <Row title="إخفاء المشغّل العائم" description="يخفي المشغّل الصغير أعلى الشريط السفلي. التلاوة والإشعار يستمرّان">
+          <Toggle checked={hideMini} onChange={() => { const n = !hideMini; setHideMini(n); save(APP_SETTINGS_KEYS.hideMiniPlayer, n ? '1' : '0') }} label="إخفاء المشغّل العائم" />
         </Row>
         <Row title="طريقة عرض الآيات" description={layout === 'scroll' ? 'تمرير متصل' : 'صفحات من 10 آيات'} last stacked>
           <Choice current={layout} onChange={(v) => setLayout(v as 'scroll' | 'pages')} labels={{ scroll: 'تمرير', pages: 'صفحات' }} />
