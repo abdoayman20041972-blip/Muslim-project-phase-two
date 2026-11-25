@@ -1923,3 +1923,43 @@ body:has(.nav-float) .quran-mini-player{bottom:calc(max(.6rem,env(safe-area-inse
 .radio-live.is-live i{animation:radio-pulse 1.6s ease-in-out infinite}
 @keyframes radio-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.35)}}
 @media (prefers-reduced-motion:reduce){.radio-live.is-live i{animation:none}}
+
+/* Dhikr tap pad (dpad): a small round button with a ring of beads; the count sits under it. */
+.dpad{display:flex;flex-direction:column;align-items:center;gap:.2rem;margin-top:.35rem;padding:0;border:0;background:none}
+.dpad-pad{position:relative;flex:none;display:grid;place-items:center;width:2.6rem;height:2.6rem;padding:0;border:0;border-radius:9999px;color:hsl(var(--azkar-teal-ink));background:radial-gradient(circle at 35% 28%,hsl(var(--azkar-card)),hsl(var(--azkar-teal-tint)));box-shadow:0 6px 14px hsl(165 30% 15%/.14),inset 0 0 0 1px hsl(var(--azkar-gold)/.25);-webkit-tap-highlight-color:transparent;transition:transform .12s ease,box-shadow .12s ease}
+.dpad-pad:active:not(:disabled){transform:scale(.92)}
+.dpad-pad:disabled{cursor:default}
+.dpad-ring{position:absolute;inset:0;width:100%;height:100%}
+.dpad-bead{fill:none;stroke:hsl(var(--azkar-teal)/.18);stroke-width:6;stroke-linecap:round;transition:stroke .15s ease}
+.dpad-bead-on{stroke:hsl(var(--azkar-teal))}
+.dpad-done .dpad-bead-on{stroke:hsl(var(--azkar-gold))}
+.dpad-done{color:hsl(var(--azkar-gold));background:radial-gradient(circle at 35% 28%,hsl(var(--azkar-card)),hsl(var(--azkar-gold)/.14))}
+.dpad-dot{position:relative;width:.5rem;height:.5rem;border-radius:9999px;background:currentColor;opacity:.85}
+.dpad-check{position:relative;font-size:1rem;font-weight:800;line-height:1}
+.dpad-count{display:flex;align-items:baseline;gap:.35rem;line-height:1;color:hsl(var(--azkar-teal-ink))}
+.dpad-now{font-family:Amiri,serif;font-size:1.4rem;font-weight:700}
+.dpad-of{font-size:.75rem;font-weight:700;color:hsl(var(--azkar-ink-faint))}
+.dpad-done+.dpad-count .dpad-now{color:hsl(var(--azkar-gold))}
+.dpad-left{font-size:.75rem;color:hsl(var(--azkar-ink-soft))}
+.dpad-left strong{font-size:.875rem;color:hsl(var(--azkar-ink))}
+.dpad-undo{min-height:2rem;padding:0 .8rem;border-radius:9999px;border:1px solid hsl(var(--azkar-hairline));background:hsl(var(--azkar-card));font-size:.6875rem;font-weight:700;color:hsl(var(--azkar-ink-soft))}
+.dpad-journey{gap:.5rem;margin-top:.8rem;padding:0}
+.dpad-journey .dpad-pad{width:4rem;height:4rem}
+.dpad-journey .dpad-now{font-size:2.2rem}
+.dpad-journey .dpad-of{font-size:.75rem}
+.dpad-journey .dpad-dot{width:.75rem;height:.75rem}
+.dpad-journey .dpad-check{font-size:1.5rem}
+@media (prefers-reduced-motion:reduce){.dpad-pad,.dpad-bead{transition:none}.dpad-pad:active:not(:disabled){transform:none}}
+html.reduce-motion .dpad-pad,html.reduce-motion .dpad-bead{transition:none}
+html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
+/* Dhikr list: each dhikr is its own card with space between cards. */
+.azkar-list-cards,.dark .azkar-list-cards{background:none!important}
+.azkar-list-cards article{border-radius:1.25rem;border:1px solid hsl(var(--azkar-hairline));box-shadow:var(--shadow-1)}
+.azkar-list-cards article:not(.azkar-fadl-card):not(.azkar-guidance-card){background:hsl(var(--azkar-card))}
+.dpad-pad::after{content:"";position:absolute;inset:-.45rem;border-radius:9999px}
+
+.azkar-list-cards article p.u-reading-text{line-height:2!important;font-size:calc(1.15rem*var(--zikr-scale,1))!important}
+.azkar-list-cards article .u-reading-text+.dpad{margin-top:0}
+.dpad-meta{display:flex;align-items:center;justify-content:center;gap:.6rem}
+.dpad-undo{min-height:1.75rem}
+.azkar-list-cards article p.u-reading-text{font-size:calc(1.2rem*var(--zikr-scale,1))!important}
