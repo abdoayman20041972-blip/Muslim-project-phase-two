@@ -19,6 +19,9 @@ function useRadioValue() {
   const stationRef = useRef<RadioStation | null>(null)
   const nativeQueue = useRef<Promise<void>>(Promise.resolve())
   const pausedByFocus = useRef(false)
+  // One automatic retry per user action, so a momentary server error does not read as a dead station.
+  const retried = useRef(false)
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const getAudio = useCallback(() => {
     if (!audioRef.current) {
@@ -29,7 +32,9 @@ function useRadioValue() {
     return audioRef.current
   }, [])
 
-  const begin = useCallback((url: string) => {
+  const begin = useCallback((url: string, isRetry = false) => {
+    if (!isRetry) retried.current = false
+    if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null }
     const audio = getAudio()
     audio.src = url
     setStatus('loading')
@@ -46,6 +51,7 @@ function useRadioValue() {
   }, [begin, currentSurah, stopQuran])
 
   const stop = useCallback(() => {
+    if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null }
     const audio = audioRef.current
     if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() }
     stationRef.current = null
@@ -72,7 +78,14 @@ function useRadioValue() {
     const onPlaying = () => setStatus('playing')
     const onWaiting = () => { if (stationRef.current && !audio.paused) setStatus('loading') }
     const onError = () => {
-      if (!stationRef.current) return
+      const current = stationRef.current
+      if (!current) return
+      if (!retried.current) {
+        retried.current = true
+        setStatus('loading')
+        retryTimer.current = setTimeout(() => { retryTimer.current = null; if (stationRef.current?.id === current.id) begin(current.url, true) }, 1500)
+        return
+      }
       setStatus('error')
     }
     audio.addEventListener('playing', onPlaying)
