@@ -94,6 +94,8 @@ public class BackgroundAudioPlugin extends Plugin {
         intent.putExtra("playing", call.getBoolean("playing", true));
         Double position = call.getDouble("position", 0.0);
         Double duration = call.getDouble("duration", 0.0);
+        intent.putExtra("skipPrevious", Boolean.TRUE.equals(call.getBoolean("skipPrevious", false)));
+        intent.putExtra("skipNext", Boolean.TRUE.equals(call.getBoolean("skipNext", false)));
         intent.putExtra("positionMs", position == null ? 0L : (long) (position * 1000));
         intent.putExtra("durationMs", duration == null || duration <= 0 ? -1L : (long) (duration * 1000));
         try {
