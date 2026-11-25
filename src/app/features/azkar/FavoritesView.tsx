@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { copyText, shareText } from './shareActions'
+import { shareQuoteCard } from './shareActions'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
 import { toArabicDigits, toArabicNumber, type View } from '../../constants'
@@ -10,9 +10,6 @@ type Props = { favorites: Favorite[]; onToggleFavorite: (key: string) => void; o
 
 function StarIcon({ filled = false, className = 'h-[18px] w-[18px]' }: { filled?: boolean; className?: string }) {
   return <svg viewBox="0 0 24 24" className={className} fill={filled ? 'currentColor' : 'none'} aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-}
-function CopyIcon() {
-  return <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" strokeWidth="1.7"/></svg>
 }
 function ShareIcon() {
   return <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.7"/><circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.7"/><circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.7"/><path d="m8.2 10.8 7.5-4.3M8.2 13.2l7.5 4.3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
@@ -110,8 +107,7 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
                     </div>}
                     <div className="relative mt-4 flex items-center gap-2 border-t border-azkar-hairline pt-3">
                       <button onClick={() => setView?.({ name: 'category', id: category.id })} aria-label={`فتح ${category.label}`} className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-teal/20 bg-azkar-teal-tint px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">فتح في القسم</button>
-                      <button onClick={() => void copyText(item.text)} aria-label="نسخ الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><CopyIcon/>نسخ</button>
-                      <button onClick={() => void shareText(item.text)} aria-label="مشاركة الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><ShareIcon/>مشاركة</button>
+                      <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.6875rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><ShareIcon/>مشاركة</button>
                     </div>
                   </article>
                 })}
