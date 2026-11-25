@@ -234,6 +234,16 @@ export class QuranAudioSession {
     const { request, seconds } = this.state
     if (request) void this.start(request, true, seconds)
   }
+  /** Notification/lock-screen seek bar. The audio element is the position source of truth. */
+  seek = (seconds: number) => {
+    const { audio, request } = this.state
+    if (!request || !audio || !Number.isFinite(seconds) || seconds < 0) return
+    try {
+      audio.currentTime = seconds
+      this.update({ seconds })
+      this.save()
+    } catch { /* Unloaded element or beyond duration: the next timeupdate resyncs. */ }
+  }
   restore = () => {
     const saved = this.state.saved
     if (saved) void this.start(saved, true, saved.seconds)
