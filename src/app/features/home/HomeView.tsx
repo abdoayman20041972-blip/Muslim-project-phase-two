@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BookOpen, ChevronLeft, Compass, Heart, Moon, MoreHorizontal, ScrollText, Sun, Clock } from 'lucide-react'
+import { BookOpen, ChevronLeft, Compass, Moon, ScrollText, Settings, Sun, Sparkles, BookMarked, CircleDot } from 'lucide-react'
 import { formatLocalizedDate, toArabicNumber } from '../../constants'
 import { formatCountdown, formatPrayerTime, PRAYER_LABELS, useNextPrayer, usePrayerCoords } from '../prayer/prayerTimes'
 import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
@@ -96,12 +96,10 @@ export function HomeView({
   onOpenEveningAzkar,
   onOpenTasbih,
   onContinueReading,
-  onOpenSettings = () => {},
   onOpenQibla = () => {},
+  onOpenSettings = () => {},
   onOpenProphets = () => {},
   onOpenHadith = () => {},
-  onOpenFavorites = () => {},
-  onOpenMore = () => {},
   onOpenSurah,
 }: HomeViewProps) {
   const [dateTick, setDateTick] = useState(() => new Date())
@@ -201,6 +199,9 @@ export function HomeView({
             {hijriDate && <div className="text-[0.75rem] font-semibold text-azkar-gold-deep">{hijriDate}</div>}
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={onOpenSettings} aria-label="الإعدادات" className="home-v4-round u-pressable">
+              <Settings className="h-5 w-5" />
+            </button>
             <button onClick={onToggleDarkMode} aria-label="تبديل الوضع الليلي" className="home-v4-round u-pressable">
               {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
@@ -210,18 +211,25 @@ export function HomeView({
         <section className="home-prayer-photo" data-testid="home-prayer-photo" data-reveal>
           <div className="home-prayer-photo-img" style={photoSrc ? { backgroundImage: `url("${photoSrc}")` } : undefined} aria-hidden="true" />
           <div className="home-prayer-photo-shade" aria-hidden="true" />
-          <div className="relative z-10 flex items-start justify-between px-4 pt-3.5">
-            <span className="home-reference-location"><span>{locationLabel}</span><Compass className="h-4 w-4" /></span>
-            <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
+          <button type="button" onClick={onOpenPrayer} aria-label="مواقيت الصلاة" className="absolute inset-0 z-[5] h-full w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold" />
+          <div className="home-prayer-sky" aria-hidden="true">
+            <span className="home-sky-star home-sky-star-a" />
+            <span className="home-sky-star home-sky-star-b" />
+            <span className="home-sky-star home-sky-star-c" />
+            <span className="home-sky-glow" />
           </div>
-          <div className="relative z-10 flex items-end justify-between px-4 pb-3 pt-6">
-            <div className="text-left">
-              <div className="text-[0.75rem] font-semibold text-white/80">متبقي</div>
-              <div dir="ltr" className="text-[1.625rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
-            </div>
+          <div className="home-prayer-top relative z-10 flex items-start justify-between px-4">
+            <span className="text-[0.8125rem] font-semibold text-white/85">{next ? 'الصلاة القادمة' : 'مواقيت الصلاة'}</span>
+            <span className="home-reference-location"><Compass className="h-4 w-4" /><span>{locationLabel}</span></span>
+          </div>
+          <div className="relative z-10 flex items-end justify-between px-4 pb-3 pt-3">
             <div className="text-right">
               <div className="font-amiri text-[2.75rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
-              <div className="mt-1 text-[1.375rem] font-bold tabular-nums text-white">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
+            </div>
+            <div className="home-prayer-time-block text-center">
+              <div className="text-[1.625rem] font-bold tabular-nums leading-none text-white">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
+              <div className="mt-2 text-[0.75rem] font-semibold leading-none text-white/80">متبقي</div>
+              <div dir="ltr" className="mt-1 text-[1.3rem] font-bold tabular-nums leading-none text-white">{formatCountdown(remainingMs)}</div>
             </div>
           </div>
           <span className="sr-only" role="status">{next ? `الصلاة القادمة ${PRAYER_LABELS[next.key]}` : ''}</span>
@@ -236,12 +244,6 @@ export function HomeView({
                 </button>
               )
             })}
-          </div>
-          <div className="home-prayer-credit relative z-10 px-3 pb-2 text-[0.6875rem] text-white/75" dir="ltr">
-            <span>Illustrative photo, not your location · </span>
-            <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="-my-2.5 inline-block py-2.5 underline">{photo.artist}</a>
-            <span> / Wikimedia Commons / </span>
-            <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="-my-2.5 inline-block py-2.5 underline">{photo.license}</a>
           </div>
           {!coords && <div className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">حدّد موقعك لعرض مواقيت الصلاة بدقة</div>}
           {coords && prayerLoading && !timings && <div role="status" className="relative z-10 px-4 pb-2.5 text-center text-[0.6875rem] text-white/80">جارٍ حساب المواقيت…</div>}
@@ -258,21 +260,13 @@ export function HomeView({
           <DailyAyahCard ayah={dailyAyah} onOpenSurah={onOpenSurah} />
         </div>
 
-        <section className="mt-4" data-reveal>
-          <div className="mb-2 flex items-baseline justify-between px-1">
-            <h2 className="font-amiri text-[1.375rem] font-bold text-azkar-teal-ink">أقسام أخرى</h2>
-            <span className="text-[0.6875rem] text-azkar-ink-soft">غير موجودة في الشريط السفلي</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} reveal={false} />
-            <HomeTile onClick={onOpenPrayer} title="المواقيت" subtitle="الشهر كامل" tone="prayer" icon={<Clock className="h-6 w-6" />} reveal={false} />
-            <HomeTile onClick={onOpenProphets} title="قصص الأنبياء" subtitle="دروس وعِبر" tone="prophets" icon={<ScrollText className="h-6 w-6" />} reveal={false} />
-            <HomeTile onClick={onOpenFavorites} title="المفضلة" subtitle="ما حفظته" tone="azkar" icon={<Heart className="h-6 w-6" />} reveal={false} />
-          </div>
-          <button type="button" onClick={onOpenMore} className="home-more-link u-pressable mt-2.5 flex w-full items-center justify-between rounded-2xl px-4 py-3 text-right">
-            <span className="flex items-center gap-2 font-amiri text-[1.0625rem] font-bold text-azkar-teal-ink"><MoreHorizontal className="h-5 w-5" />المزيد</span>
-            <span className="text-[0.6875rem] text-azkar-ink-soft">السبحة والإعدادات وأدوات أخرى</span>
-          </button>
+        <section className="mt-4 grid grid-cols-2 gap-2.5" data-reveal aria-label="الأقسام">
+          <HomeTile onClick={onOpenMushaf} title="المصحف" subtitle="القرآن الكريم" tone="quran" icon={<BookOpen className="h-6 w-6" />} reveal={false} />
+          <HomeTile onClick={onOpenHadith} title="الأحاديث" subtitle="من السنة النبوية" tone="hadith" icon={<BookMarked className="h-6 w-6" />} reveal={false} />
+          <HomeTile onClick={onOpenAzkar} title="الأذكار" subtitle="أذكار اليوم والليلة" tone="azkar" icon={<Sparkles className="h-6 w-6" />} reveal={false} />
+          <HomeTile onClick={onOpenProphets} title="قصص الأنبياء" subtitle="دروس وعِبر" tone="prophets" icon={<ScrollText className="h-6 w-6" />} reveal={false} />
+          <HomeTile onClick={onOpenTasbih} title="السبحة" subtitle="تسبيح وذكر" tone="tasbih" icon={<CircleDot className="h-6 w-6" />} reveal={false} />
+          <HomeTile onClick={onOpenQibla} title="القبلة" subtitle="اتجاه الكعبة" tone="qibla" icon={<Compass className="h-6 w-6" />} reveal={false} />
         </section>
       </main>
     </div>
