@@ -51,16 +51,6 @@ function useStoryAyahs(surahs: number[]) {
   return { ayahs, failed }
 }
 
-function Ornament({ side }: { side: 'open' | 'close' }) {
-  return (
-    <svg className={`ys-orn ys-orn-${side}`} viewBox="0 0 16 44" aria-hidden="true" focusable="false">
-      <path d="M3 3 Q14 22 3 41" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8 8 Q14 22 8 36" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".6" />
-      <circle cx="12.5" cy="22" r="1.4" fill="currentColor" />
-    </svg>
-  )
-}
-
 function VerseBlock({ verse, ayahs, failed }: { verse: StoryVerse; ayahs: AyahMap | null; failed: boolean }) {
   const [surah, from, to] = verse
   const numbers: number[] = []
@@ -70,7 +60,6 @@ function VerseBlock({ verse, ayahs, failed }: { verse: StoryVerse; ayahs: AyahMa
     <figure className="ys-verse" data-testid="ys-verse">
       <figcaption className="ys-verse-label">قال تعالى</figcaption>
       <div className="ys-verse-row">
-        <Ornament side="open" />
         {list ? (
           <p className="ys-verse-text font-amiri">
             {numbers.map((n) => (
@@ -83,7 +72,6 @@ function VerseBlock({ verse, ayahs, failed }: { verse: StoryVerse; ayahs: AyahMa
         ) : (
           <p className="ys-verse-text ys-verse-wait">{failed ? 'تعذّر تحميل الآيات. افتح المصحف لقراءتها.' : 'جارٍ تحميل الآيات'}</p>
         )}
-        <Ornament side="close" />
       </div>
       <cite className="ys-verse-ref">{storyAyahReference(verse)}</cite>
     </figure>
