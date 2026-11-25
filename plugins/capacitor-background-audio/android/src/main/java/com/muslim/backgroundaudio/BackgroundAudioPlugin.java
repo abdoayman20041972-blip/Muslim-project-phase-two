@@ -29,11 +29,20 @@ public class BackgroundAudioPlugin extends Plugin {
 
     @Override
     public void load() {
-        // Forward notification buttons, media keys and audio-focus changes to the web layer.
+        // Forward notification buttons, media keys and seek-bar moves to the web layer.
         MediaPlaybackService.setListener(
             action -> {
                 JSObject data = new JSObject();
-                data.put("action", action);
+                if (action != null && action.startsWith("seek:")) {
+                    data.put("action", "seek");
+                    try {
+                        data.put("position", Long.parseLong(action.substring(5)));
+                    } catch (NumberFormatException ignored) {
+                        data.put("position", 0L);
+                    }
+                } else {
+                    data.put("action", action);
+                }
                 notifyListeners("mediaAction", data);
             }
         );
