@@ -110,6 +110,18 @@ describe('QuranAudioSession', () => {
     instances[0].dispatchEvent(new Event('ended'))
     expect(session.state.status).toBe('paused'); expect(instances[0].play).toHaveBeenCalledTimes(1)
   })
+  it('continues from a chosen ayah through the rest of the surah, then stops', async () => {
+    const session = new QuranAudioSession()
+    await session.start({ ...connected, kind: 'single-ayah', surah: 1, ayah: { number: 5, numberInSurah: 5, text: '' } })
+    instances[0].dispatchEvent(new Event('ended'))
+    await Promise.resolve()
+    expect(instances).toHaveLength(2)
+    expect(instances[1].src).toContain('/6.mp3'); expect(session.state.request?.ayah?.numberInSurah).toBe(6)
+    instances[1].dispatchEvent(new Event('ended')); await Promise.resolve()
+    expect(instances[2].src).toContain('/7.mp3')
+    instances[2].dispatchEvent(new Event('ended')); await Promise.resolve()
+    expect(instances).toHaveLength(3); expect(session.state.status).toBe('paused')
+  })
   it('exposes a recoverable error with a fresh retry', async () => {
     const session = new QuranAudioSession(); await session.start(single)
     instances[0].dispatchEvent(new Event('error'))
