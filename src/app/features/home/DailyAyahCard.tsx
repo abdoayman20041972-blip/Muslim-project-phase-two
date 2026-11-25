@@ -86,7 +86,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
   const primary = `${pill} home-ayah-act-primary`
 
   return (
-    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-4 pt-8 text-center" data-testid="daily-ayah-card">
+    <div className="home-reference-ayah home-ayah-green relative overflow-hidden rounded-[1.5rem] px-5 pb-12 pt-8 text-center" data-testid="daily-ayah-card">
       <span className="home-tile-shape home-tile-shape-a" aria-hidden="true" />
       <span className="home-tile-shape home-tile-shape-b" aria-hidden="true" />
       <span className="home-ayah-lines" aria-hidden="true" />
