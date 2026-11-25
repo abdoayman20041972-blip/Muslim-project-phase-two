@@ -323,3 +323,15 @@ export async function loadApiEdition(edition: string): Promise<LoadedEdition> {
   }
   return data
 }
+
+/**
+ * Deterministic "hadith of the day" pick: rotates through `count` curated
+ * hadiths by local day-of-year. Pure and offline; no new content, just an
+ * index into the existing reviewed collection.
+ */
+export function dailyHadithIndex(date: Date, count: number): number {
+  if (count <= 0) return 0
+  const start = new Date(date.getFullYear(), 0, 0)
+  const day = Math.floor((date.getTime() - start.getTime()) / 86400000)
+  return ((day % count) + count) % count
+}
