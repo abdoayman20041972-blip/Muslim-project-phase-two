@@ -37,7 +37,7 @@ describe('quranAudioPlayback', () => {
       kind: 'connected',
       reciter: 'ar.husary',
       surahNumber: 12,
-      source: expect.stringContaining('server13.mp3quran.net/husr/012.mp3'),
+      source: expect.stringContaining('cdn.mp3quran.net/audio/mahmoud-husary/r1/012.mp3'),
     })
   })
 
