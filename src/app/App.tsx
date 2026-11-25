@@ -628,7 +628,11 @@ export function App() {
     [backOr],
   );
   const prophetsScreen = useMemo(() => <ProphetsView onBack={() => backOr({ name: "home" })} />, [backOr]);
-  const hadithScreen = useMemo(() => <HadithView onBack={() => setView({ name: "home" })} />, []);
+  const [hadithDetailOpen, setHadithDetailOpen] = useState(false);
+  const hadithScreen = useMemo(
+    () => <HadithView onBack={() => setView({ name: "home" })} onDetailChange={setHadithDetailOpen} />,
+    [],
+  );
   const tasbihScreen = useMemo(
     () => (
       <TasbihView
@@ -672,12 +676,13 @@ export function App() {
             qibla={qiblaScreen}
             prophets={prophetsScreen}
             hadith={hadithScreen}
+            hadithDetailOpen={hadithDetailOpen}
             onHome={() => setView({ name: "home" })}
             tasbih={tasbihScreen}
             more={moreScreen}
           />
         <QuranMiniPlayer />
-        {hasBottomNav(view) && (
+        {hasBottomNav(view) && !(view.name === "hadith" && hadithDetailOpen) && (
           <BottomNav view={view} onNavigate={go} />
         )}
       </div>
