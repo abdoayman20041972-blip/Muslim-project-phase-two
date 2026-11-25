@@ -160,7 +160,7 @@ public class AlarmFireReceiver extends BroadcastReceiver {
             .setContentTitle(entry.title)
             .setContentText(entry.body)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(entry.body))
-            .setColor(NotificationLook.paletteFor(entry.title)[2])
+            .setColor(NotificationLook.accentFor(entry.title))
             .setAutoCancel(true)
             .setWhen(System.currentTimeMillis())
             .setCategory(NotificationCompat.CATEGORY_ALARM)
