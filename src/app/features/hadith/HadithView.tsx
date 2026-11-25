@@ -4,6 +4,7 @@ import { BookOpen, ChevronLeft, ChevronRight, ExternalLink, Search, Share2, Spar
 import {
   API_EDITIONS,
   HADITH_COLLECTION,
+  dailyHadithIndex,
   loadApiEdition,
   type EditionOrigin,
   type HadithGrade,
@@ -34,6 +35,13 @@ const GROUPS: { key: GroupKey; name: string; blurb: string }[] = [
   { key: 'curated', name: 'مختارات', blurb: 'أحاديث مختارة بمصدر كل حديث وملاحظة مختصرة، مضمّنة في التطبيق.' },
   ...API_EDITIONS.map((edition) => ({ key: edition.key as GroupKey, name: edition.name, blurb: edition.blurb })),
 ]
+
+const GROUP_ACCENTS: Record<GroupKey, 'gold' | 'teal' | 'olive' | 'plum'> = {
+  curated: 'gold',
+  nawawi: 'teal',
+  qudsi: 'olive',
+  dehlawi: 'plum',
+}
 
 const curatedItems: Item[] = HADITH_COLLECTION.map((hadith, index) => ({
   key: hadith.id,
@@ -196,9 +204,9 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
         )}
         {item && (
           <div className="hadith-reader-body">
-            <article key={item.key} className="hadith-card hadith-reader-card">
+            <article key={item.key} className={`hadith-card hadith-reader-card hadith-anim hadith-accent-${GROUP_ACCENTS[item.group]}`}>
               <div className="hadith-card-top">
-                <span>
+                <span className="hadith-num-chip">
                   {item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}
                   {item.excerpt && (
                     <span className="mr-2 rounded-full border border-azkar-hairline px-2 py-0.5 text-[0.6875rem] font-normal text-azkar-ink-soft" title="جزء من الحديث الوارد في المصدر" data-testid="hadith-excerpt-badge">مقتطف</span>
@@ -244,6 +252,21 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
   return (
     <section dir="rtl" className="hadith-screen">
       {header('الأحاديث', 'من النبي ﷺ: كلماتٌ تُصلح القلب والعمل', onBack)}
+      {(() => {
+        const dailyIndex = dailyHadithIndex(new Date(), curatedItems.length)
+        const daily = curatedItems[dailyIndex]
+        if (!daily) return null
+        return (
+          <button type="button" onClick={() => open('curated', dailyIndex)} className="hadith-daily u-pressable hadith-anim" data-testid="hadith-daily">
+            <div className="hadith-daily-top">
+              <span className="hadith-daily-tag"><Sparkles className="h-3 w-3" aria-hidden="true" /> حديث اليوم</span>
+              {daily.source && <span className="hadith-daily-src">{toArabicDigits(daily.source)}</span>}
+            </div>
+            <p className="hadith-daily-text font-amiri">{daily.text}</p>
+            <span className="hadith-daily-cta">تصفّح «مختارات» <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" /></span>
+          </button>
+        )
+      })()}
       {searchBox}
       {query.trim() ? (
         <div className="grid gap-4" data-testid="hadith-results">
@@ -273,16 +296,17 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
         </div>
       ) : (
         <div className="grid gap-3" data-testid="hadith-groups">
-          {GROUPS.map((group) => {
+          {GROUPS.map((group, position) => {
             const edition = group.key === 'curated' ? null : editions[group.key]
             return (
-              <div key={group.key} className="hadith-card">
+              <div key={group.key} className={`hadith-card hadith-group-card hadith-accent-${GROUP_ACCENTS[group.key]} hadith-anim`} style={{ animationDelay: `${(position + 1) * 45}ms` }}>
                 <button type="button" onClick={() => open(group.key)} disabled={edition?.state === 'loading'} className="u-pressable block w-full text-right" data-testid={`hadith-group-${group.key}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-amiri text-lg font-bold text-azkar-teal-ink">{group.name}</span>
-                    <span className="text-[0.6875rem] font-bold text-azkar-gold-deep" data-testid={`hadith-count-${group.key}`}>{countText(group.key)}</span>
+                    <span className="hadith-count-pill" data-testid={`hadith-count-${group.key}`}>{countText(group.key)}</span>
                   </div>
                   <p className="mt-1 text-[0.6875rem] leading-relaxed text-azkar-ink-soft">{group.blurb}</p>
+                  <ChevronLeft className="hadith-group-chevron" aria-hidden="true" />
                 </button>
                 {edition?.state === 'error' && (
                   <div className="mt-2 text-[0.6875rem] text-azkar-ink-soft">
