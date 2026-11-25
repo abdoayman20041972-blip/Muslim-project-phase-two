@@ -8,7 +8,7 @@ export interface BackgroundAudioStartOptions {
   duration?: number
 }
 export type BackgroundAudioAction =
-  | 'play' | 'pause' | 'stop'
+  | 'play' | 'pause' | 'stop' | 'seek'
   | 'focusLossTransient' | 'focusLoss' | 'focusGain' | 'noisy'
 export interface BackgroundAudioPlugin {
   /** Starts the service, or updates it if already running. Idempotent. */
@@ -20,7 +20,8 @@ export interface BackgroundAudioPlugin {
   requestNotificationPermission(): Promise<{ granted: boolean }>
   addListener(
     eventName: 'mediaAction',
-    listener: (event: { action: BackgroundAudioAction }) => void,
+    /** action is the control pressed; position (ms) is set only for 'seek'. */
+    listener: (event: { action: BackgroundAudioAction; position?: number }) => void,
   ): Promise<{ remove: () => Promise<void> }>
 }
 export declare const BackgroundAudio: BackgroundAudioPlugin
