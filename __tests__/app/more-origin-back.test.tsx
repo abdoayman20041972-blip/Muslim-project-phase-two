@@ -26,11 +26,11 @@ describe('Back from tools opened through the Home tiles', () => {
     })
   }
 
-  it('المزيد stays reachable from the bar and shows the coming-soon placeholder', async () => {
+  it('المزيد stays reachable from the bar and shows the radio card', async () => {
     render(<App />)
     await finishBoot()
     fireEvent.click(within(screen.getByRole('navigation', { name: 'التنقل الرئيسي' })).getByRole('button', { name: 'المزيد' }))
     await screen.findByRole('heading', { name: 'المزيد' })
-    expect(screen.getByText('قريبًا')).toBeTruthy()
+    expect(screen.getByTestId('more-radio-card')).toBeTruthy()
   })
 })
