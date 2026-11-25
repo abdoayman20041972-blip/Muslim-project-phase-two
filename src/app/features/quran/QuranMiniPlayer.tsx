@@ -1,9 +1,22 @@
+import { useEffect, useState } from 'react'
+import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { useQuranAudio } from './QuranAudioProvider'
 import { surahList } from '../../../quran-meta'
 import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { ReciterPicker } from './ReciterPicker'
 
+function useMiniPlayerHidden() {
+  const [hidden, setHidden] = useState(() => readSetting(APP_SETTINGS_KEYS.hideMiniPlayer, '0') === '1')
+  useEffect(() => {
+    const sync = () => setHidden(readSetting(APP_SETTINGS_KEYS.hideMiniPlayer, '0') === '1')
+    window.addEventListener('azkar-settings-changed', sync)
+    return () => window.removeEventListener('azkar-settings-changed', sync)
+  }, [])
+  return hidden
+}
+
 export function QuranMiniPlayer() {
+  const hidden = useMiniPlayerHidden()
   const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter, buffering, source, error, retry, saved, restore, backgroundWarning, audioProgress } = useQuranAudio()
 
   if (currentSurah === null) return saved ? <div dir="rtl" className="fixed bottom-24 left-3 right-3 z-[55] rounded-2xl border border-azkar-hairline bg-azkar-card p-3 text-sm text-azkar-teal-ink shadow-lg" data-testid="quran-resume-player">
@@ -11,6 +24,10 @@ export function QuranMiniPlayer() {
     <span className="mx-2">{surahList.find((item) => item.number === saved.surah)?.shortName} · {QURAN_AUDIO_RECITER_LABELS[saved.reciter]} · {Math.floor(saved.seconds / 60)}:{String(Math.floor(saved.seconds % 60)).padStart(2, '0')}</span>
     <button type="button" onClick={() => stop()} aria-label="مسح موضع الاستماع المحفوظ">مسح</button>
   </div> : null
+
+  // The user can hide the floating player; playback and the system notification are unaffected.
+  // The separate "resume listening" bar above stays as it was.
+  if (hidden) return null
 
   const reciterLabel = QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter
   const surah = surahList.find((item) => item.number === currentSurah)
