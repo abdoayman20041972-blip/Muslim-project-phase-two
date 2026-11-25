@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { surahList } from '../../../quran-meta'
 import { type Ayah, type View } from '../../constants'
@@ -64,6 +64,10 @@ function useAudioValue() {
   // The native service lives as long as a session exists (loading, playing or paused), so the
   // notification and lock screen keep their controls while paused. Idle or error stops it.
   const serviceNeeded = !!request && ['loading', 'playing', 'paused'].includes(state.status)
+  // Notification previous/next exist only for whole-surah recitation, within surah 1..114.
+  const skipPrevious = request?.kind === 'connected' && request.surah > 1
+  const skipNext = request?.kind === 'connected' && request.surah < 114
+  const skipFlags = useMemo(() => ({ skipPrevious, skipNext }), [skipPrevious, skipNext])
   const secondsRef = useRef(state.seconds)
   secondsRef.current = state.seconds
   const notificationAsked = useRef(false)
@@ -78,14 +82,14 @@ function useAudioValue() {
         const { BackgroundAudio } = await loadAudioPlugin()
         if (!current) return
         if (serviceNeeded) {
-          await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration })
+          await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration, ...skipFlags })
           if (!notificationAsked.current) {
             notificationAsked.current = true
             const permission = await BackgroundAudio.requestNotificationPermission()
             if (!permission.granted) setNotificationWarning('الإشعارات مغلقة، فلن تظهر أزرار التحكم في الإشعار وشاشة القفل. فعّلها من إعدادات التطبيق.')
             // Android posts nothing for a service started before the permission existed, so
             // start it again now that the answer is known.
-            else if (current) await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration })
+            else if (current) await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration, ...skipFlags })
           }
         } else await BackgroundAudio.stop()
       } catch {
@@ -93,7 +97,7 @@ function useAudioValue() {
       }
     })
     return () => { current = false }
-  }, [serviceNeeded, active, title, artist, state.duration])
+  }, [serviceNeeded, active, title, artist, state.duration, skipFlags.skipPrevious, skipFlags.skipNext])
   const [backgroundWarning, setBackgroundWarning] = useState<string | null>(null)
   const [notificationWarning, setNotificationWarning] = useState<string | null>(null)
   useEffect(() => { setBackgroundWarning(null) }, [request])
@@ -113,6 +117,15 @@ function useAudioValue() {
           case 'play': pausedByFocus.current = false; if (status === 'paused' || status === 'error') session.toggle(); break
           case 'pause': pausedByFocus.current = false; if (running) session.toggle(); break
           case 'stop': pausedByFocus.current = false; session.stop(); break
+          case 'next': case 'previous': {
+            // Notification skip buttons move between whole-surah recitations only.
+            const req = session.state.request
+            if (req?.kind === 'connected') {
+              const target = req.surah + (action === 'next' ? 1 : -1)
+              if (target >= 1 && target <= 114) void session.start({ kind: 'connected', reciter: req.reciter, surah: target })
+            }
+            break
+          }
           case 'seek': if (typeof position === 'number') session.seek(position / 1000); break
           case 'focusLossTransient': if (running) { pausedByFocus.current = true; session.toggle() } break
           case 'focusLoss': case 'noisy': pausedByFocus.current = false; if (running) session.toggle(); break
@@ -140,9 +153,9 @@ function useAudioValue() {
     lastPositionPush.current = state.seconds
     nativeQueue.current = nativeQueue.current.catch(() => {}).then(async () => {
       const { BackgroundAudio } = await loadAudioPlugin()
-      await BackgroundAudio.start({ title, artist, playing: true, position: state.seconds, duration: state.duration })
+      await BackgroundAudio.start({ title, artist, playing: true, position: state.seconds, duration: state.duration, ...skipFlags })
     }).catch(() => { /* Position sync is best-effort; controls use the main effect. */ })
-  }, [state.seconds, serviceNeeded, state.status, title, artist, state.duration])
+  }, [state.seconds, serviceNeeded, state.status, title, artist, state.duration, skipFlags.skipPrevious, skipFlags.skipNext])
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return
