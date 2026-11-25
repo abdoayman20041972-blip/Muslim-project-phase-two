@@ -31,4 +31,22 @@ describe('ProphetsView', () => {
     fireEvent.click(screen.getByText('القصة التالية'))
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalled())
   })
+
+  it('shows ayah blocks without side bracket ornaments, ayah text and numbers intact', async () => {
+    render(<ProphetsView onBack={() => {}} />)
+    fireEvent.click(screen.getByText('نوح'))
+    await waitFor(() => expect(document.querySelectorAll('.ys-ayah-no').length).toBeGreaterThan(60))
+    const blocks = document.querySelectorAll('[data-testid="ys-verse"]')
+    expect(blocks.length).toBeGreaterThan(3)
+    blocks.forEach((block) => {
+      expect(block.querySelector('svg')).toBeNull()
+      expect(block.querySelector('.ys-verse-text')?.textContent?.trim().length).toBeGreaterThan(10)
+    })
+  })
+  it('shows the Yusuf ayah blocks without side bracket ornaments', async () => {
+    render(<ProphetsView onBack={() => {}} />)
+    fireEvent.click(screen.getByText('يوسف'))
+    await waitFor(() => expect(document.querySelectorAll('.ys-ayah-no').length).toBe(111))
+    document.querySelectorAll('[data-testid="ys-verse"]').forEach((block) => expect(block.querySelector('svg')).toBeNull())
+  })
 })
