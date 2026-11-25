@@ -250,7 +250,19 @@ async function storeCompletedAudio(
         updatedAt: Date.now(),
       } satisfies StoredStatus)
       await transactionDone(transaction)
+      // Never report a download as complete until the stored copy reads back at full size. A WebView
+      // that silently drops a large blob write would otherwise show "منزّلة" with nothing to play.
+      const readTx = db.transaction(AUDIO_STORE, 'readonly')
+      const stored = await requestResult<StoredAudio | undefined>(readTx.objectStore(AUDIO_STORE).get(key(reciter, surahNumber)))
+      if (!stored || stored.blob.size !== blob.size) {
+        throw new OfflineStorageError('Stored audio did not read back at full size')
+      }
     } catch (error) {
+      try {
+        const cleanup = db.transaction([AUDIO_STORE, STATUS_STORE], 'readwrite')
+        cleanup.objectStore(AUDIO_STORE).delete(key(reciter, surahNumber))
+        cleanup.objectStore(STATUS_STORE).delete(key(reciter, surahNumber))
+      } catch { /* Best effort: the failure below is what the user sees. */ }
       throw asStorageError(error)
     }
   })
