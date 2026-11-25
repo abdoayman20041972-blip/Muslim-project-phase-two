@@ -1,5 +1,5 @@
 import { Component, useEffect, useState, type ReactNode } from 'react'
-import type { Section, View } from '../constants'
+import { hasBottomNav, type Section, type View } from '../constants'
 import { ConfirmDialogProvider } from './confirm-dialog'
 
 export type AppContentProps = {
@@ -89,9 +89,12 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
       {content}
     </div>
   )
+  // Bottom padding follows the chrome: screens with the bar clear it, inner
+  // screens (no bar) only need a small end margin.
+  const pad = view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : hasBottomNav(view) ? 'pt-5 pb-24' : 'pt-5 pb-8'
   return (
     <ConfirmDialogProvider>
-      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : 'pt-5 pb-24'}`}>
+      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${pad}`}>
       {keep('home') && shell('home', wrapScreen(home, 'home', onHome, false))}
       {keep('settings') && shell('settings', wrapScreen(settings, 'settings', onHome))}
       {keep('azkar-list') && shell('azkar-list', wrapScreen(azkarList, 'azkar-list', onHome))}
@@ -140,11 +143,14 @@ export function BottomNav({ view, onNavigate }: { view: View; onNavigate: (secti
   })
 
   return (
-    <nav className={`nav-float z-50 ${view.name === 'home' ? 'nav-home' : ''}`} data-home-active={view.name === 'home' ? 'true' : 'false'}
+    <nav className={`nav-float z-50 ${view.name === 'home' ? 'nav-home' : 'nav-docked'}`}
       aria-label="التنقل الرئيسي">
       {/* v1.2.6: flat opaque nav surface — the old backdrop-blur-lg was a permanent GPU cost on every
           screen for a blur invisible at 98% alpha, and the infinite indicator animations now run on
           the home tab only (see the .nav-home rules in styles.css). */}
+      {/* The gold bubble (dashboard-nav-indicator) slides to the active tab on
+          every screen; off Home the bar is docked flush to the bottom edge at
+          full width instead of floating. */}
       <div className="relative mx-auto w-full max-w-md px-1">
         <div className="dashboard-nav-main relative grid w-full grid-cols-5 items-center">
         {activeIndex >= 0 && <span aria-hidden="true" className="dashboard-nav-indicator" style={{ ['--nav-index' as string]: activeIndex }} />}
