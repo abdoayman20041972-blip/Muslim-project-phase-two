@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { setMoreBackHandler } from './moreNav'
-import { BookOpen, Pause, Play, Radio } from 'lucide-react'
-import { SeerahView } from '../seerah/SeerahView'
+import { Pause, Play, Radio, Video } from 'lucide-react'
+import { HaramLiveView } from '../haram/HaramLiveView'
+import { LibraryView } from '../library/LibraryView'
+import { BookCover } from '../library/BookCover'
+import { LIBRARY_BOOKS } from '../library/libraryData'
 import { RadioView } from '../radio/RadioView'
 import { useRadio } from '../radio/RadioProvider'
 
 /** The "More" tab: sections that don't have a place on Home. Radio is the first. */
 export function MoreView() {
-  const [screen, setScreen] = useState<'list' | 'radio' | 'seerah'>('list')
+  const [screen, setScreen] = useState<'list' | 'radio' | 'library' | 'haram'>('list')
   const { station, status, toggle } = useRadio()
   const live = status === 'playing' || status === 'loading'
   useEffect(() => {
@@ -17,7 +20,8 @@ export function MoreView() {
   }, [screen])
 
   if (screen === 'radio') return <RadioView onBack={() => setScreen('list')} />
-  if (screen === 'seerah') return <SeerahView onBack={() => setScreen('list')} />
+  if (screen === 'haram') return <HaramLiveView onBack={() => setScreen('list')} />
+  if (screen === 'library') return <LibraryView onBack={() => setScreen('list')} />
 
   return (
     <div className="w-full min-w-0" data-testid="more-view">
@@ -42,11 +46,21 @@ export function MoreView() {
           <span className="radio-live relative"><i aria-hidden="true" />مباشر</span>
         )}
       </div>
-      <button type="button" onClick={() => setScreen('seerah')} aria-label="فتح السيرة النبوية" data-testid="more-seerah-card" className="u-pressable mt-4 flex w-full items-center gap-3 rounded-2xl border border-azkar-hairline bg-azkar-card px-4 py-3.5 text-right u-shadow-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-azkar-teal-tint text-azkar-teal-ink" aria-hidden="true"><BookOpen className="h-6 w-6" /></span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-azkar-teal-ink">السيرة النبوية</span>
-          <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">قراءة ودروس من حياة النبي ﷺ</span>
+      <button type="button" onClick={() => setScreen('haram')} aria-label="فتح البث المباشر" data-testid="more-haram-card" className="more-haram-card u-pressable mt-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9c875]/25 text-[#f3dc9a]" aria-hidden="true"><Video className="h-6 w-6" /></span>
+        <span className="min-w-0 flex-1 text-right">
+          <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-white">البث المباشر بالفيديو</span>
+          <span className="mt-0.5 block text-[0.8125rem] font-semibold text-white/80">قناتان بالصوت والصورة</span>
+        </span>
+        <span className="radio-live relative"><i aria-hidden="true" />مباشر</span>
+      </button>
+      <button type="button" onClick={() => setScreen('library')} aria-label="فتح مكتبة السيرة والتاريخ" data-testid="more-library-card" className="more-library-card u-pressable mt-4">
+        <span className="more-library-books" aria-hidden="true">
+          {LIBRARY_BOOKS.slice(0, 3).map((book, i) => <BookCover key={book.id} book={book} className={`more-library-book more-library-book-${i}`} />)}
+        </span>
+        <span className="min-w-0 flex-1 text-right">
+          <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-azkar-teal-ink">المكتبة</span>
+          <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">السيرة والصحابة والتاريخ الإسلامي</span>
         </span>
       </button>
     </div>

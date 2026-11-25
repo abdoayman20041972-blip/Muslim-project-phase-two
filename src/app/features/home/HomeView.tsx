@@ -261,9 +261,9 @@ export function HomeView({
         <header ref={headerRef} className="home-rise-header flex items-center justify-between pb-5 pt-[max(.8rem,env(safe-area-inset-top))]">
           <div className="text-right" data-reveal>
             <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
-            <div className="font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{gregorianDate}</div>
-            <div className="home-date-line flex items-baseline gap-2 font-semibold text-azkar-gold-deep">
-              <span className="home-weekday font-amiri text-[1.0625rem] font-bold text-azkar-teal-ink">{weekdayName}</span>
+            <div className="home-weekday font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{weekdayName}</div>
+            <div className="home-date-line flex flex-wrap items-baseline gap-x-2 font-semibold text-azkar-gold-deep">
+              <span className="text-[0.8125rem] text-azkar-teal-ink">{gregorianDate}</span>
               {hijriDate && <span className="text-[0.75rem]">{hijriDate}</span>}
             </div>
           </div>
