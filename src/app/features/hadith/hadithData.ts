@@ -235,8 +235,18 @@ export type EditionOrigin = 'bundled' | 'network'
 export type LoadedEdition = ApiEditionData & { origin: EditionOrigin }
 
 const editionCache = new Map<string, LoadedEdition>()
-const EDITION_CACHE_VERSION = 2
+const EDITION_CACHE_VERSION = 3
 const EDITION_STORAGE_PREFIX = 'hadith-edition:'
+
+/**
+ * The upstream editions mark line breaks inside a hadith with literal `<br>` tags
+ * (nawawi: 10, qudsi: 32). They are presentation markup, not part of the wording,
+ * so the loader converts them to real line breaks; the text itself is untouched.
+ */
+const BR_TAG_RUN = /\s*(?:<br\s*\/?>\s*)+/gi
+export function convertMarkupLineBreaks(text: string): string {
+  return text.replace(BR_TAG_RUN, '\n').replace(/^\n+|\n+$/g, '')
+}
 
 /** Apply the reviewed mechanical fixes equally to bundled, CDN and cached data. */
 function prepareEdition(edition: string, value: unknown, origin: EditionOrigin): LoadedEdition | null {
@@ -248,7 +258,7 @@ function prepareEdition(edition: string, value: unknown, origin: EditionOrigin):
     const number = String(entry.hadithnumber)
     if (!/^\d+$/.test(number) || Number(number) < 1 || seen.has(number)) return null
     seen.add(number)
-    let text = entry.text
+    let text = convertMarkupLineBreaks(entry.text)
     if (edition === 'ara-dehlawi') text = convertDehlawiOrthography(text)
     if (edition === 'ara-nawawi') text = text.replace(/[\u202b\u202c]/g, '')
     hadiths.push({ hadithnumber: entry.hadithnumber, text })
