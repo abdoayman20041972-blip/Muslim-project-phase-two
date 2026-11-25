@@ -6,9 +6,12 @@ export interface BackgroundAudioStartOptions {
   /** Position and duration in seconds, shown on the lock screen. */
   position?: number
   duration?: number
+  /** Show previous/next buttons (whole-surah playback only). Default false. */
+  skipPrevious?: boolean
+  skipNext?: boolean
 }
 export type BackgroundAudioAction =
-  | 'play' | 'pause' | 'stop' | 'seek'
+  | 'play' | 'pause' | 'stop' | 'seek' | 'next' | 'previous'
   | 'focusLossTransient' | 'focusLoss' | 'focusGain' | 'noisy'
 export interface BackgroundAudioPlugin {
   /** Starts the service, or updates it if already running. Idempotent. */
