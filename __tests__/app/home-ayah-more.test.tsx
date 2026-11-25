@@ -62,7 +62,7 @@ describe('DailyAyahCard decorative lines', () => {
     const css = readFileSync('src/styles.css', 'utf8')
     const rule = css.match(/\.home-ayah-lines\{[^}]*\}/)?.[0] ?? ''
     expect(rule).toMatch(/top:0/)
-    expect(rule).toMatch(/height:2\.4rem/)
+    expect(rule).toMatch(/height:1\.7rem/)
     expect(rule).not.toMatch(/inset:0/)
     const { container } = render(<DailyAyahCard ayah={DAILY_AYAHS[0]} />)
     const lines = container.querySelector('.home-ayah-lines')
