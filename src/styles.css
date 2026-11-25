@@ -1841,3 +1841,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="tab"]:
 /* No text selection or copy menu anywhere in the app. Text fields keep normal editing. */
 html,body,#root,#root *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
+
+/* Quran mini player: fixed to the bottom edge, directly above the bottom bar when it is shown. */
+.quran-mini-player{left:50%;transform:translateX(-50%);bottom:max(.6rem,env(safe-area-inset-bottom))}
+body:has(.nav-float) .quran-mini-player{bottom:calc(max(.6rem,env(safe-area-inset-bottom)) + 4.4rem + .5rem)}
