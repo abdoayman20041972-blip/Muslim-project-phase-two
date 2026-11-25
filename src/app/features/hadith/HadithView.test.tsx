@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HadithView } from './HadithView'
 import { HADITH_COLLECTION, clearEditionCache } from './hadithData'
 import { HADITH_SOURCE_URLS } from './hadithSources'
+import { shareQuoteCard as shareQuoteCardReal } from '../azkar/shareActions'
+vi.mock('../azkar/shareActions', () => ({ shareQuoteCard: vi.fn().mockResolvedValue(undefined), shareText: vi.fn() }))
+const shareQuoteCard = vi.mocked(shareQuoteCardReal)
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, isBackupKey } from '../../settings'
 
 const sample = { hadiths: [{ hadithnumber: 1, text: 'نص تجريبي أول' }, { hadithnumber: 2, text: 'نص تجريبي ثانٍ' }, { hadithnumber: 3, text: 'نص تجريبي ثالث' }] }
@@ -75,14 +78,13 @@ describe('reading screen', () => {
     })
     expect(HADITH_COLLECTION.every((h) => HADITH_SOURCE_URLS[h.id])).toBe(true)
   })
-  it('copies the hadith text with its source', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined)
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+  it('has no copy button and shares the hadith as a card image', async () => {
     openCurated()
-    fireEvent.click(screen.getByRole('button', { name: /نسخ/ }))
-    await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(writeText.mock.calls[0][0]).toContain(HADITH_COLLECTION[0].text)
-    expect(await screen.findByText('تم نسخ الحديث')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /نسخ/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /مشاركة/ }))
+    await waitFor(() => expect(shareQuoteCard).toHaveBeenCalled())
+    expect(shareQuoteCard.mock.calls[0][0].text).toBe(HADITH_COLLECTION[0].text)
+    expect(shareQuoteCard.mock.calls[0][0].filename).toBe('hadith.png')
   })
   it('applies font size and hides notes live from settings', () => {
     openCurated()
