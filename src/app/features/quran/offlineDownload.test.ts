@@ -324,6 +324,19 @@ describe('Quran offline download manager', () => {
     expect(await getDownloadedSurahBlob('ar.minshawi', 5)).toBeUndefined()
   })
 
+  it('accepts an MP3 that starts with zero padding before the first frame (Abdul Basit files)', async () => {
+    const body = audioChunk(64 * 1024)
+    const padded = new Uint8Array(208 + body.byteLength)
+    padded.set(body, 208) // 208 zero bytes, then a valid frame sync
+    // Split so the first network chunk is ONLY padding.
+    vi.mocked(fetch).mockResolvedValue(streamResponse([padded.subarray(0, 100), padded.subarray(100)], { declaredLength: padded.byteLength }))
+
+    const result = await downloadSurah('ar.abdulbasitmurattal', 112)
+
+    expect(result.failed).toEqual([])
+    expect(await isSurahDownloaded('ar.abdulbasitmurattal', 112)).toBe(true)
+  })
+
   it('rejects audio-looking bytes that are not MP3 and truncated bodies', async () => {
     const notMp3 = new Uint8Array(64 * 1024) // zeros: no ID3, no frame sync
     vi.mocked(fetch).mockResolvedValueOnce(streamResponse([notMp3]))
