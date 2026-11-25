@@ -43,16 +43,14 @@ describe('DailyAyahCard', () => {
 })
 
 describe('MoreView', () => {
-  it('lists Tasbih, Settings and the secondary tools and opens them', () => {
-    const onOpen = vi.fn()
-    render(<MoreView onOpen={onOpen} />)
+  it('stays in the bar as an empty placeholder that says soon, with no tool tabs', () => {
+    render(<MoreView />)
+    expect(screen.getByRole('heading', { name: 'المزيد' })).toBeTruthy()
+    expect(screen.getByText('قريبًا')).toBeTruthy()
+    // The tools moved out: no tab-like entries remain on this page.
     for (const name of ['السبحة', 'الإعدادات', 'المفضلة', 'قصص الأنبياء', 'القبلة']) {
-      expect(screen.getByRole('button', { name })).toBeTruthy()
+      expect(screen.queryByRole('button', { name })).toBeNull()
     }
-    fireEvent.click(screen.getByRole('button', { name: 'الإعدادات' }))
-    expect(onOpen).toHaveBeenCalledWith({ name: 'settings' })
-    fireEvent.click(screen.getByRole('button', { name: 'السبحة' }))
-    expect(onOpen).toHaveBeenCalledWith({ name: 'tasbih' })
   })
 })
 
