@@ -20,20 +20,15 @@ describe('daily ayah full text', () => {
 
 describe('DailyAyahCard', () => {
   const ayah = { text: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ', surah: 'الرعد', number: 28 }
-  it('labels the excerpt, expands to the complete verse, and copies it', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined)
-    Object.assign(navigator, { clipboard: { writeText } })
+  it('expands to the complete verse and has no copy button', async () => {
     const onOpenSurah = vi.fn()
     render(<DailyAyahCard ayah={ayah} onOpenSurah={onOpenSurah} />)
-    expect(screen.getByText(/مقتطف/)).toBeTruthy()
+    expect(screen.queryByText(/مقتطف/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'نسخ' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'الآية كاملة' }))
     const full = await screen.findByTestId('daily-ayah-full')
     await waitFor(() => expect(within(full).queryByRole('status')).toBeNull())
     expect(full.textContent!.length).toBeGreaterThan(ayah.text.length)
-    fireEvent.click(screen.getByRole('button', { name: 'نسخ' }))
-    await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(writeText.mock.calls[0][0]).toContain('سورة الرعد')
-    expect(await screen.findByText('تم نسخ الآية كاملة')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'فتح السورة في المصحف' }))
     expect(onOpenSurah).toHaveBeenCalledWith(13)
   })
@@ -51,7 +46,7 @@ describe('MoreView', () => {
   it('lists Tasbih, Settings and the secondary tools and opens them', () => {
     const onOpen = vi.fn()
     render(<MoreView onOpen={onOpen} />)
-    for (const name of ['السبحة', 'الإعدادات', 'المفضلة', 'قصص الأنبياء', 'القبلة', 'المواقيت']) {
+    for (const name of ['السبحة', 'الإعدادات', 'المفضلة', 'قصص الأنبياء', 'القبلة']) {
       expect(screen.getByRole('button', { name })).toBeTruthy()
     }
     fireEvent.click(screen.getByRole('button', { name: 'الإعدادات' }))
