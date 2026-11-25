@@ -169,11 +169,12 @@ public class AlarmFireReceiver extends BroadcastReceiver {
         // Green gradient card with gold wavy lines. Title/text above stay set for
         // accessibility and as the fallback when a device ignores custom views.
         try {
-            android.widget.RemoteViews card = NotificationLook.views(context, entry.title, entry.body);
-            if (card != null) {
+            android.widget.RemoteViews card = NotificationLook.views(context, entry.title, entry.body, false);
+            android.widget.RemoteViews bigCard = NotificationLook.views(context, entry.title, entry.body, true);
+            if (card != null && bigCard != null) {
                 builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
                 builder.setCustomContentView(card);
-                builder.setCustomBigContentView(card);
+                builder.setCustomBigContentView(bigCard);
             }
         } catch (RuntimeException ignored) {
             // Keep the plain notification (BigTextStyle) when the card cannot be built.
