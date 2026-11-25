@@ -2,6 +2,7 @@ import type { Ayah } from '../../constants'
 import { quranAudioUrl, quranSurahAudioUrl } from '../../constants'
 import { getDownloadedSurahBlob } from './offlineDownload'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
+import { surahList } from '../../../quran-meta'
 import { isQuranAudioReciter, type QuranAudioReciter } from './quranAudioPlayback'
 
 export type SessionRequest = {
@@ -165,6 +166,10 @@ export class QuranAudioSession {
         audio.currentTime = 0
         this.resumeAt = 0
         this.play(audio, epoch)
+      } else if (request.kind === 'single-ayah' && request.ayah && request.ayah.numberInSurah < (surahList.find((item) => item.number === request.surah)?.numberOfAyahs ?? 0)) {
+        // Listening from an ayah continues through the rest of the surah, ayah by ayah.
+        const ayah = { number: request.ayah.number + 1, numberInSurah: request.ayah.numberInSurah + 1, text: '' }
+        void this.start({ ...request, ayah })
       } else {
         audio.currentTime = 0
         this.update({ status: 'paused', seconds: 0 })
