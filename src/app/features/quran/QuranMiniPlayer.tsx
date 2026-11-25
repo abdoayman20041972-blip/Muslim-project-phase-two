@@ -1,14 +1,10 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useQuranAudio } from './QuranAudioProvider'
 import { surahList } from '../../../quran-meta'
-import { QURAN_AUDIO_RECITER_LABELS, QURAN_AUDIO_RECITERS, type QuranAudioReciter } from './quranAudioPlayback'
-
-type Position = { x: number | null; y: number }
+import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
+import { ReciterPicker } from './ReciterPicker'
 
 export function QuranMiniPlayer() {
   const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter, buffering, source, error, retry, saved, restore, backgroundWarning, audioProgress } = useQuranAudio()
-  const [position, setPosition] = useState<Position>({ x: null, y: 16 })
-  const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
 
   if (currentSurah === null) return saved ? <div dir="rtl" className="fixed bottom-24 left-3 right-3 z-[55] rounded-2xl border border-azkar-hairline bg-azkar-card p-3 text-sm text-azkar-teal-ink shadow-lg" data-testid="quran-resume-player">
     <button type="button" onClick={restore} className="u-pressable rounded-xl bg-azkar-teal px-3 py-2 text-azkar-card">استئناف الاستماع</button>
@@ -23,59 +19,23 @@ export function QuranMiniPlayer() {
     toggleCurrent()
   }
 
-  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest('button,select,option,a,input')) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    dragRef.current = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top }
-    if (typeof event.currentTarget.setPointerCapture === 'function') event.currentTarget.setPointerCapture(event.pointerId)
-    event.currentTarget.style.cursor = 'grabbing'
-  }
-
-  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== event.pointerId) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    const maxX = Math.max(8, window.innerWidth - rect.width - 8)
-    const maxY = Math.max(8, window.innerHeight - rect.height - 8)
-    setPosition({
-      x: Math.min(maxX, Math.max(8, event.clientX - drag.offsetX)),
-      y: Math.min(maxY, Math.max(8, event.clientY - drag.offsetY)),
-    })
-  }
-
-  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId !== event.pointerId) return
-    dragRef.current = null
-    event.currentTarget.style.cursor = 'grab'
-  }
-
-  const style = position.x === null
-    ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)', left: '50%', transform: 'translateX(-50%)' }
-    : { top: position.y + 'px', left: position.x + 'px' }
-
   return (
     <div dir="rtl" data-testid="quran-mini-player"
-      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
-      style={style}
-      className="fixed z-[55] flex w-[min(94vw,520px)] max-w-md items-center gap-2 rounded-2xl border border-azkar-hairline bg-azkar-card/98 px-3 py-2.5 text-azkar-ink shadow-[0_10px_28px_hsl(var(--azkar-ink)/0.18)] backdrop-blur-lg"
+      className="quran-mini-player fixed z-[55] flex w-[min(94vw,520px)] max-w-md items-center gap-2 rounded-2xl border border-azkar-hairline bg-azkar-card/98 px-3 py-2.5 text-azkar-ink shadow-[0_10px_28px_hsl(var(--azkar-ink)/0.18)] backdrop-blur-lg"
       aria-label="مشغل القرآن المصغر"
     >
-      <div className="min-w-0 flex-1 cursor-grab select-none touch-none" title="اسحب لتحريك المشغل">
+      <div className="min-w-0 flex-1 select-none">
         <div className="truncate text-sm font-bold text-azkar-teal-ink">{surah?.shortName ?? 'القرآن الكريم'}</div>
         <div className="mt-0.5 truncate text-xs text-azkar-ink-soft">
           {source === 'offline' ? 'أوفلاين · ' : ''}{reciterLabel} · {playback?.kind === 'connected' ? 'تلاوة متصلة' : current !== null ? 'الآية ' + current : 'تلاوة القرآن'}
         </div>
       </div>
-      {(error || backgroundWarning) && <div role="alert" className="absolute left-0 right-0 top-full mt-1 rounded-xl border border-azkar-hairline bg-azkar-card p-3 text-xs text-azkar-ink shadow-lg">
+      {(error || backgroundWarning) && <div role="alert" className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-azkar-hairline bg-azkar-card p-3 text-xs text-azkar-ink shadow-lg">
         {error || backgroundWarning} {error && <button type="button" onClick={retry} className="mr-2 underline">إعادة المحاولة</button>}
       </div>}
       <span className="sr-only" aria-live="polite">{buffering ? 'جاري تحميل الصوت' : playing ? 'قيد التشغيل' : 'متوقف مؤقتًا'} {Math.floor((audioProgress || 0) / 60)} دقيقة</span>
-      <select aria-label="القارئ في المشغل المصغر" value={reciter}
-        onChange={(event) => { void setReciter(event.target.value as QuranAudioReciter) }}
-        onPointerDown={(event) => event.stopPropagation()}
-        className="h-9 max-w-[125px] shrink-0 rounded-xl border border-azkar-gold-soft bg-azkar-bg-alt px-2 text-[0.6875rem] font-bold text-azkar-teal-ink">
-        {QURAN_AUDIO_RECITERS.map((id) => <option key={id} value={id}>{QURAN_AUDIO_RECITER_LABELS[id]}</option>)}
-      </select>
+      <ReciterPicker label="القارئ في المشغل المصغر" value={reciter} onChange={(next) => { void setReciter(next) }}
+        className="h-9 w-[7.5rem] shrink-0 text-[0.6875rem]" />
       <button type="button" onClick={togglePlayback}
         className="u-pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal text-azkar-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold"
         aria-busy={buffering} aria-label={playing ? 'إيقاف مؤقت' : 'تشغيل'}>
