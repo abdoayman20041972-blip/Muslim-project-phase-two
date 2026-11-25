@@ -98,6 +98,25 @@ describe('reading screen', () => {
     expect(document.querySelector('.hadith-text')?.getAttribute('data-size')).toBe('lg')
     expect(document.body.textContent).not.toContain(HADITH_COLLECTION[0].note)
   })
+  it('renders upstream <br> markup as line breaks, never as literal text', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ hadiths: [{ hadithnumber: 1, text: 'أول<br>ثانٍ' }] }))
+    render(<HadithView onBack={vi.fn()} />)
+    await waitFor(() => expect(screen.getByTestId('hadith-count-qudsi').textContent).toContain(ar(1)))
+    fireEvent.click(screen.getByTestId('hadith-group-qudsi'))
+    const text = document.querySelector('.hadith-text')
+    expect(text?.textContent).toBe('أول\nثانٍ')
+    expect(text?.textContent).not.toContain('<')
+    expect(document.body.textContent).not.toContain('br>')
+  })
+  it('lays the reader out compactly with a progress indicator that tracks position', () => {
+    openCurated()
+    expect(document.querySelector('.hadith-reader-card')).toBeTruthy()
+    expect(document.querySelector('.hadith-reader-body nav')).toBeTruthy()
+    const bar = () => document.querySelector('.hadith-progress>span') as HTMLElement
+    expect(bar().style.width).toBe(`${(1 / HADITH_COLLECTION.length) * 100}%`)
+    next()
+    expect(bar().style.width).toBe(`${(2 / HADITH_COLLECTION.length) * 100}%`)
+  })
   it('shows the position indicator in the chosen number style', () => {
     openCurated()
     act(() => {
