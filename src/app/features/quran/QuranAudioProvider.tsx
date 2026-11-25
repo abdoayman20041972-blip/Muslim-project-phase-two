@@ -83,6 +83,9 @@ function useAudioValue() {
             notificationAsked.current = true
             const permission = await BackgroundAudio.requestNotificationPermission()
             if (!permission.granted) setNotificationWarning('الإشعارات مغلقة، فلن تظهر أزرار التحكم في الإشعار وشاشة القفل. فعّلها من إعدادات التطبيق.')
+            // Android posts nothing for a service started before the permission existed, so
+            // start it again now that the answer is known.
+            else if (current) await BackgroundAudio.start({ title, artist, playing: active, position: secondsRef.current, duration: state.duration })
           }
         } else await BackgroundAudio.stop()
       } catch {
