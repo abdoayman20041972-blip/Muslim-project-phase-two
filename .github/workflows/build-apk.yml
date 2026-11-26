@@ -48,10 +48,10 @@ jobs:
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      # `npm install` (not `npm ci`) so the build still works while package.json
-      # and package-lock.json are being brought back in sync.
+      # `npm ci` installs exactly what package-lock.json pins. If package.json
+      # changes, regenerate the lock first (npm install --package-lock-only).
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Upload the resolved package-lock.json
         uses: actions/upload-artifact@v4
@@ -69,7 +69,7 @@ jobs:
           test -f resources/icon.png || { echo "::error::resources/icon.png is missing"; exit 1; }
           test -f resources/splash.png || { echo "::error::resources/splash.png is missing"; exit 1; }
 
-      # L6 fix: with the suite back to green (310/310), typecheck and tests are
+      # L6 fix: with the suite green, typecheck and tests are
       # now BLOCKING gates for the APK — a regression can no longer slip into a
       # shipped build unnoticed. Results are still summarized in the run page.
       - name: Typecheck (blocking)
@@ -112,8 +112,8 @@ jobs:
 
       - name: Set version name and version code
         env:
-          VERSION_NAME: "1.4.9"
-          VERSION_CODE: "12"
+          VERSION_NAME: "1.4.10"
+          VERSION_CODE: "13"
         run: |
           # versionCode must strictly increase with every release APK, otherwise
           # Android refuses the new file as an update. Bump both values together.
