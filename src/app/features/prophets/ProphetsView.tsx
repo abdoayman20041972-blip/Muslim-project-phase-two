@@ -5,6 +5,7 @@ import { readSetting } from '../../settings'
 import { YusufStoryBody } from './YusufStoryBody'
 import { StoryBody } from './StoryBody'
 import { DETAILED_STORIES } from './storyContent'
+import { BackButton } from '../../components/app-chrome'
 
 export function ProphetsView({ onBack }: { onBack: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -44,9 +45,7 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
   return (
     <>
       <header className="hadith-header">
-        <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable hadith-icon-button">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        </button>
+        <BackButton onClick={onBack} />
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
           <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
@@ -97,9 +96,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
   return (
     <article>
       <header className="hadith-header">
-        <button type="button" onClick={onBack} aria-label="عودة إلى القائمة" className="u-pressable hadith-icon-button">
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
+        <BackButton onClick={onBack} label="عودة إلى القائمة" />
         <div className="min-w-0 flex-1">
           <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{story.name}</h1>
           <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
