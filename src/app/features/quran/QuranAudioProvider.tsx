@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core'
 import { surahList } from '../../../quran-meta'
 import { type Ayah, type View } from '../../constants'
 import { QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
-import { QuranAudioSession } from './quranAudioSession'
+import { QuranAudioSession, createMemorizeRequest } from './quranAudioSession'
 import { useQuranPreferences } from './useQuranPreferences'
 import { isRadioActive, notifyQuranStarted } from '../radio/audioOwner'
 
@@ -48,6 +48,29 @@ function useAudioValue() {
     preferences.setReciter(selectedReciter)
     void session.start({ kind: 'single-ayah', ayah, reciter: selectedReciter, surah: surahNumber })
   }, [session, preferences.setReciter])
+  const startMemorize = useCallback((plan: { reciter: QuranAudioReciter; surah: number; from: Ayah; to: number; repeats: number; gapMs: number }) => {
+    preferences.setReciter(plan.reciter)
+    void session.start(createMemorizeRequest(plan))
+  }, [session, preferences.setReciter])
+  const memorize = useMemo(() => {
+    if (state.request?.kind !== 'memorize') return null
+    const request = state.request
+    const repeats = request.repeats ?? 1
+    const done = request.done ?? 0
+    return {
+      surah: request.surah,
+      reciter: request.reciter,
+      from: request.from ?? request.ayah?.numberInSurah ?? 1,
+      to: request.to ?? request.ayah?.numberInSurah ?? 1,
+      ayah: request.ayah?.numberInSurah ?? 1,
+      repeats,
+      done,
+      gap: state.gap,
+      gapMs: request.gapMs ?? 0,
+      status: state.status,
+      complete: done >= repeats,
+    }
+  }, [state.request, state.gap, state.status])
   // Complete-surah recordings have no verified ayah timestamps. Index is deliberately
   // ignored and the UI explicitly labels playback as starting at the beginning.
   const playConnected = useCallback((_index: number, list: Ayah[], selectedReciter: QuranAudioReciter, surahNumber: number, _withBismillah = false) => {
@@ -180,20 +203,21 @@ function useAudioValue() {
       navigator.mediaSession.playbackState = !request ? 'none' : playing ? 'playing' : 'paused'
       if (!request) navigator.mediaSession.metadata = null
       else if ('MediaMetadata' in window) navigator.mediaSession.metadata = new MediaMetadata({
-        title: request.kind === 'single-ayah' ? `${title} - الآية ${request.ayah!.numberInSurah}` : `${title} - تلاوة متصلة`, artist, album: 'مسلم',
+        title: request.kind === 'single-ayah' ? `${title} - الآية ${request.ayah!.numberInSurah}` : request.kind === 'memorize' ? `${title} - تكرار للحفظ (الآية ${request.ayah!.numberInSurah})` : `${title} - تلاوة متصلة`, artist, album: 'مسلم',
       })
     } catch { /* Optional browser feature. */ }
   }, [request, playing, title, artist])
 
   return {
     reciter, setReciter, playing, buffering: state.status === 'loading',
-    current: request?.kind === 'single-ayah' ? request.ayah!.numberInSurah : null,
+    current: request?.kind === 'single-ayah' || request?.kind === 'memorize' ? request.ayah!.numberInSurah : null,
     currentSurah: request?.surah ?? null,
     playback: request ? { kind: request.kind, reciter: request.reciter } : null,
     audioProgress: state.seconds, audioDuration: state.duration, audio: state.audio,
     source: state.source, error: state.error, backgroundWarning: backgroundWarning ?? notificationWarning,
     saved: state.saved, restore: () => { if (session.state.saved) preferences.setReciter(session.state.saved.reciter); session.restore() }, retry: session.retry,
     stop: () => session.stop(), toggleCurrent: session.toggle, playSingleAyah, playConnected, toggle, repeat, setRepeat,
+    startMemorize, memorize,
   }
 }
 const QuranAudioContext = createContext<ReturnType<typeof useAudioValue> | null>(null)

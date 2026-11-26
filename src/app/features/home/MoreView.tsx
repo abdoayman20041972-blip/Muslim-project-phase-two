@@ -7,10 +7,12 @@ import { BookCover } from '../library/BookCover'
 import { LIBRARY_BOOKS } from '../library/libraryData'
 import { RadioView } from '../radio/RadioView'
 import { useRadio } from '../radio/RadioProvider'
+import { BookOpen } from 'lucide-react'
+import { EssentialsView } from '../essentials/EssentialsView'
 
 /** The "More" tab: sections that don't have a place on Home. Radio is the first. */
 export function MoreView() {
-  const [screen, setScreen] = useState<'list' | 'radio' | 'library' | 'haram'>('list')
+  const [screen, setScreen] = useState<'list' | 'radio' | 'library' | 'haram' | 'essentials'>('list')
   const { station, status, toggle } = useRadio()
   const live = status === 'playing' || status === 'loading'
   useEffect(() => {
@@ -22,6 +24,7 @@ export function MoreView() {
   if (screen === 'radio') return <RadioView onBack={() => setScreen('list')} />
   if (screen === 'haram') return <HaramLiveView onBack={() => setScreen('list')} />
   if (screen === 'library') return <LibraryView onBack={() => setScreen('list')} />
+  if (screen === 'essentials') return <EssentialsView onBack={() => setScreen('list')} />
 
   return (
     <div className="w-full min-w-0" data-testid="more-view">
@@ -62,6 +65,13 @@ export function MoreView() {
           <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-azkar-teal-ink">المكتبة</span>
           <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">السيرة والصحابة والتاريخ الإسلامي</span>
         </span>
+      </button>
+      <button type="button" onClick={() => setScreen('essentials')} aria-label="فتح ما لا يسع المسلم جهله" data-testid="more-essentials-card" className="more-library-card u-pressable mt-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-azkar-teal-tint text-azkar-teal-ink" aria-hidden="true"><BookOpen className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1 text-right">
+            <span className="block font-amiri text-[1.375rem] font-bold leading-tight text-azkar-teal-ink">ما لا يسع المسلم جهله</span>
+            <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">شرح مبسط لأساسيات الدين</span>
+          </span>
       </button>
     </div>
   )

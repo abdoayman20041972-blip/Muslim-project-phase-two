@@ -66,3 +66,11 @@ next-env.d.ts
 
 # local plugin gradle build output (the android/ project itself is generated in CI)
 plugins/*/android/build/
+
+# personal content pack, never committed
+/private/
+
+# Quran-center: only the heritage-only public data (public/data/quran-center) is committed.
+# Contemporary-work content stays local and is never committed.
+/public/data/quran-center-private/
+/.cache/quran-center-dumps/

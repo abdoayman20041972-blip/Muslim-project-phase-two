@@ -1,0 +1,155 @@
+{
+ "batch": "corrections-v6-public-heritage12",
+ "master_table": {
+  "file": "held-rows-master-table-8a9aac93.csv",
+  "sha256": "d6de3cd5ad93e2ae43532cd15858cd99ed4d31dd41d63002d69396bbef1d736c"
+ },
+ "rule": "PUBLIC DISTRIBUTION VARIANT: RELEASE = these 12 heritage entries ONLY (master table 8a9aac93 Tier A, canonical placement + book-context + gloss match; frozen word/meaning sha256 pins preserved per entry). The 13 modern Siraj entries of the private pack are WITHHELD from public distribution: contemporary copyrighted work (no redistribution license; Quranpedia dump license leaves contemporary works to their owners). They remain pinned and available in the separately delivered personal-use pack (quran-center-private), which this app merges at runtime when present.",
+ "entries": [
+  {
+   "row_id": "HLD-0002",
+   "surah": 2,
+   "ayah": 40,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "إِسْرائِيلَ",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L1464 [2/40]",
+   "word_sha256": "de98811f8593ee8ebe6af22be84b89273ef408417f4d2a315d35825a02b44972",
+   "meaning_sha256": "0372ed204bf38ca20a4e3cb3b361cf932dac33f872af67b1334c807e6fb112ec"
+  },
+  {
+   "row_id": "HLD-0006",
+   "surah": 2,
+   "ayah": 51,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "وعدنا",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L1583 [2/51]",
+   "word_sha256": "f7f066c7147e09915245f40cbccdfa54fa1b46554846df1a4687254ca7a34def",
+   "meaning_sha256": "a7cca22cc59a3e1278b975677156a691743a2f4f141fdece3482615e937afe04"
+  },
+  {
+   "row_id": "HLD-0016",
+   "surah": 2,
+   "ayah": 185,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "الْقُرْآنُ",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L2311 [2/185]",
+   "word_sha256": "a3b9b6d2908ca291fa89a3733d97deb3286a501217cf91ac4075f64368061d7d",
+   "meaning_sha256": "e80d01f598df0270e35ee153fe8e7021849c5ef688073632bb2ca4e4a25fd908"
+  },
+  {
+   "row_id": "HLD-0025",
+   "surah": 2,
+   "ayah": 265,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "الطّلّ",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L2662 [2/265]",
+   "word_sha256": "690053fe8fa73b9474082287929e5155922cab97e8613a6bfdfc7bdd8f11347b",
+   "meaning_sha256": "b664162f84308ac43e001e0a1ff6da7380b8e99f25c4f4b2e7dcfda4edbea1ed"
+  },
+  {
+   "row_id": "HLD-0026",
+   "surah": 2,
+   "ayah": 275,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "الرِّبا",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L2681 [2/275]",
+   "word_sha256": "b7782d54b96c0ea87c8c4ed7dcaec624fe492252db1a7c7d2a965af123b922f1",
+   "meaning_sha256": "934e1b94e66b3ad6af5d4df281ae5808261382c5e39121a02efb6c95aa48a779"
+  },
+  {
+   "row_id": "HLD-0075",
+   "surah": 7,
+   "ayah": 111,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "أرجئه",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L4127 [7/111]",
+   "word_sha256": "7618c62a03dc1aeacd58b08881d1f2833c01a658f0d1056e67490d9524361061",
+   "meaning_sha256": "b851c049451faf317be70420693093c78416aebb23905ec95dc332f9124ac8cb"
+  },
+  {
+   "row_id": "HLD-0118",
+   "surah": 13,
+   "ayah": 22,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "يَدْرَؤُنَ",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L5055 [13/22]",
+   "word_sha256": "63d505dcea95d066c79374607a6d1f8e0d35b775adf8d6eeb8f107ee2f67b7c7",
+   "meaning_sha256": "d5ff0af58e3c2508cdfb6937e0f963a771b4b30ad4843e492e5daff4fcc92c79"
+  },
+  {
+   "row_id": "HLD-0195",
+   "surah": 36,
+   "ayah": 12,
+   "book": "تذكرة الأريب في تفسير الغريب",
+   "text": "وآثارهم",
+   "tier": "A",
+   "final_verdict": "BOOK-MULTI-BUT-CURRENT-OK",
+   "source_pointer": "tadhkira L5546 [36/12]",
+   "word_sha256": "575be5c737c0b4b61a54dfbefdb5c43009903054348ff70a60fceef9646733f1",
+   "meaning_sha256": "d0ec9e5e2130c11ad127be3537f93c638075b421584bb141c704f2622c16562d"
+  },
+  {
+   "row_id": "HLD-0211",
+   "surah": 42,
+   "ayah": 28,
+   "book": "تذكرة الأريب في تفسير الغريب",
+   "text": "الرحمة",
+   "tier": "A",
+   "final_verdict": "CORRECT-ALSO-ELSEWHERE",
+   "source_pointer": "tadhkira L6228 [42/28]",
+   "word_sha256": "24fb3bbea58096b065e8afdc8b6a6a85e4fbaab5ed9b0c0016bcff1701f46066",
+   "meaning_sha256": "b5cfecc7e9553c88694abf7169cb4053826a1ac09b516d4e97d5f2cd1563c3d6"
+  },
+  {
+   "row_id": "HLD-0214",
+   "surah": 43,
+   "ayah": 32,
+   "book": "تذكرة الأريب في تفسير الغريب",
+   "text": "الرحمة",
+   "tier": "A",
+   "final_verdict": "CORRECT-ALSO-ELSEWHERE",
+   "source_pointer": "tadhkira L6298 [43/32]",
+   "word_sha256": "24fb3bbea58096b065e8afdc8b6a6a85e4fbaab5ed9b0c0016bcff1701f46066",
+   "meaning_sha256": "56b3fc80fc4fe4edeccabcf5df4d6ee5b8c17f826315fdc3dc82e866ac6ed90f"
+  },
+  {
+   "row_id": "HLD-0215",
+   "surah": 43,
+   "ayah": 63,
+   "book": "تذكرة الأريب في تفسير الغريب",
+   "text": "والحكمة",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tadhkira L6349 [43/63]",
+   "word_sha256": "d9bcef8bab0a98147d719d3df27c2c3657e94f4a9ba4219be454e8c3a3326762",
+   "meaning_sha256": "56b3fc80fc4fe4edeccabcf5df4d6ee5b8c17f826315fdc3dc82e866ac6ed90f"
+  },
+  {
+   "row_id": "HLD-0255",
+   "surah": 65,
+   "ayah": 4,
+   "book": "التبيان في تفسير غريب القرآن",
+   "text": "اللَّائِي",
+   "tier": "A",
+   "final_verdict": "VERIFIED-CORRECT",
+   "source_pointer": "tibyan L8129 [65/4]",
+   "word_sha256": "c890dcce1e3009ce3efc8ec3b4798e71b2169e14631295d34ab8190693b50d37",
+   "meaning_sha256": "22e435cfa29ec8cb43d2960ae60fc8ad72e7b0cd077f4aae7a2d3e70c906e37b"
+  }
+ ],
+ "byte_pin_rule": "word_sha256/meaning_sha256 pin the exact reviewed UTF-8 bytes of each released word/meaning (incl. the 7 reviewed vocalization enrichments, which ship as those bytes). The validator compares every released word against these frozen hashes; mutating bytes and regenerating files-manifest.json fails the build."
+}

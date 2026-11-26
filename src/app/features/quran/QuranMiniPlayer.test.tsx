@@ -10,7 +10,8 @@ const value = (overrides: Partial<ReturnType<typeof useQuranAudio>>) => ({
   audioProgress: 0, audioDuration: 10, playback: null, audio: mockAudio(),
   playSingleAyah: vi.fn(), playConnected: vi.fn(), toggleCurrent: vi.fn(), toggle: vi.fn(), stop: vi.fn(),
   source: null, error: null, backgroundWarning: null, saved: null, restore: vi.fn(), retry: vi.fn(),
-  repeat: 'off' as const, setRepeat: vi.fn(), selectAyah: vi.fn(), setReciter: vi.fn(), ...overrides,
+  repeat: 'off' as const, setRepeat: vi.fn(), selectAyah: vi.fn(), setReciter: vi.fn(),
+  startMemorize: vi.fn(), memorize: null, ...overrides,
 })
 describe('QuranMiniPlayer', () => {
   beforeEach(() => { vi.clearAllMocks(); localStorage.removeItem('azkar_hide_mini_player') })
@@ -48,6 +49,20 @@ describe('QuranMiniPlayer', () => {
         mockedUseQuranAudio.mockReturnValue(value({ playing: false, toggleCurrent }))
         render(<QuranMiniPlayer />)
         fireEvent.click(screen.getByRole('button', { name: 'تشغيل' }))
+        expect(toggleCurrent).toHaveBeenCalledTimes(1)
+  })
+
+  it('labels the toggle as skip during a memorization silence window', () => {
+        const toggleCurrent = vi.fn()
+        mockedUseQuranAudio.mockReturnValue(value({
+          playing: true, toggleCurrent,
+          memorize: { surah: 1, reciter: 'ar.minshawi', from: 1, to: 3, ayah: 2, repeats: 5, done: 1, gap: true, gapMs: 1000, status: 'playing', complete: false },
+        }))
+        render(<QuranMiniPlayer />)
+        const button = screen.getByRole('button', { name: 'تخطي الفاصل' })
+        expect(button).toBeTruthy()
+        expect(screen.getByText(/فاصل صمت بين التكرارات/)).toBeTruthy()
+        fireEvent.click(button)
         expect(toggleCurrent).toHaveBeenCalledTimes(1)
   })
 

@@ -1,0 +1,21 @@
+{
+ "batch": "corrections-v6-public-heritage12",
+ "scopes": {
+  "gharib": {
+   "status": "verified",
+   "note": "PUBLIC VARIANT: qualified Tier A heritage subset ONLY - 12 entries (التبيان 8 / تذكرة الأريب 4), listed one by one in verified-entries.json with frozen reviewed bytes pinned per entry. The 13 qualified modern Siraj entries are withheld from public distribution (contemporary copyrighted work) and ship only in the separate personal-use pack. Small partial reviewed coverage; most surahs have NO released gharib and the UI says so. Everything else remains HELD pending. Blanket gharib unlock remains expressly not authorized."
+  },
+  "metadata": {
+   "status": "pending-review",
+   "note": "Fidelity 114/114 verified by the independent reviewer; makki/madani + descentOrder labeling decision still open (review report §3D/§3E)."
+  },
+  "asbab": {
+   "status": "pending-review",
+   "note": "al-Wahidi chains ungraded (weak/fabricated reports); per-report takhrij + notice posture await the specialist."
+  },
+  "virtues": {
+   "status": "pending-review",
+   "note": "Grace sections carry weak/ungraded hadiths (Tirmidhi 2895, Ahmad 6643; Ya-Sin grace36); specialist takhrij pending."
+  }
+ }
+}

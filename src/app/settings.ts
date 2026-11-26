@@ -17,6 +17,7 @@ export const APP_SETTINGS_KEYS = {
   prophetShowQuestion:'azkar_prophet_show_question',
   adhanSound:'adhan_sound',
   mutedPrayers:'azkar_muted_prayers', kahfReminder:'azkar_friday_kahf_reminder', kahfReminderTime:'azkar_friday_kahf_time',
+  quranMemorizeHide:'azkar_quran_memorize_hide',
 } as const
 export function readSetting(key:string,fallback=''){try{return localStorage.getItem(key)??fallback}catch{return fallback}}
 export function writeSetting(key:string,value:string){try{localStorage.setItem(key,value)}catch(error){console.error('[settings] could not save',key,error)}}

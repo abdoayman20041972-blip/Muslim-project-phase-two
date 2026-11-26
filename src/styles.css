@@ -1965,3 +1965,14 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .app-content:has(.book-reader) .book-reader{height:calc(100dvh - 13.2rem)}
 .app-content:has(.book-reader) .book-page{font-size:1.17em}
 @media (max-height:520px) and (orientation:landscape){.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 9.2rem)}}
+.ess-section{margin-top:1.1rem}
+.ess-p{margin:.4rem 0 0;font-size:1rem;font-weight:500;line-height:2;color:hsl(var(--azkar-teal-ink))}
+.ess-list{margin:.4rem 0 0;padding-inline-start:1.4rem;font-size:1rem;line-height:2;color:hsl(var(--azkar-teal-ink))}
+.ess-bullets{list-style:disc}
+ol.ess-list{list-style:decimal}
+.ess-actions{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+
+/* Quran center: hide the repeated ayah's words for self-testing while its
+   number button stays visible and tappable. */
+.quran-ayah-masked{color:transparent!important;text-shadow:0 0 10px hsl(var(--azkar-ink)/.4)}
+.quran-ayah-masked button{text-shadow:none}

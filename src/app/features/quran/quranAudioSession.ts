@@ -6,10 +6,46 @@ import { surahList } from '../../../quran-meta'
 import { isQuranAudioReciter, type QuranAudioReciter } from './quranAudioPlayback'
 
 export type SessionRequest = {
-  kind: 'connected' | 'single-ayah'
+  kind: 'connected' | 'single-ayah' | 'memorize'
   reciter: QuranAudioReciter
   surah: number
   ayah?: Ayah
+  // Memorization drill fields (kind === 'memorize' only).
+  from?: number
+  to?: number
+  repeats?: number
+  gapMs?: number
+  /** Completed plays of the current ayah; done === repeats marks the drill finished. */
+  done?: number
+}
+
+export type MemorizePlan = {
+  reciter: QuranAudioReciter
+  surah: number
+  from: Ayah
+  to: number
+  repeats: number
+  gapMs: number
+}
+
+export const MEMORIZE_LIMITS = { repeatsMin: 1, repeatsMax: 20, gapMsMin: 0, gapMsMax: 10000 } as const
+
+export function createMemorizeRequest(plan: MemorizePlan): SessionRequest {
+  const meta = surahList.find((item) => item.number === plan.surah)
+  if (!meta) throw new RangeError('surah must be between 1 and 114')
+  if (!Number.isInteger(plan.from.numberInSurah) || plan.from.numberInSurah < 1 || plan.from.numberInSurah > meta.numberOfAyahs) {
+    throw new RangeError('from ayah is outside the surah')
+  }
+  if (!Number.isInteger(plan.to) || plan.to < plan.from.numberInSurah || plan.to > meta.numberOfAyahs) {
+    throw new RangeError('to must be within [from, surah ayah count]')
+  }
+  if (!Number.isInteger(plan.repeats) || plan.repeats < MEMORIZE_LIMITS.repeatsMin || plan.repeats > MEMORIZE_LIMITS.repeatsMax) {
+    throw new RangeError(`repeats must be ${MEMORIZE_LIMITS.repeatsMin}..${MEMORIZE_LIMITS.repeatsMax}`)
+  }
+  if (!Number.isFinite(plan.gapMs) || plan.gapMs < MEMORIZE_LIMITS.gapMsMin || plan.gapMs > MEMORIZE_LIMITS.gapMsMax) {
+    throw new RangeError(`gapMs must be ${MEMORIZE_LIMITS.gapMsMin}..${MEMORIZE_LIMITS.gapMsMax}`)
+  }
+  return { kind: 'memorize', reciter: plan.reciter, surah: plan.surah, ayah: plan.from, from: plan.from.numberInSurah, to: plan.to, repeats: plan.repeats, gapMs: plan.gapMs, done: 0 }
 }
 export type SavedSession = SessionRequest & { seconds: number; version: 1 }
 export type SessionState = {
@@ -21,9 +57,11 @@ export type SessionState = {
   duration: number
   error: string | null
   saved: SavedSession | null
+  /** True during the configurable silence between memorization repetitions. */
+  gap: boolean
 }
 export const QURAN_SESSION_KEY = 'muslim-quran-audio-session-v1'
-const EMPTY: Omit<SessionState, 'saved'> = { request: null, audio: null, status: 'idle', source: null, seconds: 0, duration: 0, error: null }
+const EMPTY: Omit<SessionState, 'saved'> = { request: null, audio: null, status: 'idle', source: null, seconds: 0, duration: 0, error: null, gap: false }
 
 export function readSavedSession(): SavedSession | null {
   try {
@@ -73,7 +111,8 @@ export class QuranAudioSession {
   }
   save = () => {
     const { request, audio } = this.state
-    if (!request) return
+    // A memorization drill is a focused exercise, not a listening position to resume.
+    if (!request || request.kind === 'memorize') return
     const seconds = this.resumeAt > 0 ? this.resumeAt : audio && Number.isFinite(audio.currentTime) ? audio.currentTime : this.state.seconds
     const saved: SavedSession = { ...request, seconds, version: 1 }
     try { localStorage.setItem(QURAN_SESSION_KEY, JSON.stringify(saved)) } catch { /* Playback works when storage is full/disabled. */ }
@@ -84,6 +123,7 @@ export class QuranAudioSession {
     if (!forget) this.save()
     ++this.epoch
     ++this.continuation
+    this.clearGap()
     this.disposeAudio()
     if (forget) {
       try { localStorage.removeItem(QURAN_SESSION_KEY) } catch { /* optional */ }
@@ -95,6 +135,7 @@ export class QuranAudioSession {
     this.save()
     const epoch = ++this.epoch
     ++this.continuation
+    this.clearGap()
     this.disposeAudio()
     this.autoplay = autoplay
     this.resumeAt = seconds
@@ -111,6 +152,9 @@ export class QuranAudioSession {
         }
       } catch { /* Missing/unsupported storage must not prevent online playback. */ }
     }
+    // Memorize drills play the plain per-ayah CDN URL like any media element:
+    // the CDN sends no CORS headers, so page-context fetch caching cannot work
+    // (offline reuse is the service worker's job - see center/memorizeAudioCache).
     if (epoch === this.epoch) this.attach(request, this.onlineUrl(request), 'online', epoch)
   }
   private async localBlob(request: SessionRequest): Promise<Blob | undefined> {
@@ -162,6 +206,21 @@ export class QuranAudioSession {
     }
     const ended = () => {
       if (!valid()) return
+      if (request.kind === 'memorize') {
+        const done = request.done ?? 0
+        const repeats = request.repeats ?? 1
+        const to = request.to ?? request.ayah?.numberInSurah ?? 0
+        if (request.ayah && done + 1 < repeats) {
+          this.afterGap(request, { ...request, done: done + 1 })
+        } else if (request.ayah && request.ayah.numberInSurah < to) {
+          const ayah = { number: request.ayah.number + 1, numberInSurah: request.ayah.numberInSurah + 1, text: '' }
+          this.afterGap(request, { ...request, ayah, done: 0 })
+        } else {
+          audio.currentTime = 0
+          this.update({ request: { ...request, done: repeats }, status: 'paused', seconds: 0 })
+        }
+        return
+      }
       if ((request.kind === 'single-ayah' && this.repeat === 'ayah') || (request.kind === 'connected' && this.repeat === 'surah')) {
         audio.currentTime = 0
         this.resumeAt = 0
@@ -210,6 +269,29 @@ export class QuranAudioSession {
     if (this.autoplay) this.play(audio, epoch)
     else audio.load()
   }
+  private gapTimer: ReturnType<typeof setTimeout> | null = null
+  private gapNext: SessionRequest | null = null
+  private clearGap() {
+    if (this.gapTimer) clearTimeout(this.gapTimer)
+    this.gapTimer = null
+    this.gapNext = null
+  }
+  /** Silence window between memorization repetitions; guarded against stop/start. */
+  private afterGap(request: SessionRequest, next: SessionRequest) {
+    const gapMs = Math.max(0, request.gapMs ?? 0)
+    if (!gapMs) { void this.start(next); return }
+    const epoch = this.epoch
+    const continuation = ++this.continuation
+    this.gapNext = next
+    this.update({ gap: true })
+    this.gapTimer = setTimeout(() => {
+      this.gapTimer = null
+      if (this.epoch !== epoch || continuation !== this.continuation) return
+      this.gapNext = null
+      this.update({ gap: false })
+      void this.start(next)
+    }, gapMs)
+  }
   private play(audio: HTMLAudioElement, epoch: number) {
     this.autoplay = true
     this.update({ status: 'loading', error: null })
@@ -218,6 +300,16 @@ export class QuranAudioSession {
     })
   }
   toggle = () => {
+    // During a memorization silence window the toggle skips the wait and plays
+    // the next repetition immediately; pausing mid-gap would feel like a hang.
+    if (this.state.gap) {
+      const next = this.gapNext
+      this.clearGap()
+      ++this.continuation
+      this.update({ gap: false })
+      if (next) void this.start(next)
+      return
+    }
     ++this.continuation
     const { audio, status, request } = this.state
     if (!request) return

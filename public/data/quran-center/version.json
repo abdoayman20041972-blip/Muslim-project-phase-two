@@ -1,0 +1,37 @@
+{
+  "source": "https://quranpedia.net",
+  "dumpVersion": "2026-11-24",
+  "generatedAt": "2026-11-26T05:02:02.741Z",
+  "files": {
+    "meanings.json.gz": "bafa75de0b71aa3f51fb259ffdfc9a976d72fe76db2152fe192c89f0bbc79554",
+    "surahs.json.gz": "990c26179755f686d482565ab4776387b68c8bd776cea3fe5568703b8324132b"
+  },
+  "books": {
+    "gharibHeritage": [
+      {
+        "id": 208,
+        "name": "تذكرة الأريب في تفسير الغريب",
+        "author": "ابن الجوزي (ت ٥٩٧هـ)"
+      },
+      {
+        "id": 327,
+        "name": "التبيان في تفسير غريب القرآن",
+        "author": "ابن الهائم (ت ٨١٥هـ)"
+      }
+    ],
+    "gharibModernPrivate": [
+      {
+        "id": 491,
+        "name": "السراج في بيان غريب القرآن",
+        "author": "محمد بن عبد العزيز الخضيري"
+      },
+      {
+        "id": 1424,
+        "name": "كلمات القرآن",
+        "author": "حسنين محمد مخلوف"
+      }
+    ],
+    "reviewPending": true
+  },
+  "changesFeed": "https://quranpedia.net/api/v1/changes?since=2026-11-24"
+}

@@ -17,7 +17,7 @@ function useMiniPlayerHidden() {
 
 export function QuranMiniPlayer() {
   const hidden = useMiniPlayerHidden()
-  const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter, buffering, source, error, retry, saved, restore, backgroundWarning, audioProgress } = useQuranAudio()
+  const { reciter, current, currentSurah, playing, toggleCurrent, stop, playback, setReciter, buffering, source, error, retry, saved, restore, backgroundWarning, audioProgress, memorize } = useQuranAudio()
 
   if (currentSurah === null) return saved ? <div dir="rtl" className="fixed bottom-24 left-3 right-3 z-[55] rounded-2xl border border-azkar-hairline bg-azkar-card p-3 text-sm text-azkar-teal-ink shadow-lg" data-testid="quran-resume-player">
     <button type="button" onClick={restore} className="u-pressable rounded-xl bg-azkar-teal px-3 py-2 text-azkar-card">استئناف الاستماع</button>
@@ -31,6 +31,8 @@ export function QuranMiniPlayer() {
 
   const reciterLabel = QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter
   const surah = surahList.find((item) => item.number === currentSurah)
+  // During a memorization silence window the toggle skips the wait (quranAudioSession.toggle), so the control must say so.
+  const gap = memorize?.gap ?? false
 
   const togglePlayback = () => {
     toggleCurrent()
@@ -50,12 +52,12 @@ export function QuranMiniPlayer() {
       {(error || backgroundWarning) && <div role="alert" className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-azkar-hairline bg-azkar-card p-3 text-xs text-azkar-ink shadow-lg">
         {error || backgroundWarning} {error && <button type="button" onClick={retry} className="mr-2 underline">إعادة المحاولة</button>}
       </div>}
-      <span className="sr-only" aria-live="polite">{buffering ? 'جاري تحميل الصوت' : playing ? 'قيد التشغيل' : 'متوقف مؤقتًا'} {Math.floor((audioProgress || 0) / 60)} دقيقة</span>
+      <span className="sr-only" aria-live="polite">{buffering ? 'جاري تحميل الصوت' : gap ? 'فاصل صمت بين التكرارات' : playing ? 'قيد التشغيل' : 'متوقف مؤقتًا'} {Math.floor((audioProgress || 0) / 60)} دقيقة</span>
       <ReciterPicker label="القارئ في المشغل المصغر" value={reciter} onChange={(next) => { void setReciter(next) }}
         className="h-9 w-[7.5rem] shrink-0 text-[0.6875rem]" />
       <button type="button" onClick={togglePlayback}
         className="u-pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-azkar-teal text-azkar-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold"
-        aria-busy={buffering} aria-label={playing ? 'إيقاف مؤقت' : 'تشغيل'}>
+        aria-busy={buffering} aria-label={gap ? 'تخطي الفاصل' : playing ? 'إيقاف مؤقت' : 'تشغيل'}>
         {playing ? <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> : <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z" /></svg>}
       </button>
       <button type="button" onClick={stop}

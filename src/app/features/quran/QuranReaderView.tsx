@@ -20,6 +20,9 @@ import { QuranOfflinePlayer } from './QuranOfflinePlayer'
 import { ReciterPicker } from './ReciterPicker'
 import { QURAN_AUDIO_RECITERS, QURAN_AUDIO_RECITER_LABELS, type QuranAudioReciter } from './quranAudioPlayback'
 import { useQuranTafsir } from './useQuranTafsir'
+import { AyahCenterCard } from './center/AyahCenterCard'
+import { SurahInfoCard } from './center/SurahInfoCard'
+import { APP_SETTINGS_KEYS, readSetting, writeSetting } from '../../settings'
 import { assertQuranPageMap, groupSurahPages, type QuranPageMap } from './quranPageIntegrity'
 import { loadReadingPosition, saveReadingPosition } from './readingPosition'
 
@@ -105,6 +108,15 @@ function BookOpenIcon() {
     </svg>
   )
 }
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="7.8" r="1.1" fill="currentColor" />
+    </svg>
+  )
+}
 export function QuranReaderView({ view, setView }: Props) {
   const activeSurah = surahList.find((s) => s.number === view.number)
   const { ayahs, loading, error } = useQuranReaderData(view.number)
@@ -115,11 +127,14 @@ export function QuranReaderView({ view, setView }: Props) {
     setLayout,
     fontConfig: fs,
   } = useQuranPreferences()
-  const { current, currentSurah, playing, buffering, playback, repeat, setRepeat, playSingleAyah, playConnected, toggleCurrent, reciter, setReciter } = useQuranAudio()
+  const { current, currentSurah, playing, buffering, playback, repeat, setRepeat, playSingleAyah, playConnected, toggleCurrent, reciter, setReciter, memorize } = useQuranAudio()
   const [pageIndex, setPageIndex] = useState(0)
   const [readingMode, setReadingMode] = useState(false)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [panel, setPanel] = useState<Ayah | null>(null)
+  const [centerFor, setCenterFor] = useState<Ayah | null>(null)
+  const [surahInfoOpen, setSurahInfoOpen] = useState(false)
+  const [memorizeHideText, setMemorizeHideText] = useState(() => readSetting(APP_SETTINGS_KEYS.quranMemorizeHide, '0') === '1')
   const mushafRef = useRef<HTMLDivElement | null>(null)
   // س07: the audio follow effect may only move the page when the PLAYING AYAH
   // changes, never when the user turned the page manually.
@@ -140,6 +155,8 @@ export function QuranReaderView({ view, setView }: Props) {
       if (e.key === 'Escape') {
         setPanel(null)
         setShareFor(null)
+        setCenterFor(null)
+        setSurahInfoOpen(false)
         closeTafsir()
       }
     }
@@ -381,9 +398,19 @@ export function QuranReaderView({ view, setView }: Props) {
       URL.revokeObjectURL(url)
     } catch (error) { console.debug('[QuranReaderView]', error); showShareFailure() }
   }
-  function openTafsir(a: Ayah) {
+  function openCenter(a: Ayah) {
     setPanel(null)
+    setCenterFor(a)
     loadTafsir(a)
+  }
+  function closeCenter() {
+    setCenterFor(null)
+    closeTafsir()
+  }
+  const memorizeAyahInSurah = memorize && memorize.surah === view.number && !memorize.complete && memorize.status !== 'error' ? memorize.ayah : null
+  const changeMemorizeHideText = (value: boolean) => {
+    setMemorizeHideText(value)
+    writeSetting(APP_SETTINGS_KEYS.quranMemorizeHide, value ? '1' : '0')
   }
   if (!activeSurah) return null
   return (
@@ -425,8 +452,8 @@ export function QuranReaderView({ view, setView }: Props) {
       ) : (
         <div className="quran-reader-header flex items-center gap-3 mb-5">
           <BackButton onClick={() => setView({ name: 'mushaf-list' })} />
-          <div className="flex-1">
-            <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-amiri font-bold text-2xl text-azkar-teal-ink">
               {activeSurah!.shortName}
             </div>
             <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5 truncate">
@@ -435,6 +462,14 @@ export function QuranReaderView({ view, setView }: Props) {
               {QURAN_AUDIO_RECITER_LABELS[reciter as QuranAudioReciter] ?? reciter}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setSurahInfoOpen(true)}
+            aria-label="معلومات عن السورة"
+            className="u-pressable inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-azkar-gold-soft bg-azkar-card text-azkar-teal-ink"
+          >
+            <InfoIcon />
+          </button>
           <button
             type="button"
             onClick={() => setControlsOpen((v) => !v)}
@@ -625,7 +660,7 @@ export function QuranReaderView({ view, setView }: Props) {
                     setPanel(a)
                   }}
                   role="presentation"
-                  className={'cursor-pointer rounded-md ' + (playback?.kind !== 'connected' && visibleCurrent === a.numberInSurah ? 'bg-azkar-gold/20' : '')}
+                  className={'cursor-pointer rounded-md ' + (playback?.kind !== 'connected' && visibleCurrent === a.numberInSurah ? 'bg-azkar-gold/20 ' : '') + (memorizeAyahInSurah === a.numberInSurah ? 'bg-azkar-gold/20 ' : '') + (memorizeHideText && memorizeAyahInSurah === a.numberInSurah ? 'quran-ayah-masked ' : '')}
                 >
                   {a.text}
                   <button
@@ -674,7 +709,7 @@ export function QuranReaderView({ view, setView }: Props) {
                 مشاركة
               </button>
               <button
-                onClick={() => openTafsir(panel)}
+                onClick={() => openCenter(panel)}
                 aria-label="تفسير الآية"
                 className="quran-tool-btn u-pressable"
               >
@@ -757,62 +792,28 @@ export function QuranReaderView({ view, setView }: Props) {
           </div>,
           document.body,
         )}
-      {tafsirFor &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[60] bg-black/40"
-            onClick={() => closeTafsir()}
-            role="presentation"
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label={`تفسير الآية ${toArabicNumber(tafsirFor.numberInSurah)}`}
-              onKeyDown={trapDialogFocus}
-              tabIndex={-1}
-              onClick={(e) => e.stopPropagation()}
-              className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md max-h-[82vh] focus:outline-none rounded-t-[2rem] border-t border-azkar-gold-soft bg-azkar-card shadow-2xl flex flex-col"
-            >
-              <div className="shrink-0 px-5 pt-5 pb-3 border-b border-azkar-gold-soft">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-amiri font-bold text-lg">
-                      تفسير الآية {toArabicNumber(tafsirFor.numberInSurah)}
-                    </div>
-                    <div className="text-[0.6875rem] text-azkar-ink-soft mt-1">{tafsirLabel}</div>
-                  </div>
-                  <button
-                    onClick={() => closeTafsir()}
-                    aria-label="إغلاق التفسير"
-                    autoFocus
-                    className="w-9 h-9 rounded-full bg-azkar-bg-alt flex items-center justify-center"
-                  >
-                    <CloseIcon />
-                  </button>
-                </div>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-                {tafsirLoading ? (
-                  <div className="py-12 text-center text-sm text-azkar-ink-soft">
-                    جارٍ تحميل التفسير...
-                  </div>
-                ) : tafsirError ? (
-                  <div className="py-12 text-center text-sm text-azkar-ink-soft">
-                    تعذر تحميل التفسير. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.
-                  </div>
-                ) : (
-                  <div className="font-amiri text-[1.125rem] leading-[2.05] text-azkar-ink whitespace-pre-line">
-                    {tafsirText}
-                  </div>
-                )}
-              </div>
-              <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-[0.6875rem] text-azkar-ink-soft">
-                {tafsirLabel}
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      {centerFor && (
+        <AyahCenterCard
+          surah={activeSurah!}
+          ayah={centerFor}
+          ayahs={ayahs ?? []}
+          reciter={reciter as QuranAudioReciter}
+          tafsir={{
+            text: tafsirText,
+            loading: tafsirLoading,
+            error: tafsirError,
+            label: tafsirLabel,
+            forThisAyah: tafsirFor?.number === centerFor.number,
+          }}
+          onTafsirTab={() => { if (tafsirFor?.number !== centerFor.number) loadTafsir(centerFor) }}
+          onClose={closeCenter}
+          hideText={memorizeHideText}
+          onHideTextChange={changeMemorizeHideText}
+        />
+      )}
+      {surahInfoOpen && (
+        <SurahInfoCard surah={activeSurah!} onClose={() => setSurahInfoOpen(false)} />
+      )}
     </div>
   )
 }
