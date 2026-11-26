@@ -235,7 +235,7 @@ describe('TasbihView bead illumination cycle', () => {
     // The tap after a full cycle starts a new illumination cycle from bead 1.
     expect(litSmall()).toBe(1)
     expect(imamLit()).toBe(false)
-    expect(screen.getByText('٣٥', { selector: '.tasbih-count' })).toBeTruthy()
+    expect(screen.getByText('35', { selector: '.tasbih-count' })).toBeTruthy()
   })
 
   it('larger goals complete the second illumination cycle at tap 68 and restart at 69', () => {
