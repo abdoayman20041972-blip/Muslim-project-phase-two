@@ -1,0 +1,190 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+# Starting a second build on the same branch cancels the one still running.
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up JDK 21 (required by Capacitor 7)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Gradle downloads (AGP, Kotlin, Capacitor libraries) are reused between builds.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Accept Android SDK licenses and install required packages
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then
+            SDKM=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)
+          fi
+          export PATH="$(dirname "$SDKM"):$PATH"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      # `npm ci` installs exactly what package-lock.json pins. If package.json
+      # changes, regenerate the lock first (npm install --package-lock-only).
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Upload the resolved package-lock.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+
+      # Bundled offline assets are committed with the repo (no network at build time).
+      - name: Verify bundled offline assets
+        run: |
+          test -f public/img/qibla-mobile.jpg || { echo "::error::public/img/qibla-mobile.jpg is missing (must be committed for offline use)"; exit 1; }
+          test -f native/adhan.mp3 || { echo "::error::native/adhan.mp3 is missing"; exit 1; }
+          test -f native/stat-icon.png || { echo "::error::native/stat-icon.png is missing (notification status-bar icon)"; exit 1; }
+          test -f native/large-icon.png || { echo "::error::native/large-icon.png is missing (notification large icon)"; exit 1; }
+          test -f resources/icon.png || { echo "::error::resources/icon.png is missing"; exit 1; }
+          test -f resources/splash.png || { echo "::error::resources/splash.png is missing"; exit 1; }
+
+      # L6 fix: with the suite green, typecheck and tests are
+      # now BLOCKING gates for the APK — a regression can no longer slip into a
+      # shipped build unnoticed. Results are still summarized in the run page.
+      - name: Typecheck (blocking)
+        run: |
+          set +e
+          npm run typecheck > typecheck.log 2>&1
+          CODE=$?
+          {
+            echo "### Typecheck: $([ $CODE -eq 0 ] && echo passed || echo "FAILED ($(grep -c 'error TS' typecheck.log) errors)")"
+            if [ $CODE -ne 0 ]; then echo '```'; head -n 60 typecheck.log; echo '```'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $CODE
+
+      - name: Tests (blocking)
+        run: |
+          set +e
+          npm run test:run > tests.log 2>&1
+          CODE=$?
+          {
+            echo "### Tests: $([ $CODE -eq 0 ] && echo passed || echo FAILED)"
+            echo '```'; tail -n 40 tests.log; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $CODE
+
+      - name: Build web app (optimized production build, prerendered for Capacitor)
+        run: PRERENDER=1 npm run build
+
+      - name: Verify web build output exists
+        run: |
+          test -f .output/public/index.html || {
+            echo "::error::Web build did not produce .output/public/index.html"
+            exit 1
+          }
+
+      - name: Create Android project (generated during build, not committed)
+        run: npx cap add android
+
+      - name: Patch Android project (manifest permissions, splash theme)
+        run: node scripts/patch-android.mjs
+
+      - name: Set version name and version code
+        env:
+          VERSION_NAME: "1.4.9"
+          VERSION_CODE: "12"
+        run: |
+          # versionCode must strictly increase with every release APK, otherwise
+          # Android refuses the new file as an update. Bump both values together.
+          GRADLE=android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"$VERSION_NAME\"/" "$GRADLE"
+          sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" "$GRADLE"
+          grep -q "versionName \"$VERSION_NAME\"" "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
+          grep -q "versionCode $VERSION_CODE\$" "$GRADLE" || { echo "::error::versionCode bump failed"; exit 1; }
+
+      - name: Bundle adhan sound into raw resources
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cp native/adhan.mp3 android/app/src/main/res/raw/adhan.mp3
+
+      - name: Apply release signing configuration
+        run: python3 scripts/apply-signing.py
+
+      - name: Generate app icons and splash screen
+        run: >-
+          npx @capacitor/assets generate --android
+          --iconBackgroundColor '#0d2b23' --iconBackgroundColorDark '#0d2b23'
+          --splashBackgroundColor '#0d2b23' --splashBackgroundColorDark '#0d2b23'
+
+      - name: Sync web assets into Android project
+        run: npx cap sync android
+
+      - name: Prepare signing secrets
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/muslim-release.keystore
+            {
+              echo "storeFile=muslim-release.keystore"
+              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+              echo "keyAlias=$ANDROID_KEY_ALIAS"
+              echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            } > android/keystore.properties
+            echo "variant=Release" >> "$GITHUB_OUTPUT"
+            echo "Signing with the release keystore."
+          else
+            echo "variant=Debug" >> "$GITHUB_OUTPUT"
+            echo "Release secrets not set; building a debug APK (fine for personal installs)."
+          fi
+
+      - name: Build APK
+        run: cd android && ./gradlew "assemble${{ steps.signing.outputs.variant }}" --no-daemon
+
+      - name: Verify APK exists and is non-empty
+        run: |
+          APK="android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk"
+          test -s "$APK" || { echo "::error::APK missing or empty at $APK"; exit 1; }
+          file "$APK"
+
+      - name: Verify APK permissions
+        run: |
+          APK="android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          PERMS=$("$AAPT" dump permissions "$APK")
+          echo "$PERMS"
+          for P in POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM USE_EXACT_ALARM RECEIVE_BOOT_COMPLETED VIBRATE ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION; do
+            echo "$PERMS" | grep -q "android.permission.$P" || { echo "::error::APK is missing android.permission.$P"; exit 1; }
+          done
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: muslim-app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}-apk
+          path: android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk
+          if-no-files-found: error
