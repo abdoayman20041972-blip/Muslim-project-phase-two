@@ -19,7 +19,7 @@ describe('QiblaView empty state', () => {
     expect(onBack).not.toHaveBeenCalled()
 
     // The old way out still works.
-    fireEvent.click(getByRole('button', { name: 'العودة' }))
+    fireEvent.click(getByRole('button', { name: 'رجوع' }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
