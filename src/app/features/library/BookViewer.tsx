@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { readerNote } from './readerNote'
 import { ChevronLeft } from 'lucide-react'
 import { toArabicNumber } from '../../constants'
 import { BookReader } from './BookReader'
@@ -90,7 +91,7 @@ export function BookViewer({ book, onClose }: { book: LibraryBook; onClose: () =
     <div className="w-full min-w-0" data-testid="book-toc">
       <ScreenHeader title={list ? list.name : book.title} subtitle={list ? `${toArabicNumber(list.idx.length)} فصلًا` : (book.id.startsWith('bidaya') ? `${book.author} · البداية والنهاية` : `${book.author} ${book.died}`)} onBack={goBack} backLabel={backLabel} />
       {data.meta && !data.meta.complete && !list && <p role="note" data-testid="book-partial" className="lib-note lib-note-warn">تنبيه: هذه النسخة غير مكتملة. المتاح للقراءة {toArabicNumber(data.chapters.length)} فصلًا{data.meta.gap ? `، وينقص منها ${data.meta.gap}` : '، وليس الكتاب كاملًا'}.</p>}
-      {!list && data.meta?.note && <p role="note" data-testid="book-note" className="lib-note">{data.meta.note}</p>}
+      {!list && readerNote(data.meta?.note) && <p role="note" data-testid="book-note" className="lib-note">{readerNote(data.meta?.note)}</p>}
       {!list && !data.meta?.note && range && <p role="note" data-testid="book-range" className="lib-note">النص المتاح هنا {range} في طبعة السعادة، ولذلك تبدأ القائمة من {groups[0]?.name}. لا يتوفر في هذا التطبيق نص للأجزاء السابقة.</p>}
       {saved >= 0 && saved < data.chapters.length && !list && (
         <button type="button" onClick={() => setChapter(saved)} className="lib-continue u-pressable"><span className="lib-continue-label">متابعة القراءة</span><span className="lib-continue-title">{data.chapters[saved].t}</span></button>
