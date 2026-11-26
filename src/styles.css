@@ -2020,7 +2020,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .library-book:disabled{opacity:.55;filter:grayscale(.35)}
 .pdf-reader{height:auto;min-height:0}
 .pdf-reader .book-spread{flex:0 0 auto;align-items:flex-start}
-.pdf-stage{position:relative;background:#fff;flex:1;overflow:auto;max-height:calc(100dvh - 15rem);touch-action:pan-x pan-y pinch-zoom}
+.pdf-stage{position:relative;background:#fff;flex:1;overflow:auto;max-height:calc(100dvh - 13.6rem);touch-action:pan-x pan-y pinch-zoom}
 .pdf-zoom{display:flex;justify-content:center;gap:.5rem;margin-top:.5rem}
 .pdf-canvas{display:block;max-width:none;height:auto}
 .pdf-turn-fwd{animation:pdf-in-fwd .38s ease-out}
@@ -2109,7 +2109,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .lib-card{background:linear-gradient(135deg,#fffdf6,#f1efe2)}
 .dark .lib-card{background:linear-gradient(135deg,rgba(26,52,45,.95),rgba(16,34,29,.95))}
 .lib-note{border-inline-start:4px solid #c99a2e}
-.app-content:has(.book-reader){padding-left:.7rem;padding-right:.7rem}
-.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 14.5rem)}
-.app-content:has(.book-reader) .book-page{font-size:1.1em}
+.app-content:has(.book-reader){padding-left:.4rem;padding-right:.4rem}
+.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 13.2rem)}
+.app-content:has(.book-reader) .book-page{font-size:1.17em}
 @media (max-height:520px) and (orientation:landscape){.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 9.2rem)}}
