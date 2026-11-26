@@ -458,6 +458,10 @@ export function App() {
   }, []);
   const go = (s: Section) => {
     setNavOrigin("default");
+    // A bottom-bar tap always lands on that tab's root screen. Screens with
+    // their own inner state (More > Library > book, Hadith detail) are remounted.
+    if (s === "more") { setMoreNonce((n) => n + 1); try { window.scrollTo(0, 0); } catch { /* tests */ } }
+    if (s === "hadith") { setHadithNonce((n) => n + 1); setHadithDetailOpen(false); try { window.scrollTo(0, 0); } catch { /* tests */ } }
     setView(
       s === "home"
         ? { name: "home" }
@@ -520,7 +524,9 @@ export function App() {
     ),
     [lastSurahMeta, darkMode, setAppearance],
   );
-  const moreScreen = useMemo(() => <MoreView />, []);
+  const [moreNonce, setMoreNonce] = useState(0);
+  const [hadithNonce, setHadithNonce] = useState(0);
+  const moreScreen = useMemo(() => <MoreView key={moreNonce} />, [moreNonce]);
   const settingsScreen = useMemo(
     () => (
       <SettingsView
@@ -634,8 +640,8 @@ export function App() {
   const prophetsScreen = useMemo(() => <ProphetsView onBack={() => backOr({ name: "home" })} />, [backOr]);
   const [hadithDetailOpen, setHadithDetailOpen] = useState(false);
   const hadithScreen = useMemo(
-    () => <HadithView onBack={() => setView({ name: "home" })} onDetailChange={setHadithDetailOpen} />,
-    [],
+    () => <HadithView key={hadithNonce} onBack={() => setView({ name: "home" })} onDetailChange={setHadithDetailOpen} />,
+    [hadithNonce],
   );
   const tasbihScreen = useMemo(
     () => (
