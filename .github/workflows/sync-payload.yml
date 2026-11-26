@@ -1,0 +1,40 @@
+name: Sync payload
+on:
+  push:
+    branches: [main-2]
+    paths: ['.github/workflows/sync-payload.yml']
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply payload
+        run: |
+          set -e
+          cat sync/sync/pchunk* | tr -d '\n' | base64 -d > /tmp/payload.tgz
+          echo "ebd81925968a78ba965115c6b2462a038d36848083ecb6ed2356bac3e7ff4267  /tmp/payload.tgz" | sha256sum -c -
+          mkdir /tmp/pl && tar xzf /tmp/payload.tgz -C /tmp/pl
+          while read -r f; do [ -n "$f" ] && mkdir -p "$(dirname "$f")" && cp /tmp/pl/"$f" "$f"; done < /tmp/pl/files.txt
+          git rm -q -r -f -- sync
+          git add -A
+      - name: Verify
+        run: |
+          set -e
+          cd /tmp/pl
+          bad=0
+          cd "$GITHUB_WORKSPACE"
+          while read -r h f; do echo "$h  $f" | sha256sum -c --quiet - || bad=1; done < /tmp/pl/shas.txt
+          git ls-files | grep -v '^.github/' | sed 's#^#./#' | sort > have.txt
+          awk '{print $2}' /tmp/pl/shas.txt | grep -v '^./.github/' | sort > want.txt
+          diff have.txt want.txt && echo "FILE SET MATCH" || bad=1
+          rm -f have.txt want.txt
+          test $bad -eq 0
+      - name: Commit
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git commit -q -m "Essentials reader redesign and Quran asbab (verified narrations)"
+          git push origin HEAD:main-2
+          git log --oneline -1
