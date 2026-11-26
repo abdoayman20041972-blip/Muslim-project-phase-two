@@ -1,6 +1,6 @@
 {
- "batch": "asbab-verified-v2.1",
- "rule": "each entry: al-Wahidi narration text (reviewed; verse markers expanded from the pinned surahs dump) whose revelation-cause report was independently confirmed in a graded source (Sahihayn or graded Sunan) via sunnah.com; textSha256 pins the exact reviewed bytes; positions without a verified report ship nothing. v2 corrections (independent content audit): 5 reference numbers corrected to the verified sunnah.com parallel that explicitly carries the verse association (2:144->Bukhari 399, 28:56->Bukhari 4772, 33:23->Muslim 1903, 29:8->Muslim 1748c, 49:2->Muslim 119a); unsupported sub-narratives trimmed so the صحيح badge only certifies displayed content (2:144 isnad-less Jibril dialogue removed; 49:2 deafness detail removed; 24:33 Subayh narrative removed; 59:9 land-split narrative removed; 65:1 Qatada/Hafsa branch removed; 33:4 unattributed Jameel narrative removed); 113:1 HELD and removed (cited Bukhari 5766 verified to contain the magic story with no surah-revelation link; cause rests on قال المفسرون only). v2.1 scope trims: 33:51 mufassirun takhyir narrative and wa-qala-qawm paragraph removed (commentary causal claims not in the cited hadiths); 49:2 cause-conflating intro removed (verified Muslim 119a shows Thabit's reaction after revelation, not the cause) and Ibn Abi Mulayka commentary cause removed",
+ "batch": "asbab-verified-v2.1+reader-v3-sliceA",
+ "rule": "each entry: al-Wahidi narration text (reviewed; verse markers expanded from the pinned surahs dump) whose revelation-cause report was independently confirmed in a graded source (Sahihayn or graded Sunan) via sunnah.com; textSha256 pins the exact reviewed bytes; positions without a verified report ship nothing. v2 corrections (independent content audit): 5 reference numbers corrected to the verified sunnah.com parallel that explicitly carries the verse association (2:144->Bukhari 399, 28:56->Bukhari 4772, 33:23->Muslim 1903, 29:8->Muslim 1748c, 49:2->Muslim 119a); unsupported sub-narratives trimmed so the صحيح badge only certifies displayed content (2:144 isnad-less Jibril dialogue removed; 49:2 deafness detail removed; 24:33 Subayh narrative removed; 59:9 land-split narrative removed; 65:1 Qatada/Hafsa branch removed; 33:4 unattributed Jameel narrative removed); 113:1 HELD and removed (cited Bukhari 5766 verified to contain the magic story with no surah-revelation link; cause rests on قال المفسرون only). v2.1 scope trims: 33:51 mufassirun takhyir narrative and wa-qala-qawm paragraph removed (commentary causal claims not in the cited hadiths); 49:2 cause-conflating intro removed (verified Muslim 119a shows Thabit's reaction after revelation, not the cause) and Ibn Abi Mulayka commentary cause removed | R3 UPDATE: +17 reader-facing narrations (slice A, v4) with exact book/number/grade.",
  "sourceBook": {
   "file": "asbab-book-2919.json.gz",
   "name": "أسباب نزول القرآن",
@@ -50,6 +50,15 @@
   },
   {
    "surah": 2,
+   "ayah": 195,
+   "textSha256": "75cfc677c164d505027797462fce9bea73c761380dae93cb0a0880f20ad63745",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 2972 (كتاب التفسير، سورة البقرة)",
+   "grade": "صحيح (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
+   "surah": 2,
    "ayah": 196,
    "textSha256": "5308e24513cb57479e20cf296289ea84138000740a16486c52ff66d0a5eca6ce",
    "source": "صحيح البخاري",
@@ -58,11 +67,29 @@
   },
   {
    "surah": 2,
+   "ayah": 198,
+   "textSha256": "8473dea36e9f469c41badc8a6c593a55260bc2ed812c2423bf49f8ccd0c6b819",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4519 (كتاب التفسير)؛ سنن أبي داود 1734 (كتاب المناسك)",
+   "grade": "صحيح",
+   "relation": "سبب"
+  },
+  {
+   "surah": 2,
    "ayah": 199,
    "textSha256": "bfd4e9ce569db468f35441f838ebd4341b5ffa8cb83ccb90546a7149583d5dd2",
    "source": "صحيح البخاري",
    "reference": "صحيح البخاري 4520",
    "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 219,
+   "textSha256": "1f96eb3175a6e73baae6d9d0239852ac0e497d7ebe5b22c1ba0f09b03654f8a3",
+   "source": "سنن أبي داود",
+   "reference": "سنن أبي داود 3670 (كتاب الأشربة، باب في تحريم الخمر)",
+   "grade": "صحيح (حكم الألباني)",
+   "relation": "سبب"
   },
   {
    "surah": 2,
@@ -90,6 +117,24 @@
   },
   {
    "surah": 2,
+   "ayah": 240,
+   "textSha256": "84a157183c7527104851f9d2822eb7177ada885682e04735e46b78a9e4c19efa",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4531 (كتاب التفسير)",
+   "grade": "صحيح",
+   "relation": "سبب"
+  },
+  {
+   "surah": 2,
+   "ayah": 267,
+   "textSha256": "30bb08a42f27c654a76981e1e661c78c5771659ca34cb41f3354fbf6a5cfee72",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 2987 (كتاب التفسير، سورة البقرة)",
+   "grade": "حسن (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
+   "surah": 2,
    "ayah": 285,
    "textSha256": "7a5e339d11ab9144ff705f4f4de0028258046ff2ea4ed5bd7a49e9a083e434b1",
    "source": "صحيح مسلم",
@@ -111,6 +156,15 @@
    "source": "صحيح البخاري",
    "reference": "صحيح البخاري 4559",
    "grade": "صحيح"
+  },
+  {
+   "surah": 3,
+   "ayah": 169,
+   "textSha256": "a9782267a85fcdff99510d3c009d10c7857648c389fe1698f2eb9d44666cd64a",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 3010 (كتاب التفسير، سورة آل عمران)؛ صحيح مسلم 1887 (باب أرواح الشهداء في الجنة)",
+   "grade": "حسن في الترمذي (حكم دار السلام)؛ وصحيح في مسلم",
+   "relation": "سبب"
   },
   {
    "surah": 3,
@@ -218,6 +272,15 @@
   },
   {
    "surah": 5,
+   "ayah": 87,
+   "textSha256": "c4cd92f56aeb6affe2f6e6bd3be24ad9096f9957a8a016799ea3abc37423bc6f",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 3054 (كتاب التفسير، سورة المائدة)",
+   "grade": "صحيح (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
+   "surah": 5,
    "ayah": 93,
    "textSha256": "a543e9e90c85563189d8666f9a416a2e52119217b33f879119d97f2cf939967f",
    "source": "صحيح البخاري",
@@ -233,12 +296,30 @@
    "grade": "صحيح"
   },
   {
+   "surah": 6,
+   "ayah": 121,
+   "textSha256": "e16cc3c01edfa212b9a366357a9d21a6f9daf8f1a77b7e127887689cae477314",
+   "source": "سنن أبي داود",
+   "reference": "سنن أبي داود 2819 (كتاب الضحايا، باب في ذبائح أهل الكتاب)",
+   "grade": "صحيح (حكم الألباني)، لكن ذكر اليهود فيه منكر والمحفوظ أنهم المشركون",
+   "relation": "سبب"
+  },
+  {
    "surah": 7,
    "ayah": 31,
    "textSha256": "5dcefb37d70affccc896452dbb932e51c2c917cea35d131d0aebdc77ebd03198",
    "source": "سنن النسائي",
    "reference": "سنن النسائي 2956",
    "grade": "صحيح"
+  },
+  {
+   "surah": 8,
+   "ayah": 1,
+   "textSha256": "dd0d3a4a91750adda2994d82976b79c18338eff64b2230479da50f9f8dc5b13f",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1748 أ/ب (كتاب الجهاد والسير، باب الأنفال)",
+   "grade": "صحيح",
+   "relation": "سبب"
   },
   {
    "surah": 8,
@@ -353,6 +434,24 @@
    "grade": "صحيح"
   },
   {
+   "surah": 22,
+   "ayah": 39,
+   "textSha256": "e1cb6ebdafd87d5b1f9455d935c6464bc581265587fbdd2080f21760608e15a8",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 3171 (كتاب التفسير، سورة الحج)",
+   "grade": "صحيح (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
+   "surah": 24,
+   "ayah": 3,
+   "textSha256": "92c63e7d99962bc060ef98775f196b169f9a66ba4d6f4d6dca794577b0cfe51d",
+   "source": "سنن النسائي",
+   "reference": "سنن النسائي 3228 (كتاب النكاح، باب تزويج الزانية)",
+   "grade": "حسن (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
    "surah": 24,
    "ayah": 6,
    "textSha256": "3b472adf21d381a54b366246bf73d7a2329279ed8a15e0802aab0629c46ed572",
@@ -418,6 +517,15 @@
   },
   {
    "surah": 33,
+   "ayah": 33,
+   "textSha256": "bd35444229d52b62be14f87f70876193d5d04c89b41cbb4f4b4b8e6df82839fb",
+   "source": "سنن الترمذي",
+   "reference": "سنن الترمذي 3205 (كتاب التفسير، سورة الأحزاب) و3787 (كتاب المناقب)؛ وشاهد من صحيح مسلم 2424 (حديث الكساء عن عائشة)",
+   "grade": "صحيح (حكم دار السلام)",
+   "relation": "سبب"
+  },
+  {
+   "surah": 33,
    "ayah": 51,
    "textSha256": "350ac1f3866aa1b34cd8408d0278c2a0f75be7260a1324e1afaa3acc903e2956",
    "source": "صحيح مسلم",
@@ -474,6 +582,15 @@
    "grade": "صحيح"
   },
   {
+   "surah": 58,
+   "ayah": 1,
+   "textSha256": "41c5bb8f56dfe2cc3eac8207d330e2a9c0e38ed47185cae41f53f21b6dbe34a5",
+   "source": "سنن أبي داود",
+   "reference": "سنن أبي داود 2214 (كتاب الطلاق، باب في الظهار)",
+   "grade": "حسن دون قوله «والعرق» (حكم الألباني)",
+   "relation": "سبب"
+  },
+  {
    "surah": 59,
    "ayah": 5,
    "textSha256": "bce365f360d41650730ce29e1b532522bef100c026ddb74dbbf6af033ce43acc",
@@ -498,12 +615,30 @@
    "grade": "صحيح"
   },
   {
+   "surah": 60,
+   "ayah": 10,
+   "textSha256": "61f8f4c9b929011713a91df55893f761a83c70df4c2b5f302abce41ffe112c94",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5286 (كتاب الطلاق، باب نكاح من أسلم من المشركات وعدتهن)",
+   "grade": "صحيح",
+   "relation": "سبب"
+  },
+  {
    "surah": 62,
    "ayah": 11,
    "textSha256": "6805d606e6e92074c55aeddc05db229bdb23d64ba35709dcb9b2fdb0d1339f29",
    "source": "صحيح البخاري",
    "reference": "صحيح البخاري 4899",
    "grade": "صحيح"
+  },
+  {
+   "surah": 63,
+   "ayah": 7,
+   "textSha256": "9f90245c4d2110a879aa3deaddf10e55d66945ee6275ea8bf696d6415a0c08c4",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 2772 (كتاب صفات المنافقين)؛ صحيح البخاري 4905 (كتاب التفسير)",
+   "grade": "صحيح",
+   "relation": "سبب"
   },
   {
    "surah": 65,
@@ -514,12 +649,30 @@
    "grade": "صحيح"
   },
   {
+   "surah": 66,
+   "ayah": 4,
+   "textSha256": "2a3dde0d92049e310d702c9c094bf668508e959491fe9db864dbf877853957ed",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5191",
+   "grade": "صحيح",
+   "relation": "سبب"
+  },
+  {
    "surah": 93,
    "ayah": 1,
    "textSha256": "9b9d881cf3a0df1d5fd6863787e94636eeb78e7575014da46b670e9e4bae692d",
    "source": "صحيح البخاري",
    "reference": "صحيح البخاري 4983",
    "grade": "صحيح"
+  },
+  {
+   "surah": 108,
+   "ayah": 1,
+   "textSha256": "7de335a37c69a1d135c4597420c762fa57eebd57866999d86a59175a19e87b74",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 400أ (كتاب الصلاة)",
+   "grade": "صحيح",
+   "relation": "سبب"
   },
   {
    "surah": 111,
