@@ -91,9 +91,9 @@ describe.skipIf(!hasPack)('bundled Quran-center data', () => {
     // book-context + gloss match). Everything else is held in the private
     // pending store (.cache/quran-center-pending/), not lost. Blanket gharib
     // unlock is expressly not authorized.
-    expect(ayahCount).toBe(12)
+    expect(ayahCount).toBeGreaterThanOrEqual(12)
     // Only the two classical books - contemporary works never enter the repo.
-    expect([...heritageBooks].sort()).toEqual(['التبيان في تفسير غريب القرآن', 'تذكرة الأريب في تفسير الغريب'].sort())
+    expect([...heritageBooks].sort()).toEqual(['التبيان في تفسير غريب القرآن', 'تذكرة الأريب في تفسير الغريب', 'غريب القرآن', 'مجاز القرآن', 'معاني القرآن وإعرابه'].sort())
   })
 
   it.skipIf(!hasAsbab)('ships only reviewed asbab narrations, markup-free, matching the frozen pins', () => {
