@@ -24,7 +24,7 @@ export async function loadSurah(surahNumber: number, signal?: AbortSignal): Prom
       const list = (module.default[String(surahNumber)] ?? []).map((ayah) => ({
         number: ayah.number,
         numberInSurah: ayah.numberInSurah,
-        text: ayah.text,
+        text: ayah.text.replace(/\uFEFF/g, ''),
       }))
       const expected = surahList.find((surah) => surah.number === surahNumber)?.numberOfAyahs
       if (!expected || !list.length || list.length !== expected) throw new Error('incomplete')

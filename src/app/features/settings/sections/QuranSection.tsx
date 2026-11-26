@@ -157,7 +157,7 @@ export function QuranSection({
         <Row title="إخفاء المشغّل العائم" description="يخفي المشغّل الصغير أعلى الشريط السفلي. التلاوة والإشعار يستمرّان">
           <Toggle checked={hideMini} onChange={() => { const n = !hideMini; setHideMini(n); save(APP_SETTINGS_KEYS.hideMiniPlayer, n ? '1' : '0') }} label="إخفاء المشغّل العائم" />
         </Row>
-        <Row title="طريقة عرض الآيات" description={layout === 'scroll' ? 'تمرير متصل' : 'صفحات من 10 آيات'} last stacked>
+        <Row title="طريقة عرض الآيات" description={layout === 'scroll' ? 'تمرير متصل' : 'صفحات المصحف'} last stacked>
           <Choice current={layout} onChange={(v) => setLayout(v as 'scroll' | 'pages')} labels={{ scroll: 'تمرير', pages: 'صفحات' }} />
         </Row>
       </Section>

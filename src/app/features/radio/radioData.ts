@@ -1,9 +1,15 @@
+import { fetchWithTimeout } from '../../net'
+
 export type RadioStation = { id: number; name: string; url: string }
 export type RadioGroup = 'all' | 'reciters' | 'mixed' | 'seerah' | 'tafsir' | 'hadith' | 'adhkar' | 'fatwa' | 'occasions'
 
 export const RADIO_API_URL = 'https://www.mp3quran.net/api/v3/radios?language=ar'
 const CACHE_KEY = 'azkar_radio_stations_v1'
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+// The station list opens with a bare fetch: a hung connection used to leave the
+// radio screen on «جارٍ تحميل المحطات…» forever, so the list load has the same
+// hard timeout as every other network call in the app (src/app/net.ts).
+const LIST_TIMEOUT_MS = 12_000
 
 // Stations pinned at the top of "all": the general mix, then well known reciters.
 const UNAVAILABLE_RADIO_IDS = new Set([94, 109084])
@@ -67,7 +73,12 @@ export async function loadStations(fetcher: typeof fetch = fetch): Promise<{ sta
   const cached = readCachedStations()
   if (cached?.fresh) return { stations: cached.stations, offlineCopy: false }
   try {
-    const response = await fetcher(RADIO_API_URL)
+    // An injected fetcher (tests) is used as-is; the real fetch goes through
+    // fetchWithTimeout so a dead connection fails into the cached copy or the
+    // retry state instead of hanging.
+    const response = fetcher === fetch
+      ? await fetchWithTimeout(RADIO_API_URL, LIST_TIMEOUT_MS)
+      : await fetcher(RADIO_API_URL)
     if (!response.ok) throw new Error(String(response.status))
     const stations = normalizeStations(await response.json())
     if (!stations.length) throw new Error('empty')

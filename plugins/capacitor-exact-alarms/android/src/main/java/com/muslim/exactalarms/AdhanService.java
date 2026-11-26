@@ -92,6 +92,13 @@ public class AdhanService extends Service {
         try { length = player == null ? 0 : player.getDuration(); } catch (RuntimeException ignored) { }
         // Watchdog = recording length plus a margin, so a normal full playback is never cut.
         handler.postDelayed(watchdog, length > 0 ? length + 30_000L : MAX_PLAY_MS);
+        // The wake lock was acquired with the MAX_PLAY_MS cap before the
+        // duration was known; re-acquire with the real length so a recording
+        // longer than 6 minutes is never cut when the CPU sleeps (acquire on a
+        // held lock just resets its timeout).
+        if (wakeLock != null && wakeLock.isHeld() && length + 30_000L > MAX_PLAY_MS) {
+            try { wakeLock.acquire(length + 60_000L); } catch (RuntimeException ignored) { }
+        }
         return START_NOT_STICKY;
     }
 
@@ -153,7 +160,7 @@ public class AdhanService extends Service {
         try {
             PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (power == null) return;
-            if (wakeLock == null) wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_TAG);
+            if (wakeLock == null) { wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_TAG); wakeLock.setReferenceCounted(false); }
             wakeLock.acquire(MAX_PLAY_MS);
         } catch (RuntimeException ignored) { }
     }

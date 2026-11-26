@@ -42,7 +42,7 @@ describe('reading position storage (س16)', () => {
     const format = (n: number) => `#${n}`
     expect(readingPositionLabel(null, format)).toBeNull()
     expect(readingPositionLabel({ surah: 2, layout: 'pages', pageIndex: 5, realPage: 7, updatedAt: 0 }, format)).toBe('صفحة #7')
-    expect(readingPositionLabel({ surah: 2, layout: 'pages', pageIndex: 5, updatedAt: 0 }, format)).toBe('صفحة #6')
+    expect(readingPositionLabel({ surah: 2, layout: 'pages', pageIndex: 5, updatedAt: 0 }, format)).toBeNull()
     expect(readingPositionLabel({ surah: 2, layout: 'scroll', ayah: 42, updatedAt: 0 }, format)).toBe('الآية #42')
   })
 })

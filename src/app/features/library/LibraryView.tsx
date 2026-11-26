@@ -1,9 +1,6 @@
-import { useState } from 'react'
-import { toArabicNumber } from '../../constants'
+import { useEffect, useState } from 'react'
 import { ChevronLeft, PlayCircle } from 'lucide-react'
 import { LessonsView } from './LessonsView'
-import { PdfBookReader } from './PdfBookReader'
-import { SCANNED_BOOKS } from './scannedBooks'
 import { BookCover } from './BookCover'
 import { BookViewer } from './BookViewer'
 import { ScreenHeader } from './ScreenHeader'
@@ -14,26 +11,10 @@ type Props = { onBack: () => void }
 export function LibraryView({ onBack }: Props) {
   const [open, setOpen] = useState<LibraryBook | null>(null)
   const [lessons, setLessons] = useState(false)
-  const [sifat, setSifat] = useState(false)
-  const [scan, setScan] = useState<(typeof SCANNED_BOOKS)[number] | null>(null)
 
-  if (scan) return (
-    <div className="w-full min-w-0">
-      <ScreenHeader title={`${scan.title} ${scan.vol}`} onBack={() => setScan(null)} backLabel="رجوع إلى المكتبة" />
-      <PdfBookReader title={`${scan.title} ${scan.vol}`} pdfUrl={scan.pdfUrl} credit={scan.credit} />
-    </div>
-  )
-  if (sifat) return (
-    <div className="library-view w-full min-w-0" data-testid="sifat-volumes">
-      <ScreenHeader title="صفة الصفوة" subtitle="ابن الجوزي ت ٥٩٧ هـ · نسخة مصورة" onBack={() => setSifat(false)} backLabel="رجوع إلى المكتبة" />
-      <ul className="lib-list">
-        {SCANNED_BOOKS.map((b, i) => (
-          <li key={b.id}><button type="button" onClick={() => setScan(b)} data-testid={`scan-${b.id}`} className="lib-row lib-row-vol u-pressable"><span className="lib-row-n">{toArabicNumber(i + 1)}</span><span className="lib-row-t">{b.vol}</span><span className="lib-row-count">{toArabicNumber(b.pages)} صفحة</span><ChevronLeft className="h-4 w-4 shrink-0 text-azkar-ink-soft" aria-hidden="true" /></button></li>
-        ))}
-      </ul>
-      <p role="note" data-testid="safwa-missing" className="lib-note">المتوفر في التطبيق: الجزءان الأول والثاني فقط. الكتاب في أربعة أجزاء في هذه الطبعة، والجزءان الثالث والرابع غير متوفرين حاليًا.</p>
-    </div>
-  )
+  // Sifat al-Safwa was removed from the app: drop any scanned-page cache an earlier version left on the device.
+  useEffect(() => { try { void globalThis.caches?.delete('library-scans-v1') } catch { /* ignore */ } }, [])
+
   if (lessons) return <LessonsView onBack={() => setLessons(false)} />
   if (open) return <BookViewer book={open} onClose={() => setOpen(null)} />
 
@@ -57,18 +38,6 @@ export function LibraryView({ onBack }: Props) {
                 {book.status === 'ready' && <ChevronLeft className="h-4 w-4 shrink-0 text-azkar-ink-soft" aria-hidden="true" />}
               </button>
             ))}
-            {shelf.id === 'companions' && (
-              <button type="button" onClick={() => setSifat(true)} data-testid="scan-safwa" aria-label="صفة الصفوة، ابن الجوزي" className="lib-card u-pressable">
-                <span className="lib-dot lib-dot-local" role="img" aria-label="متاح دون إنترنت" />
-                <span className="lib-card-cover"><BookCover book={SCANNED_BOOKS[0]} /></span>
-                <span className="lib-card-text">
-                  <span className="lib-card-title">صفة الصفوة</span>
-                  <span className="lib-card-meta">ابن الجوزي ت ٥٩٧ هـ</span>
-                  <span className="lib-card-meta">نسخة مصورة، جزءان من أربعة</span>
-                </span>
-                <ChevronLeft className="h-4 w-4 shrink-0 text-azkar-ink-soft" aria-hidden="true" />
-              </button>
-            )}
           </div>
         </section>
       ))}

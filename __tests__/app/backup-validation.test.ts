@@ -37,3 +37,14 @@ describe('backup import validation', () => {
     expect(r.rejected).toEqual(['azkar_counts'])
   })
 })
+
+import { isBackupKey as _isBackupKey } from '../../src/app/settings'
+import { isValidBackupValue as _isValidBackupValue } from '../../src/app/backupValidation'
+describe('book position backup', () => {
+  it('carries library-pos2 keys with numeric values only', () => {
+    expect(_isBackupKey('library-pos2-bidaya-history')).toBe(true)
+    expect(_isBackupKey('library-pos-bidaya-history')).toBe(false)
+    expect(_isValidBackupValue('library-pos2-bidaya-history', '12')).toBe(true)
+    expect(_isValidBackupValue('library-pos2-bidaya-history', '{"a":1}')).toBe(false)
+  })
+})

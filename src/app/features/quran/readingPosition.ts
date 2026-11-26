@@ -60,8 +60,8 @@ export function readingPositionLabel(
 ): string | null {
   if (!pos) return null
   if (pos.layout === 'pages') {
-    const page = pos.realPage ?? (pos.pageIndex !== undefined ? pos.pageIndex + 1 : undefined)
-    return page !== undefined ? `صفحة ${format(page)}` : null
+    // Older saves have only the page index inside the surah, which is not a Mushaf page number: show nothing rather than a wrong page.
+    return pos.realPage !== undefined ? `صفحة ${format(pos.realPage)}` : null
   }
   return pos.ayah !== undefined ? `الآية ${format(pos.ayah)}` : null
 }

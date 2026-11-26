@@ -45,6 +45,9 @@ export function BookReader({ paragraphs, credit, hasNextChapter, hasPrevChapter,
     setPages(Math.max(1, Math.round(el.scrollWidth / size.w)))
   }, [size, paragraphs])
 
+  // A resize can shrink the page count below the current page (rotation, split-screen): clamp so the reader never lands on a blank page.
+  useEffect(() => { setPage((current) => Math.min(current, pages - 1)) }, [pages])
+
   const go = useCallback((delta: 1 | -1) => {
     setPage((current) => {
       const next = Math.min(pages - 1, Math.max(0, current + delta))

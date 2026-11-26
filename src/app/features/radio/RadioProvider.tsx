@@ -22,6 +22,28 @@ function useRadioValue() {
   // One automatic retry per user action, so a momentary server error does not read as a dead station.
   const retried = useRef(false)
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // A live stream can hang without ever firing an error event (dead connection,
+  // server that accepts and trickles nothing). Without a watchdog the player
+  // sat on «جارٍ الاتصال بالبث…» forever. The watchdog routes a stall through
+  // the normal error path, which retries once and then shows the retry state.
+  const STALL_MS = 20_000
+  const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastProgressAt = useRef(0)
+  const clearStallWatchdog = useCallback(() => {
+    if (stallTimer.current) { clearTimeout(stallTimer.current); stallTimer.current = null }
+  }, [])
+  const armStallWatchdog = useCallback(() => {
+    if (stallTimer.current) clearTimeout(stallTimer.current)
+    stallTimer.current = setTimeout(() => {
+      stallTimer.current = null
+      const audio = audioRef.current
+      if (!audio || !stationRef.current) return
+      if (Date.now() - lastProgressAt.current < STALL_MS) return
+      // No audible progress for STALL_MS: the element never said so, so say it
+      // for it — the error handler below retries once, then shows the error.
+      audio.dispatchEvent(new Event('error'))
+    }, STALL_MS + 500)
+  }, [])
 
   const getAudio = useCallback(() => {
     if (!audioRef.current) {
@@ -37,6 +59,8 @@ function useRadioValue() {
     if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null }
     const audio = getAudio()
     audio.src = url
+    lastProgressAt.current = Date.now()
+    armStallWatchdog()
     setStatus('loading')
     audio.play().catch(() => { /* The error event decides what happens next. */ })
   }, [getAudio])
@@ -51,6 +75,7 @@ function useRadioValue() {
   }, [begin, currentSurah, stopQuran])
 
   const stop = useCallback(() => {
+    clearStallWatchdog()
     if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null }
     const audio = audioRef.current
     if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() }
@@ -75,9 +100,11 @@ function useRadioValue() {
 
   useEffect(() => {
     const audio = getAudio()
-    const onPlaying = () => setStatus('playing')
-    const onWaiting = () => { if (stationRef.current && !audio.paused) setStatus('loading') }
+    const onPlaying = () => { lastProgressAt.current = Date.now(); clearStallWatchdog(); setStatus('playing') }
+    const onProgress = () => { lastProgressAt.current = Date.now() }
+    const onWaiting = () => { if (stationRef.current && !audio.paused) { setStatus('loading'); armStallWatchdog() } }
     const onError = () => {
+      clearStallWatchdog()
       const current = stationRef.current
       if (!current) return
       if (!retried.current) {
@@ -90,15 +117,18 @@ function useRadioValue() {
     }
     audio.addEventListener('playing', onPlaying)
     audio.addEventListener('waiting', onWaiting)
+    audio.addEventListener('timeupdate', onProgress)
     audio.addEventListener('error', onError)
     return () => {
+      clearStallWatchdog()
       audio.removeEventListener('playing', onPlaying)
       audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('timeupdate', onProgress)
       audio.removeEventListener('error', onError)
       audio.pause()
       setRadioActive(false)
     }
-  }, [begin, getAudio])
+  }, [begin, getAudio, armStallWatchdog, clearStallWatchdog])
 
   // Quran playback started: radio steps aside.
   useEffect(() => onQuranStarted(() => { if (stationRef.current) stop() }), [stop])

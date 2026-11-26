@@ -592,7 +592,7 @@ export function App() {
   const mushafReaderScreen = useMemo(
     () =>
       readerView ? (
-        <QuranReaderView
+        <QuranReaderView key={`${readerView.number}`}
           view={readerView}
           setView={
             quickOrigin

@@ -50,6 +50,7 @@ function parseJson(value: string): { ok: true; value: unknown } | { ok: false } 
 
 export function isValidBackupValue(key: string, value: unknown): value is string {
   if (typeof value !== 'string' || value.length > MAX_VALUE_LENGTH) return false
+  if (key.startsWith('library-pos2-')) return /^\d{1,6}$/.test(value)
   if (key in ENUM_KEYS) return ENUM_KEYS[key].includes(value)
   if (TIME_KEYS.has(key)) return value === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
   if (COUNT_KEYS.has(key)) return /^\d{1,9}$/.test(value)

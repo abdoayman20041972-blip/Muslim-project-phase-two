@@ -228,7 +228,10 @@ export class QuranAudioSession {
       this.save()
     } else if (status === 'error') this.retry()
     else if (audio) this.play(audio, this.epoch)
-    else { this.autoplay = true; this.update({ status: 'loading' }) }
+    // Unreachable today (start always attaches audio, stop clears the request).
+    // If a future change ever reaches this with a request but no audio, retry
+    // rebuilds the session instead of hanging in 'loading' with no source.
+    else this.retry()
   }
   retry = () => {
     const { request, seconds } = this.state

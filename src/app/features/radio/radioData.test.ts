@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { loadStations } from './radioData'
 import { cleanStationName, normalizeStations, orderedStations } from './radioData'
 
 const payload = { radios: [
@@ -24,5 +25,31 @@ describe('radio data', () => {
     expect(all.learn.map((s) => s.id)).toEqual([21114])
     expect(orderedStations(list, 'seerah', '').rest.map((s) => s.id)).toEqual([21114])
     expect(orderedStations(list, 'all', 'مشاري').rest.map((s) => s.id)).toEqual([79])
+  })
+})
+
+describe('loadStations timeout', () => {
+  it('a hung station-list fetch fails fast into the error state instead of loading forever', async () => {
+    vi.useFakeTimers()
+    try {
+      window.localStorage.clear()
+      // A fetch that never answers: without the hard timeout the radio screen
+      // would stay on «جارٍ تحميل المحطات…» forever.
+      vi.stubGlobal('fetch', vi.fn((_input: unknown, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        // Never answers on its own; only the abort signal settles it, like a hung connection.
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+      })))
+      const pending = loadStations()
+      const outcome = pending.then(
+        () => 'resolved',
+        () => 'rejected',
+      )
+      await vi.advanceTimersByTimeAsync(12_500)
+      await expect(outcome).resolves.toBe('rejected')
+      await pending.catch(() => {})
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
   })
 })

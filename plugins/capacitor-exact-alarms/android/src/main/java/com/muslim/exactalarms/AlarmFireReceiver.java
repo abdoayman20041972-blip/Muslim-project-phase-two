@@ -214,8 +214,22 @@ public class AlarmFireReceiver extends BroadcastReceiver {
             builder.setDefaults(0);
         } else {
             builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-            builder.setSound(adhanSound(context));
-            builder.setVibrate(new long[] { 0, 400, 200, 400 });
+            // Pre-Oreo has no channels, so sound and vibration must follow the
+            // entry's own channel id: only the adhan entry may play the full
+            // adhan, the silent mode must stay silent, and reminders keep the
+            // short default sound. Before this, EVERY notification (daily
+            // ayah, azkar, pre-prayer reminder, even the silent adhan mode)
+            // played the full 2-minute adhan with vibration on Android 6-7.
+            if (entry.channelId.endsWith("-adhan")) {
+                builder.setSound(adhanSound(context));
+                builder.setVibrate(new long[] { 0, 400, 200, 400 });
+            } else if (entry.channelId.endsWith("silent")) {
+                builder.setSound(null);
+                builder.setVibrate(null);
+            } else {
+                builder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
+                builder.setVibrate(new long[] { 0, 250 });
+            }
             builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS);
         }
 

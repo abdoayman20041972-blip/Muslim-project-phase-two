@@ -60,7 +60,10 @@ export const BACKUP_KEYS = new Set<string>([
   'azkar_azkar_item_progress_v2','azkar_azkar_item_progress_v2_migrated','azkar_azkar_occasion_progress_v1','azkar_azkar_occasion_migrated_v1','azkar_favorites','azkar_favorites_version','azkar_last_surah','azkar_last_view',
   'azkar_journey_position','azkar_daily_ayah'
 ])
-export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.startsWith('azkar_tafsir_')}
+// Book reading positions (library-pos2-<book id>) are user progress, so they travel with the backup like the Quran position.
+// The older library-pos-<id> keys are NOT carried: their index meaning changed and BookViewer migrates them in place.
+export const BOOK_POSITION_KEY_PREFIX='library-pos2-'
+export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.startsWith('azkar_tafsir_') || /^library-pos2-[a-z0-9-]{1,40}$/.test(key)}
 
 // Canonical reset list for "إعادة الإعدادات الافتراضية": every registered
 // preference, plus the theme color and the custom tasbih list, which the reset
