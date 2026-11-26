@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { ExactAlarms } from '@muslim/exact-alarms'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 
 function flag(key:string){return readSetting(key,'1')!=='0'}
@@ -42,7 +44,13 @@ export function useAppSounds(){
  const tapFeedback=useCallback((kind:'ui'|'tasbih'|'tasbih-complete'='ui')=>{
   const soundEnabled=flag(kind!=='ui'?APP_SETTINGS_KEYS.tasbihSound:APP_SETTINGS_KEYS.uiSound),vibrationEnabled=flag(APP_SETTINGS_KEYS.vibration),context=getContext()
   const play=()=>{const start=context!.currentTime;if(kind==='tasbih-complete'){tone(context!,220,0.09,0.04,start);tone(context!,440,0.12,0.03,start+0.06)}else if(kind==='tasbih'){tone(context!,285,0.085,0.035,start);tone(context!,570,0.065,0.022,start+0.038)}else tone(context!,520,0.055,0.025,start)}
-  if(context&&soundEnabled){if(context.state==='running')play();else void context.resume().then(play).catch(()=>{})}
+  // On the Android app the click is played natively (SoundPool): no WebView audio output delay. Web Audio stays as the
+  // fallback for the browser and for any failure of the native call.
+  let nativeSent=false
+  if(soundEnabled&&Capacitor.isNativePlatform()){
+   try{void Promise.resolve(ExactAlarms.tapSound({kind})).catch(()=>{});nativeSent=true}catch{nativeSent=false}
+  }
+  if(!nativeSent&&context&&soundEnabled){if(context.state==='running')play();else void context.resume().then(play).catch(()=>{})}
   if(kind!=='ui'&&vibrationEnabled&&typeof navigator!=='undefined'&&navigator.vibrate) navigator.vibrate(kind==='tasbih-complete'?[35,45,35]:[10,18,10])
  },[getContext])
  useEffect(()=>()=>{void ctxRef.current?.close()},[])
