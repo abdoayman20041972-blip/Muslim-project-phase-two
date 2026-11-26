@@ -28,6 +28,8 @@ export async function computeTimingsLocally(c: Coords, date: Date, method: Praye
     const factoryName = METHOD_FACTORIES[method] ?? 'Egyptian'
     const factory = (adhan.CalculationMethod as unknown as Record<string, () => InstanceType<typeof adhan.CalculationParameters>>)[factoryName]
     const params = factory.call(adhan.CalculationMethod)
+    // The Egyptian preset in adhan adds +1 minute to Dhuhr; the printed Egyptian tables (wall calendar 26 Nov 2026) do not.
+    params.methodAdjustments.dhuhr = 0
     if (school === '1') params.madhab = adhan.Madhab.Hanafi
     const times = new adhan.PrayerTimes(new adhan.Coordinates(c.lat, c.lng), date, params)
     const format = (value: Date) => `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`
@@ -51,10 +53,10 @@ const MAX_CACHE_AGE=3*24*60*60*1000
 const TIME_RE=/^\d{1,2}:\d{2}/
 
 function cacheKey(date:Date,c:Coords,method=currentMethod(),school=currentSchool()){
-  return `azkar_pt_v2_${dateKey(date)}_${c.lat.toFixed(2)}_${c.lng.toFixed(2)}_m${method}_s${school}`
+  return `azkar_pt_v3_${dateKey(date)}_${c.lat.toFixed(2)}_${c.lng.toFixed(2)}_m${method}_s${school}`
 }
 function monthCacheKey(date:Date,c:Coords,method=currentMethod(),school=currentSchool()){
-  return `azkar_pt_month_v2_${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}_${c.lat.toFixed(2)}_${c.lng.toFixed(2)}_m${method}_s${school}`
+  return `azkar_pt_month_v3_${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}_${c.lat.toFixed(2)}_${c.lng.toFixed(2)}_m${method}_s${school}`
 }
 function validTimings(value:unknown):value is Timings{
   if(!value||typeof value!=='object')return false
@@ -139,7 +141,7 @@ export function cleanupPrayerCache(){
       const k=localStorage.key(i)
       if(!k)continue
       if(k.startsWith('azkar_prayer_timings_'))localStorage.removeItem(k)
-      else if(k.startsWith('azkar_pt_v2_')||k.startsWith('azkar_pt_month_v2_')){
+      else if(k.startsWith('azkar_pt_v2_')||k.startsWith('azkar_pt_month_v2_')||k.startsWith('azkar_pt_v3_')||k.startsWith('azkar_pt_month_v3_')){
         const raw=localStorage.getItem(k)
         try{const p=JSON.parse(raw||'');if(p?.savedAt&&Date.now()-Number(p.savedAt)>MAX_CACHE_AGE)localStorage.removeItem(k)}catch{localStorage.removeItem(k)}
       }
