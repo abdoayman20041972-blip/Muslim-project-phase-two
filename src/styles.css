@@ -33,8 +33,8 @@
 }
 html,body,#root{min-height:100%;}html,body{overscroll-behavior-y:contain;}*{scrollbar-width:none;}*::-webkit-scrollbar{display:none;}
 html{min-height:100%;background:hsl(var(--azkar-bg));}
-body{min-height:100dvh;margin:0;overflow-x:hidden;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:hsl(var(--azkar-bg));}
-.app-viewport{min-height:100dvh;min-height:100svh;box-sizing:border-box;}
+body{min-height:100vh;min-height:100dvh;margin:0;overflow-x:hidden;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:hsl(var(--azkar-bg));}
+.app-viewport{min-height:100vh;min-height:100dvh;min-height:100svh;box-sizing:border-box;}
 .app-content{box-sizing:border-box;padding-bottom:calc(6rem + env(safe-area-inset-bottom));}
 .app-content.home-spacing{padding-bottom:0;}
 @layer base{*{@apply border-border outline-ring/50;}body{color:hsl(var(--foreground));}}
@@ -67,7 +67,7 @@ html[data-theme="amber"]{--azkar-teal:31 62% 38%;--azkar-teal-deep:30 66% 25%;--
 .dark[data-theme="amber"],html.dark[data-theme="amber"]{--azkar-teal:31 68% 60%;--azkar-teal-deep:30 60% 44%;--azkar-teal-ink:31 68% 65%;--azkar-gold:40 72% 65%;--azkar-gold-soft:38 45% 42%;--azkar-gold-deep:35 68% 76%;--azkar-teal-tint:31 68% 60%/.14}
 
 /* Cinematic startup Splash — aligned with the new Muslim dashboard identity. */
-.muslim-splash{display:flex;position:fixed;min-height:100dvh;flex-direction:column;align-items:center;justify-content:center;padding:env(safe-area-inset-top) 1.5rem env(safe-area-inset-bottom);color:#ead69a;background:radial-gradient(ellipse at 50% 30%,rgba(67,139,111,.23),transparent 27%),radial-gradient(circle at 50% 58%,rgba(213,191,124,.055),transparent 34%),radial-gradient(circle at 10% 80%,rgba(213,191,124,.08),transparent 24%),linear-gradient(180deg,#081f19 0%,#0d2b23 42%,#061713 100%);isolation:isolate;transition:opacity .4s ease,transform .4s cubic-bezier(.22,1,.36,1)}
+.muslim-splash{display:flex;position:fixed;min-height:100vh;min-height:100dvh;flex-direction:column;align-items:center;justify-content:center;padding:env(safe-area-inset-top) 1.5rem env(safe-area-inset-bottom);color:#ead69a;background:radial-gradient(ellipse at 50% 30%,rgba(67,139,111,.23),transparent 27%),radial-gradient(circle at 50% 58%,rgba(213,191,124,.055),transparent 34%),radial-gradient(circle at 10% 80%,rgba(213,191,124,.08),transparent 24%),linear-gradient(180deg,#081f19 0%,#0d2b23 42%,#061713 100%);isolation:isolate;transition:opacity .4s ease,transform .4s cubic-bezier(.22,1,.36,1)}
 .muslim-splash::before{content:"";position:absolute;inset:0;z-index:-3;pointer-events:none;opacity:.1;background-image:linear-gradient(30deg,transparent 46%,#d5bf7c 47%,#d5bf7c 49%,transparent 50%),linear-gradient(150deg,transparent 46%,#d5bf7c 47%,#d5bf7c 49%,transparent 50%);background-size:48px 48px;mask-image:linear-gradient(to bottom,black,transparent 88%)}
 .muslim-splash::after{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(circle at 50% 45%,transparent 0 19%,rgba(213,191,124,.04) 20%,transparent 39%),linear-gradient(180deg,transparent 70%,rgba(0,0,0,.28) 100%)}
 .muslim-splash-ambient{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
@@ -110,7 +110,7 @@ html[data-theme="amber"]{--azkar-teal:31 62% 38%;--azkar-teal-deep:30 66% 25%;--
 @media (prefers-reduced-motion:reduce){.muslim-splash,.muslim-splash-emblem,.muslim-splash-copy,.muslim-splash-ring,.muslim-splash-loader-track span,.muslim-splash-loader-dot,.muslim-splash-dua span,.muslim-splash-star,.muslim-splash-orb,.muslim-splash-lantern,.muslim-splash-arch,.muslim-splash-arch::after,.muslim-splash-emblem-core::before{animation:none!important}.muslim-splash-exit{transition:opacity .18s ease}.muslim-splash-emblem,.muslim-splash-copy{opacity:1;transform:none}.muslim-splash-loader-track span{transform:none;width:70%}.muslim-splash-loader-dot{left:70%}}
 
 /* Home reference redesign */
-.home-reference-page{min-height:100dvh;background:linear-gradient(180deg,#f2eee4 0%,#ece8dd 100%);color:#173c35;isolation:isolate}.dark .home-reference-page{background:linear-gradient(180deg,#10251f 0%,#0b1815 100%)}.home-reference-location{display:flex;align-items:center;gap:.45rem;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(0,0,0,.28);padding:.62rem .95rem;color:white;font-family:Amiri,serif;font-size:.95rem;font-weight:700;backdrop-filter:blur(12px)}.home-reference-ayah{position:relative;box-shadow:0 16px 36px rgba(0,0,0,.18)}
+.home-reference-page{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,#f2eee4 0%,#ece8dd 100%);color:#173c35;isolation:isolate}.dark .home-reference-page{background:linear-gradient(180deg,#10251f 0%,#0b1815 100%)}.home-reference-location{display:flex;align-items:center;gap:.45rem;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(0,0,0,.28);padding:.62rem .95rem;color:white;font-family:Amiri,serif;font-size:.95rem;font-weight:700;backdrop-filter:blur(12px)}.home-reference-ayah{position:relative;box-shadow:0 16px 36px rgba(0,0,0,.18)}
 .home-reference-content{position:relative;z-index:5;margin-top:-.1rem;padding-bottom:calc(5.75rem + env(safe-area-inset-bottom))}
 .home-reference-tile{color:white;background-size:cover;background-position:center;box-shadow:0 8px 20px rgba(20,45,38,.16)}.home-reference-tile::before{content:\"\";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.12),transparent 40%,rgba(0,0,0,.35));z-index:0}.home-reference-tile::after{content:\"\";position:absolute;inset:auto -20% -34% -20%;height:65%;border-radius:50% 50% 0 0;background:rgba(0,0,0,.16);filter:blur(10px);z-index:0}
 .home-reference-tile-quran{background:linear-gradient(135deg,#194b3e 0%,#386c58 48%,#173a32 100%)}.home-reference-tile-tasbih{background:linear-gradient(135deg,#75461e 0%,#a66c35 48%,#543116 100%)}.home-reference-tile-prayer{background:linear-gradient(135deg,#225b86 0%,#4c8ab5 48%,#193f60 100%)}.home-reference-tile-azkar{background:linear-gradient(135deg,#58324f 0%,#7f557b 48%,#3b263c 100%)}.home-reference-tile-qibla{background:linear-gradient(135deg,#803a47 0%,#a95b64 48%,#54232f 100%)}.home-reference-tile-prophets{background:linear-gradient(135deg,#0e6968 0%,#318f8a 48%,#0b494d 100%)}.home-reference-tile-hadith{background:linear-gradient(135deg,#5d6c1f 0%,#87933b 48%,#394616 100%)}.home-reference-tile-more{background:linear-gradient(135deg,#49647b 0%,#7894a8 48%,#263f50 100%)}
@@ -409,7 +409,7 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
 .quran-real-page + *{}
 @media (max-width:640px){
   .quran-real-page{
-    min-height:calc(100dvh - 13rem);
+    min-height:calc(100vh - 13rem);min-height:calc(100dvh - 13rem);
     padding:3rem 1.2rem 3rem!important;
   }
   .quran-real-page::before{inset:.5rem}
@@ -418,11 +418,11 @@ html.reduce-motion [data-reveal]{opacity:1;transform:none;transition:none}
   .quran-page-bismillah{font-size:1.5rem!important}
 }
 .quran-reading-active{
-  min-height:100dvh;
+  min-height:100vh;min-height:100dvh;
   padding-bottom:calc(6.5rem + env(safe-area-inset-bottom));
 }
 .quran-reading-active .quran-mushaf-surface{
-  min-height:calc(100dvh - 9rem);
+  min-height:calc(100vh - 9rem);min-height:calc(100dvh - 9rem);
   border-radius:1.6rem!important;
 }
 .quran-reading-active .quran-mushaf-surface::before{inset:.7rem;border-color:rgba(183,151,77,.16)}
@@ -890,13 +890,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(prefers-reduced-motion:reduce){.u-pressable{transition:none!important}.u-pressable:active{transform:none}}
 
 /* Tasbih — focused counting surface */
-.tasbih-minimal{min-height:calc(100svh - 7.5rem);padding:.25rem .1rem 1rem;}
+.tasbih-minimal{min-height:calc(100vh - 7.5rem);min-height:calc(100svh - 7.5rem);padding:.25rem .1rem 1rem;}
 .tasbih-minimal-header{position:relative;display:flex;min-height:3.25rem;align-items:center;justify-content:center;margin-bottom:.45rem;}
 .tasbih-minimal-header>button:first-child{position:absolute;inset-inline-start:0;width:2.55rem;height:2.55rem;border-radius:999px;border:1px solid hsl(var(--azkar-teal)/.12)!important;background:hsl(var(--azkar-card))!important;color:hsl(var(--azkar-teal-deep))!important;box-shadow:var(--shadow-1)!important;}
 .tasbih-minimal-title{text-align:center;line-height:1;}
 .tasbih-minimal-title .font-amiri{font-size:1.7rem;font-weight:700;color:hsl(var(--azkar-teal-deep));}
 .tasbih-minimal-title span{display:block;margin-top:.35rem;font-size:.6875rem;color:hsl(var(--azkar-ink-faint));}
-.tasbih-minimal-main{display:flex;min-height:calc(100svh - 12rem);flex-direction:column;align-items:center;}
+.tasbih-minimal-main{display:flex;min-height:calc(100vh - 12rem);min-height:calc(100svh - 12rem);flex-direction:column;align-items:center;}
 .tasbih-selector-wrap{position:relative;width:min(100%,22rem);z-index:10;}
 .tasbih-current-word{display:flex;width:100%;min-height:3.15rem;align-items:center;gap:.55rem;padding:.45rem .8rem;border:1px solid hsl(var(--azkar-gold)/.22);border-radius:1.1rem;background:linear-gradient(145deg,hsl(var(--azkar-card)),hsl(var(--azkar-surface-2)));box-shadow:var(--shadow-1);color:hsl(var(--azkar-ink));text-align:right;}
 .tasbih-current-word-label{font-size:.6875rem;color:hsl(var(--azkar-ink-faint));}
@@ -929,7 +929,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
    painting a solid card over the night photo — exactly what users reported as
    «الكارد الذي يحجب الخلفية».) */
 @media(max-width:380px){
-  .tasbih-minimal{min-height:calc(100svh - 7rem);}
+  .tasbih-minimal{min-height:calc(100vh - 7rem);min-height:calc(100svh - 7rem);}
   .tasbih-minimal-title .font-amiri{font-size:1.55rem;}
   .tasbih-counter-card{min-height:25rem;}
   .tasbih-bead-stage{width:20rem;height:20rem;}
@@ -944,7 +944,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   position:relative;
   isolation:isolate;
   overflow:hidden;
-  min-height:calc(100svh - 7.25rem);
+  min-height:calc(100vh - 7.25rem);min-height:calc(100svh - 7.25rem);
   margin-inline:-.35rem;
   padding:.45rem .55rem 1rem;
   border-radius:1.8rem;
@@ -1251,7 +1251,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 /* Tasbih background image is a real DOM layer and fills the entire viewport. */
 .tasbih-minimal{
   position:relative!important;
-  min-height:100dvh!important;
+  min-height:100vh!important;min-height:100dvh!important;
   background:transparent!important;
 }
 .tasbih-background-photo,.tasbih-background-photo-dark{
@@ -1259,7 +1259,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   inset:0!important;
   z-index:0!important;
   width:100vw!important;
-  height:100dvh!important;
+  height:100vh!important;height:100dvh!important;
   max-width:none!important;
   object-fit:cover!important;
   object-position:center center!important;
@@ -1278,7 +1278,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   inset:0!important;
   z-index:0!important;
   width:100vw!important;
-  height:100dvh!important;
+  height:100vh!important;height:100dvh!important;
   pointer-events:none!important;
   background:linear-gradient(180deg,hsl(42 40% 98%/.36) 0%,hsl(150 28% 96%/.16) 48%,hsl(165 30% 10%/.30) 100%)!important;
 }
@@ -1854,7 +1854,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .more-library-book-1{right:1.5rem;transform:rotate(3deg) translateY(-.15rem);z-index:2}
 .more-library-book-2{right:3rem;transform:rotate(9deg) translateY(.1rem);z-index:1}
 .library-book{flex:0 0 7.2rem;display:flex;flex-direction:column;gap:.4rem;text-align:center}
-.book-reader{display:flex;flex-direction:column;height:calc(100dvh - 11rem);min-height:26rem}
+.book-reader{display:flex;flex-direction:column;height:calc(100vh - 11rem);height:calc(100dvh - 11rem);min-height:26rem}
 .book-spread{flex:1;min-height:0;display:flex;padding:.55rem .6rem .55rem .35rem;border-radius:.9rem 1.1rem 1.1rem .9rem;background:linear-gradient(90deg,#d9c392,#ead9ae);box-shadow:0 12px 28px -14px rgba(60,40,10,.55),inset -4px 0 6px rgba(80,55,20,.25)}
 .book-stage{position:relative;flex:1;min-width:0;perspective:1400px;background:#fbf6e8;border-radius:.35rem;overflow:hidden}
 .book-page{position:absolute;inset:0 auto auto 0;overflow:hidden;background:#fbf6e8;direction:rtl;padding:0}
@@ -1924,7 +1924,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .lib-card-title{font-family:'Amiri',serif;font-weight:700;font-size:1.1875rem;line-height:1.45;color:hsl(var(--azkar-teal-ink))}
 .lib-card-meta{font-size:.75rem;font-weight:600;line-height:1.5;color:hsl(var(--azkar-ink-soft))}
 .lib-card-tag{align-self:flex-start;margin-top:.15rem;padding:.1rem .55rem;border-radius:999px;background:hsl(var(--azkar-teal-tint));font-size:.6875rem;font-weight:700;color:hsl(var(--azkar-teal-ink))}
-.book-reader{height:calc(100dvh - 16.5rem);min-height:22rem}
+.book-reader{height:calc(100vh - 16.5rem);height:calc(100dvh - 16.5rem);min-height:22rem}
 .book-spread{padding:.3rem .35rem .3rem .25rem;border-radius:.75rem}
 .book-controls{align-items:center;padding-top:.55rem}
 .book-count{font-size:.8125rem;font-weight:700;color:hsl(var(--azkar-ink-soft));min-width:6rem;text-align:center;white-space:nowrap}
@@ -1935,7 +1935,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 /* Tablet and landscape: library screens use a wider reading column, and the bottom bar is slimmer in short landscape. */
 @media (min-width:768px){.app-content:has(.lib-header){max-width:44rem}.app-content:has(.lib-header) .book-reader{height:calc(100dvh - 15rem)}.app-content:has(.lib-header) .book-page{font-size:1.18em}}
 @media (min-width:1024px){.app-content:has(.lib-header){max-width:50rem}}
-@media (max-height:520px) and (orientation:landscape){.nav-float .dashboard-nav-item,.dashboard-nav-item{min-height:2.6rem}.dashboard-nav-item .dashboard-nav-icon{height:1.2rem;width:1.2rem}.dashboard-nav-item{gap:0}.app-content:has(.lib-header) .book-reader{height:calc(100dvh - 12rem);min-height:14rem}}
+@media (max-height:520px) and (orientation:landscape){.nav-float .dashboard-nav-item,.dashboard-nav-item{min-height:2.6rem}.dashboard-nav-item .dashboard-nav-icon{height:1.2rem;width:1.2rem}.dashboard-nav-item{gap:0}.app-content:has(.lib-header) .book-reader{height:calc(100vh - 12rem);height:calc(100dvh - 12rem);min-height:14rem}}
 
 /* Availability dot on a card edge: blue = the content is inside the app, red = needs the internet. */
 .lib-card{position:relative}.lib-dot{position:absolute;top:.7rem;left:.7rem;width:.7rem;height:.7rem;border-radius:999px;box-shadow:0 0 0 2px #fff}.lib-dot-local{background:#1d6fe0}.lib-dot-net{background:#d92d20}
@@ -1946,7 +1946,7 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 .app-content:has(.book-reader) .lib-header-title{font-size:1.05rem;-webkit-line-clamp:1;line-height:1.3}
 .app-content:has(.book-reader) .lib-header-sub{display:none}
 .app-content:has(.book-reader) .app-back{width:2.25rem;height:2.25rem;min-width:2.25rem}
-.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 9.2rem);min-height:10rem}
+.app-content:has(.book-reader) .book-reader{height:calc(100vh - 9.2rem);height:calc(100dvh - 9.2rem);min-height:10rem}
 .app-content:has(.book-reader) .book-spread{padding:0;background:#fbf6e8;border-radius:.5rem;box-shadow:0 0 0 1px rgba(120,90,40,.25)}
 .app-content:has(.book-reader) .book-controls{padding-top:.3rem}
 .app-content:has(.book-reader) .book-btn{min-height:2.3rem;padding-top:0;padding-bottom:0}
@@ -2026,3 +2026,46 @@ ol.ess-list{list-style:decimal}
 .ess-held-list{margin:.4rem 0 0;padding-inline-start:1.2rem;font-size:calc(.92rem*var(--ess-scale));line-height:1.9;color:hsl(var(--azkar-teal-ink))}
 .ess-held-list li{margin-top:.3rem}
 .dark .ess-held-list{color:hsl(var(--azkar-ink))}
+
+
+/* Legacy WebView fallback: browsers without dvh/svh get plain vh (the minifier drops same-rule fallbacks). */
+@supports not (height:100svh){
+body{min-height:100vh}
+.app-viewport{min-height:100vh;min-height:100vh}
+.muslim-splash{min-height:100vh}
+.home-reference-page{min-height:100vh}
+@media (max-width:640px){.quran-real-page{min-height:calc(100vh - 13rem)}}
+.quran-reading-active{min-height:100vh}
+.quran-reading-active .quran-mushaf-surface{min-height:calc(100vh - 9rem)}
+.tasbih-minimal{min-height:calc(100vh - 7.5rem)}
+.tasbih-minimal-main{min-height:calc(100vh - 12rem)}
+@media(max-width:380px){.tasbih-minimal{min-height:calc(100vh - 7rem)}}
+.tasbih-minimal{min-height:calc(100vh - 7.25rem)}
+.tasbih-minimal{min-height:100vh!important}
+.tasbih-background-photo,.tasbih-background-photo-dark{height:100vh!important}
+.tasbih-background-shade{height:100vh!important}
+.book-reader{height:calc(100vh - 11rem)}
+.book-reader{height:calc(100vh - 16.5rem)}
+@media (min-width:768px){.app-content:has(.lib-header) .book-reader{height:calc(100vh - 15rem)}}
+@media (max-height:520px) and (orientation:landscape){.app-content:has(.lib-header) .book-reader{height:calc(100vh - 12rem)}}
+@media (max-height:520px) and (orientation:landscape){.app-content:has(.book-reader) .book-reader{height:calc(100vh - 9.2rem)}}
+.app-content:has(.book-reader) .book-reader{height:calc(100vh - 13.2rem)}
+@media (max-height:520px) and (orientation:landscape){.app-content:has(.book-reader) .book-reader{height:calc(100vh - 9.2rem)}}
+}
+
+/* Tablet fit: wider centred columns, full-height backgrounds, larger tasbih. Phones (<768px) are untouched. */
+html,body,#root{min-height:100vh}
+@media (min-width:768px){
+  .app-content{max-width:46rem!important}
+  .app-content.mushaf-surah-spacing{max-width:48rem!important}
+  .home-reference-content{max-width:36rem!important}
+  .tasbih-bead-stage{width:28rem!important;height:28rem!important}
+  .tasbih-bead{width:1.8rem!important;height:1.8rem!important}
+  .tasbih-count{font-size:3.4rem!important}
+}
+
+/* Qibla page: full-screen night-mosque backdrop (the page rule had been dropped from the stylesheet, leaving the title on a bare light background). Fixed to all four edges, so it fills any screen height. */
+.q2-page{position:fixed;top:0;bottom:0;left:0;right:0;margin-inline:auto;z-index:40;box-sizing:border-box;width:100%;max-width:none;overflow:hidden;display:flex;flex-direction:column;align-items:center;
+  padding:max(.7rem,env(safe-area-inset-top)) 1rem calc(4.4rem + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(3,20,17,.6),rgba(3,20,17,.12) 24%,rgba(3,20,17,0) 42%),url("/img/azkar-evening-wide-sunset-mosque.jpg") center 50%/cover no-repeat,#0d2a24;}
+@media (min-width:768px){.q2-dial{width:min(60vw,22rem,36vh)}}
