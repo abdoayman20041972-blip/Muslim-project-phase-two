@@ -29,7 +29,7 @@ export function AboutSection() {
   <Row title="الإصدار">
     <span className="text-[0.6875rem]">{version}</span>
   </Row>
-  <Row title="صور بطاقة الصلاة">
+  <Row title="صور بطاقة الصلاة" stacked>
     <ul dir="ltr" className="space-y-1 text-left text-[0.6875rem]" data-testid="photo-credits">
       {Object.values(PRAYER_PHOTOS).map((photo) => (
         <li key={photo.sourceUrl}>
