@@ -41,11 +41,16 @@ export function CategoryIcon({ icon }: { icon: ZikrCategory["icon"] }) {
       );
   }
 }
-export function BackButton({ onClick }: { onClick: () => void }) {
+/**
+ * The one back control for the whole app: a 44px round button, first in the header row (the right edge in
+ * Arabic), with the arrow pointing right (toward where "back" is in a right-to-left layout).
+ * `overlay` is for screens that sit on a photo or a dark backdrop (Qibla, live Haram video).
+ */
+export function BackButton({ onClick, label = 'رجوع', overlay = false }: { onClick: () => void; label?: string; overlay?: boolean }) {
   return (
-    <button onClick={onClick} className="u-pressable w-10 h-10 rounded-full bg-azkar-card flex items-center justify-center text-azkar-ink-soft shrink-0 u-shadow-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal" aria-label="رجوع">
-      <svg viewBox="0 0 24 24" className="w-4 h-4 rtl:rotate-180" fill="none" aria-hidden="true">
-        <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <button type="button" onClick={onClick} data-sound-early="" className={`app-back u-pressable${overlay ? ' app-back-overlay' : ''}`} aria-label={label}>
+      <svg viewBox="0 0 24 24" className="app-back-icon" fill="none" aria-hidden="true">
+        <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
   );
