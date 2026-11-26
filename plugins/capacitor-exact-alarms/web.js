@@ -8,6 +8,9 @@ export const ExactAlarmsWeb = {
   async add() {
     return { armed: 0, stored: 0 }
   },
+  async tapSound() {
+    return undefined
+  },
   async cancelOne() {
     return undefined
   },
