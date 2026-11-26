@@ -597,31 +597,6 @@ export function QuranReaderView({ view, setView }: Props) {
       {requestedLayout === 'pages' && !quranPageMap && !pageMapFailed && (
         <p role="status" className="mb-3 text-sm text-azkar-ink-soft">جاري التحقق من الصفحات، يمكنك القراءة بالتمرير الآن.</p>
       )}
-      {layout === 'pages' && (
-        <div
-          className="mb-3 flex items-center justify-between gap-2 rounded-[1.1rem] border border-azkar-gold-soft bg-azkar-card p-2"
-          aria-label="تنقل الصفحات"
-        >
-          <button
-            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
-            disabled={safePage === 0}
-            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
-          >
-            السابق
-          </button>
-          <span className="text-[0.6875rem] font-bold text-azkar-teal-ink" aria-live="polite">
-            {toArabicNumber(safePage + 1)} / {toArabicNumber(totalPages)}
-            {currentRealPageNumber != null && ` · صفحة ${toArabicNumber(currentRealPageNumber)}`}
-          </span>
-          <button
-            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={safePage === totalPages - 1}
-            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
-          >
-            التالي
-          </button>
-        </div>
-      )}
       {ayahs && (
         <div
           ref={mushafRef}
@@ -683,6 +658,31 @@ export function QuranReaderView({ view, setView }: Props) {
               <span className="quran-page-number">{toArabicNumber(currentRealPageNumber ?? 1)}</span>
             </div>
           )}
+        </div>
+      )}
+      {layout === 'pages' && (
+        <div
+          className="mt-3 mb-24 flex items-center justify-between gap-2 rounded-[1.1rem] border border-azkar-gold-soft bg-azkar-card p-2"
+          aria-label="تنقل الصفحات"
+        >
+          <button
+            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
+          >
+            السابق
+          </button>
+          <span className="text-[0.6875rem] font-bold text-azkar-teal-ink" aria-live="polite">
+            <bdi>{toArabicNumber(safePage + 1)} / {toArabicNumber(totalPages)}</bdi>
+            {currentRealPageNumber != null && <> · صفحة <bdi>{toArabicNumber(currentRealPageNumber)}</bdi></>}
+          </span>
+          <button
+            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage === totalPages - 1}
+            className="u-pressable min-h-11 rounded-xl border px-4 py-2 text-xs font-bold disabled:opacity-40"
+          >
+            التالي
+          </button>
         </div>
       )}
       {panel &&
