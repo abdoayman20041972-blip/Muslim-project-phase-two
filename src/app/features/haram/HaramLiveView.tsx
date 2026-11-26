@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowRight, Loader2, RotateCcw } from 'lucide-react'
+import { BackButton } from '../../components/app-chrome'
 
 /** Channel names and playlist URLs come from the mp3quran live-tv API (https://www.mp3quran.net/api/v3/live-tv). */
 const CHANNELS = [
@@ -70,7 +71,7 @@ export function HaramLiveView({ onBack }: { onBack: () => void }) {
     <div className="haram-live w-full min-w-0" data-testid="haram-live">
       <div className="flex items-center justify-between">
         <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">البث المباشر</h1>
-        <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable flex h-11 w-11 items-center justify-center rounded-full bg-white shadow"><ArrowRight className="h-5 w-5" /></button>
+        <BackButton onClick={onBack} overlay />
       </div>
       <div className="haram-live-stage mt-4">
         <video ref={videoRef} className="haram-live-video" playsInline controls aria-label={channel.name} />
