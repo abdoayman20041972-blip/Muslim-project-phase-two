@@ -117,7 +117,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   const pad = view.name === 'home' ? 'pb-16' : view.name === 'mushaf-surah' ? 'pb-24' : barVisible ? 'pt-5 pb-24' : 'pt-5 pb-8'
   return (
     <ConfirmDialogProvider>
-      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : ''} ${view.name}-spacing ${view.name === 'hadith' && hadithDetailOpen ? 'hadith-detail' : ''} ${pad}`}>
+      <main className={`app-content w-full min-w-0 max-w-md px-5 ${view.name === 'mushaf-surah' ? 'md:max-w-2xl lg:max-w-3xl' : 'md:max-w-xl lg:max-w-2xl'} ${view.name}-spacing ${view.name === 'hadith' && hadithDetailOpen ? 'hadith-detail' : ''} ${pad}`}>
       {keep('home') && shell('home', wrapScreen(home, 'home', onHome, false))}
       {keep('settings') && shell('settings', wrapScreen(settings, 'settings', onHome))}
       {keep('azkar-list') && shell('azkar-list', wrapScreen(azkarList, 'azkar-list', onHome))}
