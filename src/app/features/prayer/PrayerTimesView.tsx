@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BackButton } from '../../components/app-chrome'
 import { acquireLocation, locationFailureMessage } from '../location/acquireLocation'
 import { saveCoords } from '../location/coords'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
@@ -77,19 +78,6 @@ function PinIcon() {
         strokeWidth="1.6"
       />
       <circle cx="12" cy="10.5" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
-}
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 rtl:rotate-180" fill="none" aria-hidden="true">
-      <path
-        d="M15 5l-7 7 7 7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   )
 }
@@ -232,13 +220,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
   return (
     <div className="prayer-screen">
       <div className="flex items-center gap-3 mb-5">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-full bg-azkar-card border border-azkar-gold-soft flex items-center justify-center text-azkar-teal shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"
-          aria-label="رجوع"
-        >
-          <BackIcon />
-        </button>
+        <BackButton onClick={onBack} />
         <div className="flex-1">
           <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">مواقيت الصلاة</div>
           <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5">صلاتك في وقتها</div>
