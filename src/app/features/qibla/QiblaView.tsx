@@ -1,15 +1,14 @@
 import { ArrowLeft, MapPin } from 'lucide-react'
 import { QiblaCompass } from './QiblaCompass'
 import { useLocationCoords } from '../location/coords'
+import { BackButton } from '../../components/app-chrome'
 
 export function QiblaView({ onBack, onOpenLocation }: { onBack: () => void; onOpenLocation: () => void }) {
   const coords = useLocationCoords()
 
   return (
     <section dir="rtl" className="q2-page">
-      <button type="button" onClick={onBack} aria-label="رجوع" className="q2-back u-pressable">
-        <ArrowLeft className="h-5 w-5" />
-      </button>
+      <span className="q2-back-slot"><BackButton onClick={onBack} overlay /></span>
 
       <header className="q2-title">
         <h1 className="font-amiri">القبلة</h1>
@@ -29,7 +28,6 @@ export function QiblaView({ onBack, onOpenLocation }: { onBack: () => void; onOp
           <MapPin className="h-6 w-6" />
           <span>حدد موقعك أولًا</span>
           <button type="button" onClick={onOpenLocation} className="q2-empty-cta u-pressable">تحديد الموقع</button>
-          <button type="button" onClick={onBack} aria-label="العودة" className="u-pressable">العودة</button>
         </div>
       )}
     </section>
