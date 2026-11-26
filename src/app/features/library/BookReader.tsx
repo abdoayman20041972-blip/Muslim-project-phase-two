@@ -2,13 +2,22 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { toArabicNumber } from '../../constants'
 
-type Props = { title: string; heading?: string; paragraphs: string[]; credit: string; onClose?: () => void }
+type Props = {
+  paragraphs: string[]
+  credit: string
+  hasNextChapter?: boolean
+  hasPrevChapter?: boolean
+  onNextChapter?: () => void
+  onPrevChapter?: () => void
+}
 
 /**
  * Page-turn reader. The text is laid out in CSS columns, one column per page, so pages break where the text
  * really fills them. Turning a page folds the current leaf over the spine (right edge), like an Arabic book.
+ * The two buttons are one control: on the last page "next" continues into the next chapter, on the first page
+ * "previous" goes to the previous chapter, so the reader needs no second row of buttons.
  */
-export function BookReader({ title, heading, paragraphs, credit }: Props) {
+export function BookReader({ paragraphs, credit, hasNextChapter, hasPrevChapter, onNextChapter, onPrevChapter }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -51,18 +60,21 @@ export function BookReader({ title, heading, paragraphs, credit }: Props) {
     return () => window.clearTimeout(id)
   }, [turn])
 
+  const para = (text: string, i: number) => <p key={i} className={text.startsWith('↑') ? `book-para book-note${paragraphs[i - 1]?.startsWith('↑') ? '' : ' book-note-first'}` : 'book-para'}>{text}</p>
   const flow = (index: number) => (
     <div className="book-flow" style={{ height: size.h, columnWidth: size.w, columnGap: 0, width: size.w * pages, transform: `translateX(${-index * size.w}px)` }}>
-      {index === 0 && heading && <p className="book-heading">{heading}</p>}
-      {paragraphs.map((text, i) => <p key={i} className={text.startsWith('↑') ? `book-para book-note${paragraphs[i - 1]?.startsWith('↑') ? '' : ' book-note-first'}` : 'book-para'}>{text}</p>)}
+      {paragraphs.map(para)}
     </div>
   )
   const shown = turn ? turn.to : page
   const forward = turn ? turn.to > turn.from : true
+  const atEnd = page >= pages - 1
+  const atStart = page === 0
+  const nextIsChapter = atEnd && !!hasNextChapter
+  const prevIsChapter = atStart && !!hasPrevChapter
 
   return (
     <div className="book-reader" data-testid="book-reader">
-      <div className="book-reader-top"><span className="book-reader-title">{title}</span><span className="book-reader-count">صفحة {toArabicNumber(page + 1)} من {toArabicNumber(pages)} في هذا الفصل</span></div>
       <div className="book-spread">
         <div ref={stageRef} className="book-stage">
           <div className="book-page book-page-under" style={{ width: size.w, height: size.h }}>{size.w > 0 && flow(turn ? (forward ? turn.to : turn.from) : shown)}</div>
@@ -73,14 +85,14 @@ export function BookReader({ title, heading, paragraphs, credit }: Props) {
             </div>
           )}
           <div ref={measureRef} className="book-measure" aria-hidden="true" style={{ height: size.h, columnWidth: size.w, columnGap: 0 }}>
-            {heading && <p className="book-heading">{heading}</p>}
-            {paragraphs.map((text, i) => <p key={i} className={text.startsWith('↑') ? `book-para book-note${paragraphs[i - 1]?.startsWith('↑') ? '' : ' book-note-first'}` : 'book-para'}>{text}</p>)}
+            {paragraphs.map(para)}
           </div>
         </div>
       </div>
       <div className="book-controls">
-        <button type="button" data-sound="none" onClick={() => go(1)} disabled={page >= pages - 1} aria-label="الصفحة التالية" className="book-btn"><ChevronRight className="h-5 w-5" />التالية</button>
-        <button type="button" data-sound="none" onClick={() => go(-1)} disabled={page === 0} aria-label="الصفحة السابقة" className="book-btn">السابقة<ChevronLeft className="h-5 w-5" /></button>
+        <button type="button" data-sound="none" onClick={() => (prevIsChapter ? onPrevChapter?.() : go(-1))} disabled={atStart && !hasPrevChapter} className="book-btn"><ChevronRight className="h-5 w-5" aria-hidden="true" />{prevIsChapter ? 'الفصل السابق' : 'السابقة'}</button>
+        <span className="book-count" data-testid="book-count" dir="rtl">صفحة {toArabicNumber(page + 1)} من {toArabicNumber(pages)}</span>
+        <button type="button" data-sound="none" onClick={() => (nextIsChapter ? onNextChapter?.() : go(1))} disabled={atEnd && !hasNextChapter} className="book-btn book-btn-next">{nextIsChapter ? 'الفصل التالي' : 'التالية'}<ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
       </div>
       <p className="book-credit">{credit}</p>
     </div>
