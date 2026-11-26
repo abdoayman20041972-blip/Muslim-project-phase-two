@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight, BookOpen, ChevronDown } from 'lucide-react'
 import { SEERAH_CHAPTERS } from './seerahData'
+import { BackButton } from '../../components/app-chrome'
 
 /** Reading and lessons on the life of the Prophet. Text is local; links open the Qur'an or hadith source. */
 export function SeerahView({ onBack }: { onBack: () => void }) {
@@ -8,9 +9,7 @@ export function SeerahView({ onBack }: { onBack: () => void }) {
   return (
     <section dir="rtl" className="w-full min-w-0" data-testid="seerah-view">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable flex h-10 w-10 items-center justify-center rounded-full border border-azkar-hairline bg-azkar-card text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold">
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        <BackButton onClick={onBack} />
         <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">السيرة النبوية</h1>
       </div>
       <p className="mt-3 px-1 text-[0.8125rem] font-semibold leading-6 text-azkar-ink-soft">قراءة موجزة وخلاصة للتأمل من كل محطة. للتوسع ارجع إلى كتب السيرة الكاملة.</p>
