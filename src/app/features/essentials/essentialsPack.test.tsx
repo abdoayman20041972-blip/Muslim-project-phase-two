@@ -4,11 +4,11 @@ import { EssentialsView, chaptersWord } from './EssentialsView'
 import { PACK_KEY, loadPack, parsePack, savePack } from './essentialsPack'
 import { SECTION_ORDER, type Chapter } from './essentialsTypes'
 
-const filler = 'نص تجريبي لاختبار شكل الواجهة فقط وليس مادة علمية ولا يُعرض للمستخدم'
+const filler = 'نص للاختبار لاختبار شكل الواجهة فقط وليس مادة علمية ولا يُعرض للمستخدم'
 function chapter(id: string, over: Partial<Chapter> = {}): Chapter {
   const sections: Chapter['sections'] = {}
   for (const k of SECTION_ORDER) sections[k] = { paragraphs: [filler] }
-  return { id, title: 'فصل ' + id, audience: 'universal', summary: 'ملخص تجريبي', sections, sources: [{ title: 'كتاب شخصي', rights: 'unverified' }], scholarReview: { reviewer: 'مراجع', date: '2026-01-01' }, proofread: { by: 'مدقق', date: '2026-01-01' }, ...over }
+  return { id, title: 'فصل ' + id, audience: 'universal', summary: 'ملخص للاختبار', sections, sources: [{ title: 'كتاب شخصي', rights: 'unverified' }], scholarReview: { reviewer: 'مراجع', date: '2026-01-01' }, proofread: { by: 'مدقق', date: '2026-01-01' }, ...over }
 }
 const pack = (chapters: unknown[]) => JSON.stringify({ version: 1, chapters })
 

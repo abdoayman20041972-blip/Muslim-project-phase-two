@@ -7,15 +7,15 @@ import { SECTION_ORDER, type Chapter } from './essentialsTypes'
 
 afterEach(cleanup)
 
-const filler = 'نص تجريبي لاختبار شكل الواجهة فقط وليس مادة علمية ولا يُعرض للمستخدم'
+const filler = 'نص للاختبار لاختبار شكل الواجهة فقط وليس مادة علمية ولا يُعرض للمستخدم'
 /** Interface fixture. Not religious content: it only exercises layout and the gate. */
 function fixture(over: Partial<Chapter> = {}): Chapter {
   const sections: Chapter['sections'] = {}
   for (const k of SECTION_ORDER) sections[k] = { paragraphs: [filler], items: k === 'steps' ? [filler, filler] : undefined }
   return {
-    id: 'fx', title: 'فصل تجريبي', audience: 'universal', summary: 'ملخص تجريبي للقائمة', sections,
-    sources: [{ title: 'مصدر تجريبي', rights: 'original' }],
-    scholarReview: { reviewer: 'مراجع تجريبي', date: '2026-01-01' }, proofread: { by: 'مدقق تجريبي', date: '2026-01-01' },
+    id: 'fx', title: 'فصل للاختبار', audience: 'universal', summary: 'ملخص للاختبار للقائمة', sections,
+    sources: [{ title: 'مصدر للاختبار', rights: 'original' }],
+    scholarReview: { reviewer: 'مراجع للاختبار', date: '2026-01-01' }, proofread: { by: 'مدقق للاختبار', date: '2026-01-01' },
     ...over,
   }
 }
@@ -75,7 +75,7 @@ describe('EssentialsView', () => {
     const ids = SECTION_ORDER.map((k) => screen.getByTestId(`ess-section-${k}`))
     expect(ids.length).toBe(8)
     for (let i = 1; i < ids.length; i++) expect(ids[i - 1].compareDocumentPosition(ids[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('ess-sources').textContent).toContain('مصدر تجريبي')
+    expect(screen.getByTestId('ess-sources').textContent).toContain('مصدر للاختبار')
   })
   it('shows an empty screen with no cards when nothing passes', () => {
     const { container } = render(<EssentialsView onBack={() => {}} chapters={[]} />)

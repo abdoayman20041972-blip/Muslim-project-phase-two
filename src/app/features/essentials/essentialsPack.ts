@@ -19,6 +19,7 @@ function shapeOk(c: unknown): c is Chapter {
   if (typeof c.id !== 'string' || !/^[a-z0-9-]{1,60}$/.test(c.id)) return false
   if (typeof c.title !== 'string' || typeof c.summary !== 'string') return false
   if (c.audience !== 'universal' && c.audience !== 'situational') return false
+  if (c.topic !== undefined && typeof c.topic !== 'string') return false
   if (!isObj(c.sections) || !Array.isArray(c.sources)) return false
   for (const k of Object.keys(c.sections)) {
     if (!(SECTION_ORDER as readonly string[]).includes(k)) return false

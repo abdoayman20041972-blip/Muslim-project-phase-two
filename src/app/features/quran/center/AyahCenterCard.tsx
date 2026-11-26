@@ -150,28 +150,38 @@ function AsbabTab({ surah, ayah }: { surah: SurahMeta; ayah: Ayah }) {
   if (!map) {
     return (
       <div className="py-12 text-center text-sm leading-7 text-azkar-ink-soft">
-        أسباب النزول المروية قيد المراجعة العلمية، وستُتاح هنا بعد اعتمادها.
+        لا تتوفر روايةُ سببِ نزولٍ مدققة لهذه الآية في النسخة الحالية.
+        <br />
+        ليس لكل آية سببُ نزولٍ مروي، والتغطية تتسع مع اكتمال المراجعة.
       </div>
     )
   }
-  const text = map[String(ayah.numberInSurah)] ?? null
-  if (!text) {
+  const entries = map[String(ayah.numberInSurah)] ?? null
+  if (!entries || !entries.length) {
     return (
       <div className="py-12 text-center text-sm leading-7 text-azkar-ink-soft">
-        لم يُروَ عن هذه الآية سببُ نزولٍ عند الواحدي.
+        لا تتوفر روايةُ سببِ نزولٍ مدققة لهذه الآية في النسخة الحالية.
         <br />
-        ليس لكل آية سببُ نزولٍ مروي.
+        ليس لكل آية سببُ نزولٍ مروي، والتغطية تتسع مع اكتمال المراجعة.
       </div>
     )
   }
   return (
     <div>
-      <div className="mb-3 rounded-[0.9rem] border border-amber-300/60 bg-amber-50 px-3.5 py-2.5 text-[0.75rem] leading-6 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" role="note">
-        يُروى هذا النص عن الواحدي (ت ٤٦٨هـ) كما ورد في مصدره. روايات أسباب النزول تحتاج إلى تخريجٍ ومراجعةٍ علمية، وليس كل ما ورد فيها ثابتًا.
+      <div className="mb-3 rounded-[0.9rem] border border-emerald-300/60 bg-emerald-50 px-3.5 py-2.5 text-[0.75rem] leading-6 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200" role="note">
+        سبب النزول بحسب المرجع المذكور، مع بيان درجة الرواية. التغطية تقتصر على الروايات المراجعة في هذه النسخة، وليس لكل آية سبب نزول مروي.
       </div>
       {status === 'pending' && <ReviewOnlyBanner />}
-      <div className="font-amiri text-[1.0625rem] leading-[2] text-azkar-ink whitespace-pre-line">{text}</div>
-      <div className="mt-3 text-[0.6875rem] text-azkar-ink-soft">أسباب نزول القرآن · الواحدي (ت ٤٦٨هـ)</div>
+      {entries.map((entry, i) => (
+        <div key={i} className={i > 0 ? 'mt-5 border-t border-azkar-line pt-4' : ''}>
+          <div className="font-amiri text-[1.0625rem] leading-[2] text-azkar-ink whitespace-pre-line">{entry.text}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6875rem] text-azkar-ink-soft">
+            {entry.relation === 'متعلقة' && <span className="rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">رواية متعلقة بنزول الآية</span>}
+            <span className="rounded-full border border-emerald-300/60 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">{entry.grade}</span>
+            <span>{entry.reference}</span>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

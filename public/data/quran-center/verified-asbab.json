@@ -1,0 +1,533 @@
+{
+ "batch": "asbab-verified-v2.1",
+ "rule": "each entry: al-Wahidi narration text (reviewed; verse markers expanded from the pinned surahs dump) whose revelation-cause report was independently confirmed in a graded source (Sahihayn or graded Sunan) via sunnah.com; textSha256 pins the exact reviewed bytes; positions without a verified report ship nothing. v2 corrections (independent content audit): 5 reference numbers corrected to the verified sunnah.com parallel that explicitly carries the verse association (2:144->Bukhari 399, 28:56->Bukhari 4772, 33:23->Muslim 1903, 29:8->Muslim 1748c, 49:2->Muslim 119a); unsupported sub-narratives trimmed so the صحيح badge only certifies displayed content (2:144 isnad-less Jibril dialogue removed; 49:2 deafness detail removed; 24:33 Subayh narrative removed; 59:9 land-split narrative removed; 65:1 Qatada/Hafsa branch removed; 33:4 unattributed Jameel narrative removed); 113:1 HELD and removed (cited Bukhari 5766 verified to contain the magic story with no surah-revelation link; cause rests on قال المفسرون only). v2.1 scope trims: 33:51 mufassirun takhyir narrative and wa-qala-qawm paragraph removed (commentary causal claims not in the cited hadiths); 49:2 cause-conflating intro removed (verified Muslim 119a shows Thabit's reaction after revelation, not the cause) and Ibn Abi Mulayka commentary cause removed",
+ "sourceBook": {
+  "file": "asbab-book-2919.json.gz",
+  "name": "أسباب نزول القرآن",
+  "author": "الواحدي (ت ٤٦٨هـ)",
+  "sha256": "d1831b1e5af18dce182fb5a29ea374029a6427d35f16ff327385addd7486f7c9"
+ },
+ "entries": [
+  {
+   "surah": 2,
+   "ayah": 142,
+   "textSha256": "697a7109815dba179e94253dd5187a5e878dbebdae2859bc7b4717e8ef873100",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 399",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 144,
+   "textSha256": "2d394523a35aa41034696db18c5e00de98cf6fa2cd948b872e44d077c9e3e435",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 399",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 158,
+   "textSha256": "f7eb823ce81c144b9d99d817da43f4ee12d6bf4859c80336bd6e5a50600be889",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4495",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 187,
+   "textSha256": "ede6854ea066ca6d83525cb555cd9947486c39ab8882a3688370eb07dd608aae",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1915",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 189,
+   "textSha256": "5bd938fb6cb07e7f3b7598950d0156b1daed3e6220f9cd6bd267793c5872cc33",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1803",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 196,
+   "textSha256": "5308e24513cb57479e20cf296289ea84138000740a16486c52ff66d0a5eca6ce",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1815",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 199,
+   "textSha256": "bfd4e9ce569db468f35441f838ebd4341b5ffa8cb83ccb90546a7149583d5dd2",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4520",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 222,
+   "textSha256": "689831772093fec09c48ca61f030ae61e3fc0617efda7afd3078d269ee164c8e",
+   "source": "سنن أبي داود",
+   "reference": "سنن أبي داود 258",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 223,
+   "textSha256": "08f891dc0b482abe6651d3fddf2057a3d6f204397891da8043ddcbb5baf22352",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1435a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 232,
+   "textSha256": "b5eae3da5f0787c654c24532518c139c346228a24f9e09458095418b4f2ae3a6",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5130",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 2,
+   "ayah": 285,
+   "textSha256": "7a5e339d11ab9144ff705f4f4de0028258046ff2ea4ed5bd7a49e9a083e434b1",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 125",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 3,
+   "ayah": 77,
+   "textSha256": "6a50a34ca73baac7cf510d16a0c6037fab1c65bf83f69a8f8bf5ac2c6c7a58d9",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4549",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 3,
+   "ayah": 128,
+   "textSha256": "b2a7d637a51a717acf4cd2976fed0404c33affa04e7a93ce0730e58a27369c79",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4559",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 3,
+   "ayah": 188,
+   "textSha256": "4f9f4f57e09ecf661a16c8ca7f04d2880b4b8c7deb16910c57aba47078009a58",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4567",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 3,
+   "textSha256": "169a4811fc140ec52a13d32dece67eb1812bceda2f82e3c7899fee3bf371637a",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5098",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 11,
+   "textSha256": "fe6e389fb45fa055e65f5f296a13e93cd9de2b8ee6b586ab0697ab8156e6c55f",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4577",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 19,
+   "textSha256": "e94a41bb3cc0ddcdb89755ac207341aeaa7067c533f05c085d49a3415a6850c5",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4579",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 43,
+   "textSha256": "4247d7077df441d88e9e5dfef540b73042ced56327a0038f52698e51196296f5",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 334",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 59,
+   "textSha256": "f8e4a64152789d2b1cc27cd997252f1a803981eb516c5dc042bfca22e95bce55",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1834",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 65,
+   "textSha256": "5db62f0c1d1165f1f082af2191b290d8ff48c31081569e16a68928919df6073f",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4585",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 88,
+   "textSha256": "9020aacfe08f59bdbdbcb9c5c59d2c92ecfc518fee15ad215e83de8791cac71b",
+   "source": "جامع الترمذي",
+   "reference": "جامع الترمذي 3028",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 94,
+   "textSha256": "4e61e9906097d42aea85eca1b8822924830e6a4d2127611a6168b66d90aca98b",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4591",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 95,
+   "textSha256": "223c097d65cacc934a3b33d1cbe9101aa3d0155ba834cb885ff81e273ebacfc8",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4592",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 127,
+   "textSha256": "b998bb540977043835ba68d69bd679bdb6f05901c1185aec0a782bfadebf2e9d",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4574",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 4,
+   "ayah": 128,
+   "textSha256": "bfa12b0a22bbfa2e8b7cf01a1a6f49bc2963b9d98cc712898b46c676622bea5b",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5206",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 5,
+   "ayah": 3,
+   "textSha256": "ee12d610e0d51e9dd925c7021688feda3b8f96164b586516e1d7aa077224873a",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 45",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 5,
+   "ayah": 93,
+   "textSha256": "a543e9e90c85563189d8666f9a416a2e52119217b33f879119d97f2cf939967f",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4620",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 6,
+   "ayah": 52,
+   "textSha256": "78b6c02e26e72b7f988154755a266ba0642708a3cac9df1c021657c1585ff04a",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 2413b",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 7,
+   "ayah": 31,
+   "textSha256": "5dcefb37d70affccc896452dbb932e51c2c917cea35d131d0aebdc77ebd03198",
+   "source": "سنن النسائي",
+   "reference": "سنن النسائي 2956",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 8,
+   "ayah": 32,
+   "textSha256": "692cba43c22f9bb59ef55c63f65a2a4d860d77cc2734837731c4af5ca3ae4e4e",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 2796",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 8,
+   "ayah": 67,
+   "textSha256": "c13fa3853dcfaaac8bde06ea84f5777caeba92872d3b797ab3e7e27e3aac4964",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1763",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 19,
+   "textSha256": "bea92952675397ac790b46f0e414ec9acf3612379c591d0313139aaa43e0c356",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1879a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 34,
+   "textSha256": "dc181c6644e0ec76b801e27501184c83a6bb5a56bd5e1cdf86d35fdf5fd3b20e",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1406",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 58,
+   "textSha256": "52c758a260acfe7983fe53ad16db999669b7806e3c4550337b1d04820676a661",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 6933",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 79,
+   "textSha256": "8e6a21af21e68b9aa5b4163202a718efaa0f821d230851df1c821ecb81e00d10",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1415",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 84,
+   "textSha256": "0ca48e2758c3e66af5a8e5c62175427ca65ae9e36ff84800cc89073526d6ea8b",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5796",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 9,
+   "ayah": 113,
+   "textSha256": "11f7896a191407847cb11e8f12c5ab794500aff90eb1147c1cc386c3742e8c1b",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4675",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 11,
+   "ayah": 114,
+   "textSha256": "3860ae006c334ab635b9fe5ded564555498b2ae9f65cfb6e64d9b582fdc22a8d",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4687",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 17,
+   "ayah": 85,
+   "textSha256": "202af0b7ae089403d1b76ced747329784053c857e3bb139093c56a1e8b6d471f",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4721",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 17,
+   "ayah": 110,
+   "textSha256": "07692311729cba630b774aa98fdf9b8ef99210588d8a7e75f3df183327b8450f",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4722",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 19,
+   "ayah": 64,
+   "textSha256": "d0202a3b8c78f57e39ea0ac6df2c5e48b3a8a9167df6d36cab43d926dee2f490",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4731",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 19,
+   "ayah": 77,
+   "textSha256": "9919cc728d3b2e482ec857a7157535b70cce85f4f68fca1252f319232df44ac4",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4735",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 22,
+   "ayah": 19,
+   "textSha256": "0421c2f74102278e848c5fad500e3c1e03533be3af26c4251aad019069f189ed",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 3965",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 24,
+   "ayah": 6,
+   "textSha256": "3b472adf21d381a54b366246bf73d7a2329279ed8a15e0802aab0629c46ed572",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1495a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 24,
+   "ayah": 11,
+   "textSha256": "7b7e54c752bea75dada3c86eaee149ccf012b038d9a7396d524f26c7d795ebab",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 6679",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 24,
+   "ayah": 33,
+   "textSha256": "cd11176b3d2c62721ace4b03d0d7984abb3475a5de55da9d7de6d7f286cf8064",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 3029a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 25,
+   "ayah": 68,
+   "textSha256": "42cbba46b74d44ef5f86ed6fbdfa88857235b31420fcf7d5422261e8b3ce2b65",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 122",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 28,
+   "ayah": 56,
+   "textSha256": "58e79d36ce6faa14a128d3b45281e8ef428b73b96b85e2a94b30848548a2fb92",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4772",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 29,
+   "ayah": 8,
+   "textSha256": "6cf45a6fa08f5431003feb47dc41fe2afdab676391cd32d06b79a5b6bd4e2948",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1748c",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 33,
+   "ayah": 4,
+   "textSha256": "71180f7deade921d9a4863745303a704a69dad32a982024c24bf60883ccb2f00",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 2425a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 33,
+   "ayah": 23,
+   "textSha256": "2b2498c8776433d2c8e087e3a26ac98439fa25eec4dd2462f965673cb52bd226",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1903",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 33,
+   "ayah": 51,
+   "textSha256": "350ac1f3866aa1b34cd8408d0278c2a0f75be7260a1324e1afaa3acc903e2956",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 1476a",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 33,
+   "ayah": 53,
+   "textSha256": "c13545dabf182316fe90029b5c49f5d5cf0fea80c9660d156f7c9bcce12b6c61",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4791",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 39,
+   "ayah": 53,
+   "textSha256": "7b6041fc5ea5c250c91167086216c16f6f1caf5ebcea00eb40e058f4f4cedf24",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4810",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 41,
+   "ayah": 22,
+   "textSha256": "93f54ad5994afe3ef7daada95c44a33fdb88226ed70452775987d25b1dde3851",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4816",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 49,
+   "ayah": 1,
+   "textSha256": "4159add25e1c7494601e7bd99516996311c8de4b8f3d516dd7b4658595a40092",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4847",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 49,
+   "ayah": 2,
+   "textSha256": "5117c9318b3a438506730495e86569fe3ee1fa873bfa20796abcd40ea0280ce4",
+   "source": "صحيح مسلم",
+   "reference": "صحيح مسلم 119a",
+   "grade": "صحيح",
+   "relation": "متعلقة"
+  },
+  {
+   "surah": 49,
+   "ayah": 9,
+   "textSha256": "20848bc59a37d926bad932f1ed98228f0d8640f1f401ebb01b8f5603e0d2a85a",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 2691",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 59,
+   "ayah": 5,
+   "textSha256": "bce365f360d41650730ce29e1b532522bef100c026ddb74dbbf6af033ce43acc",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4884",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 59,
+   "ayah": 9,
+   "textSha256": "84fa0a4b96d984077b3d79b47d6f0b24f9ac188a985bfb2f6d1f218e981e1a93",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 3798",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 60,
+   "ayah": 1,
+   "textSha256": "9fa3045f45ec395a00de0642f0013f4f159ebfa774d0ac1d8a1f72319e0c8aa4",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4890",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 62,
+   "ayah": 11,
+   "textSha256": "6805d606e6e92074c55aeddc05db229bdb23d64ba35709dcb9b2fdb0d1339f29",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4899",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 65,
+   "ayah": 1,
+   "textSha256": "22f9ef41e45b1a393cdcac33d4e2b2fe286e76b71dae8e4af250fcfb8e8544b6",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 5332",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 93,
+   "ayah": 1,
+   "textSha256": "9b9d881cf3a0df1d5fd6863787e94636eeb78e7575014da46b670e9e4bae692d",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 4983",
+   "grade": "صحيح"
+  },
+  {
+   "surah": 111,
+   "ayah": 1,
+   "textSha256": "0d6f7c714b7046f0716490967ac27c29e3add3e415c05034120691c9a05b39a3",
+   "source": "صحيح البخاري",
+   "reference": "صحيح البخاري 1394",
+   "grade": "صحيح"
+  }
+ ]
+}

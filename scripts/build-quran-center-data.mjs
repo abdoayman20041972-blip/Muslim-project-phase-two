@@ -29,6 +29,11 @@ const BASE = 'https://quranpedia.net/dumps'
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'public', 'data', 'quran-center')
 const OUT_PRIVATE = path.join(ROOT, 'public', 'data', 'quran-center-private')
+// The 13 contemporary Siraj entries are personal-import-only and must NEVER
+// enter the public build or its manifest. Generating the private pack is
+// opt-in via QC_INCLUDE_PRIVATE_MODERN=1; the default public build emits and
+// pins nothing under quran-center-private.
+const INCLUDE_PRIVATE_MODERN = process.env.QC_INCLUDE_PRIVATE_MODERN === '1'
 const CACHE = process.env.QC_DUMP_CACHE || path.join(ROOT, '.cache', 'quran-center-dumps')
 
 // Book ids inside meanings.json.gz (verified against books.json.gz on 2026-11-26).
@@ -46,7 +51,8 @@ const ASBAB_WAHIDI = { file: 'asbab-book-2919.json.gz', name: 'أسباب نزو
 // 2026-11-26: a notice alone is not enough). Regenerate with
 // INCLUDE_REVIEW_PENDING=1 once the review passes.
 const INCLUDE_REVIEW_PENDING = process.env.INCLUDE_REVIEW_PENDING === '1'
-const NEEDED = INCLUDE_REVIEW_PENDING
+const VERIFIED_ASBAB = existsSync(path.join(ROOT, '.cache', 'quran-center-corrections', 'verified-asbab.json'))
+const NEEDED = INCLUDE_REVIEW_PENDING || VERIFIED_ASBAB
   ? ['meanings.json.gz', 'surahs.json.gz', ASBAB_WAHIDI.file]
   : ['meanings.json.gz', 'surahs.json.gz']
 
@@ -126,31 +132,64 @@ async function main() {
     return { surahs: perSurah.size, ayahCount }
   }
   const heritageStats = await writePerSurah(OUT, pick(HERITAGE_GHARIB))
-  const modernStats = await writePerSurah(OUT_PRIVATE, pick(MODERN_GHARIB))
+  const modernStats = INCLUDE_PRIVATE_MODERN ? await writePerSurah(OUT_PRIVATE, pick(MODERN_GHARIB)) : { ayahCount: 0, surahs: 0 }
   console.log(`gharib heritage: ${heritageStats.ayahCount} ayahs in ${heritageStats.surahs} surahs`)
-  console.log(`gharib modern (private, gitignored): ${modernStats.ayahCount} ayahs in ${modernStats.surahs} surahs`)
+  console.log(INCLUDE_PRIVATE_MODERN
+    ? `gharib modern (private, gitignored): ${modernStats.ayahCount} ayahs in ${modernStats.surahs} surahs`
+    : 'gharib modern (private): SKIPPED in public build (personal-import only; set QC_INCLUDE_PRIVATE_MODERN=1 to generate)')
 
-  // ---- asbab al-nuzul: al-Wahidi (heritage), verbatim with markup cleaned ----
-  // Excluded until the scholarly review passes; see INCLUDE_REVIEW_PENDING above.
-  if (INCLUDE_REVIEW_PENDING) {
-    const asbab = raw.get(ASBAB_WAHIDI.file).ayahs
+  // ---- asbab al-nuzul: ONLY independently verified narrations ship ----
+  // The corrections-overlay manifest verified-asbab.json lists each reviewed
+  // al-Wahidi narration (position, frozen reviewed bytes, source, reference,
+  // grade, verification pointer). No manifest -> nothing ships. Bulk dump of
+  // the ungraded book stays excluded regardless of INCLUDE_REVIEW_PENDING.
+  const verifiedAsbabPath = path.join(ROOT, '.cache', 'quran-center-corrections', 'verified-asbab.json')
+  let asbabStats = null
+  if (existsSync(verifiedAsbabPath)) {
+    const manifest = JSON.parse(await readFile(verifiedAsbabPath, 'utf8'))
+    if (!Array.isArray(manifest.entries) || !manifest.entries.length) throw new Error('verified-asbab.json: no entries')
+    const rows = raw.get(ASBAB_WAHIDI.file)?.ayahs
+    if (!Array.isArray(rows)) throw new Error('verified asbab manifest present but the pinned al-Wahidi dump is missing')
     const asbabDir = path.join(OUT, 'asbab')
     await mkdir(asbabDir, { recursive: true })
-    const asbabPerSurah = new Map()
-    for (const row of asbab) {
-      const text = (row.content || []).map((c) => cleanBookHtml(c.text)).filter(Boolean).join('\n\n')
-      if (!text) continue
-      if (!asbabPerSurah.has(row.surah)) asbabPerSurah.set(row.surah, {})
-      asbabPerSurah.get(row.surah)[row.ayah] = text
+    const perSurah = new Map()
+    const seen = new Set()
+    for (const entry of manifest.entries) {
+      const key = `${entry.surah}:${entry.ayah}`
+      if (seen.has(key)) throw new Error(`verified-asbab.json: duplicate position ${key}`)
+      seen.add(key)
+      for (const field of ['text', 'textSha256', 'source', 'reference', 'grade'])
+        if (typeof entry[field] !== 'string' || !entry[field].trim()) throw new Error(`verified-asbab.json:${key} missing ${field}`)
+      if (entry.relation !== undefined && entry.relation !== 'سبب' && entry.relation !== 'متعلقة')
+        throw new Error(`verified-asbab.json:${key} relation must be سبب or متعلقة`)
+      if (sha256(Buffer.from(entry.text, 'utf8')) !== entry.textSha256)
+        throw new Error(`verified-asbab.json:${key} text does not match its frozen sha256`)
+      // The position must exist in the pinned al-Wahidi dump; the shipped
+      // bytes themselves are the reviewed ones (verse markers expanded from
+      // the pinned surahs dump during review) and are frozen by textSha256.
+      const row = rows.find((r) => r.surah === entry.surah && r.ayah === entry.ayah)
+      if (!row) throw new Error(`verified-asbab.json:${key} not found in the pinned dump`)
+      if (!perSurah.has(entry.surah)) perSurah.set(entry.surah, {})
+      perSurah.get(entry.surah)[entry.ayah] = [{ text: entry.text, source: entry.source, reference: entry.reference, grade: entry.grade, ...(entry.relation ? { relation: entry.relation } : {}) }]
     }
-    let asbabCount = 0
-    for (const [surah, map] of [...asbabPerSurah.entries()].sort((a, b) => a[0] - b[0])) {
-      asbabCount += Object.keys(map).length
+    let count = 0
+    for (const [surah, map] of [...perSurah.entries()].sort((a, b) => a[0] - b[0])) {
+      count += Object.keys(map).length
       await writeFile(path.join(asbabDir, `${surah}.json`), JSON.stringify(map))
     }
-    console.log(`asbab (al-Wahidi): ${asbabCount} positions in ${asbabPerSurah.size} surahs`)
+    // Ship a pins-only copy of the manifest: positions, frozen text hashes and
+    // citation metadata. The validator refuses any shipped asbab byte that is
+    // not pinned here.
+    await writeFile(path.join(OUT, 'verified-asbab.json'), JSON.stringify({
+      batch: manifest.batch, rule: manifest.rule,
+      sourceBook: { ...manifest.sourceBook, sha256: expected.get(ASBAB_WAHIDI.file) },
+      entries: manifest.entries.map(({ surah, ayah, textSha256, source, reference, grade, relation }) =>
+        ({ surah, ayah, textSha256, source, reference, grade, ...(relation ? { relation } : {}) })),
+    }, null, 1))
+    asbabStats = { count, surahs: perSurah.size }
+    console.log(`asbab (verified narrations): ${count} positions in ${perSurah.size} surahs (batch ${manifest.batch})`)
   } else {
-    console.log('asbab (al-Wahidi): excluded pending scholarly review')
+    console.log('asbab: no verified-asbab.json overlay - nothing ships')
   }
 
   // ---- surah information cards (Quranpedia-authored metadata) ----
@@ -183,8 +222,8 @@ async function main() {
       gharibHeritage: HERITAGE_GHARIB,
       gharibModernPrivate: MODERN_GHARIB,
       reviewPending: !INCLUDE_REVIEW_PENDING,
-      ...(INCLUDE_REVIEW_PENDING
-        ? { asbab: { ...ASBAB_WAHIDI, sha256: expected.get(ASBAB_WAHIDI.file) } }
+      ...(asbabStats
+        ? { asbab: { ...ASBAB_WAHIDI, sha256: expected.get(ASBAB_WAHIDI.file), verified: asbabStats } }
         : {}),
     },
     changesFeed: `https://quranpedia.net/api/v1/changes?since=${manifest.version}`,
@@ -199,9 +238,14 @@ async function main() {
     'كمجموعة قابلة للتنزيل يلزم ذكر المصدر مع رابطه ورقم الإصدار (هذا الملف).',
     'النص الكامل للرخصة: https://quranpedia.net/dumps/LICENSE.md',
     '',
-    'الكتب التراثية المضمنة هنا (تذكرة الأريب لابن الجوزي، التبيان لابن الهائم) تراث',
-    'مشترك. أسباب النزول وفضائل السور المروية مستبعدة في هذه النسخة لحين اكتمال',
-    'المراجعة العلمية المتفق عليها. الأعمال المعاصرة (السراج في بيان غريب القرآن،',
+    'الكتب التراثية المضمنة هنا (تذكرة الأريب لابن الجوزي، التبيان لابن الهائم،',
+    ...(asbabStats
+      ? ['أسباب نزول القرآن للواحدي) تراث مشترك. يُعرض من أسباب النزول فقط الروايات',
+         'المثبتة بمرجع مُخرَّج ودرجته (انظر verified-asbab.json). فضائل السور المروية',
+         'مستبعدة في هذه النسخة لحين اكتمال المراجعة العلمية المتفق عليها.']
+      : ['التبيان لابن الهائم) تراث مشترك. أسباب النزول وفضائل السور المروية مستبعدة',
+         'في هذه النسخة لحين اكتمال المراجعة العلمية المتفق عليها.']),
+    'الأعمال المعاصرة (السراج في بيان غريب القرآن،',
     'كلمات القرآن) لا تُنشر هنا؛ تُولَّد محليًا على جهاز المستخدم في مجلد',
     'quran-center-private وتبقى ملكًا لأصحابها.',
   ].join('\n'))
@@ -243,7 +287,7 @@ async function main() {
       if (existsSync(from)) { await mkdir(path.dirname(to), { recursive: true }); await copyFile(from, to); applied++ }
     }
     for (const f of await readdir(path.join(corrRoot, 'quran-center', 'gharib'))) await overlay(path.join('quran-center', 'gharib', f))
-    if (existsSync(path.join(corrRoot, 'quran-center-private')))
+    if (INCLUDE_PRIVATE_MODERN && existsSync(path.join(corrRoot, 'quran-center-private')))
       for (const f of await readdir(path.join(corrRoot, 'quran-center-private', 'gharib'))) await overlay(path.join('quran-center-private', 'gharib', f))
     await overlay(path.join('quran-center', 'surahs-info.json'))
     await overlay(path.join('quran-center', 'review-status.json'))
@@ -270,7 +314,7 @@ async function main() {
   }
   const filesManifest = {
     generatedAt: new Date().toISOString(),
-    files: { ...(await hashTree(OUT, 'quran-center')), ...(await hashTree(OUT_PRIVATE, 'quran-center-private')) },
+    files: { ...(await hashTree(OUT, 'quran-center')), ...(INCLUDE_PRIVATE_MODERN ? await hashTree(OUT_PRIVATE, 'quran-center-private') : {}) },
   }
   await writeFile(path.join(OUT, 'files-manifest.json'), JSON.stringify(filesManifest, null, 2))
   console.log(`files-manifest.json: pinned ${Object.keys(filesManifest.files).length} shipped files`)

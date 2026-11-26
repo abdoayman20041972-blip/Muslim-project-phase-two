@@ -12,7 +12,8 @@
 export type GharibWord = { text: string; meaning: string }
 export type GharibEntry = { book: string; author: string; words: GharibWord[] }
 export type GharibMap = Record<string, GharibEntry[]>
-export type AsbabMap = Record<string, string>
+export type AsbabEntry = { text: string; source: string; reference: string; grade: string; relation?: 'سبب' | 'متعلقة' }
+export type AsbabMap = Record<string, AsbabEntry[]>
 const CENTER_BASE = '/data/quran-center'
 const PRIVATE_BASE = '/data/quran-center-private'
 
@@ -81,9 +82,15 @@ export function loadAsbab(surah: number): Promise<AsbabMap | null> {
   if (!cached) {
     cached = fetchJson(`${CENTER_BASE}/asbab/${surah}.json`).then((value) => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-      const entries = Object.entries(value as Record<string, unknown>)
-      if (!entries.every(([, text]) => typeof text === 'string' && text.trim())) return null
-      return value as AsbabMap
+      const entries = Object.values(value as Record<string, unknown>)
+      const valid = entries.every((list) =>
+        Array.isArray(list) && list.length > 0 && list.every((entry) =>
+          !!entry && typeof (entry as AsbabEntry).text === 'string' && (entry as AsbabEntry).text.trim() &&
+          typeof (entry as AsbabEntry).source === 'string' && (entry as AsbabEntry).source.trim() &&
+          typeof (entry as AsbabEntry).reference === 'string' && (entry as AsbabEntry).reference.trim() &&
+          typeof (entry as AsbabEntry).grade === 'string' && (entry as AsbabEntry).grade.trim() &&
+          ((entry as AsbabEntry).relation === undefined || (entry as AsbabEntry).relation === 'سبب' || (entry as AsbabEntry).relation === 'متعلقة')))
+      return valid ? (value as AsbabMap) : null
     })
     asbabCache.set(surah, cached)
   }

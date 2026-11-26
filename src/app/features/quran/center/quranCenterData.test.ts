@@ -69,16 +69,21 @@ describe('loadGharib', () => {
 })
 
 describe('loadAsbab', () => {
-  it('returns the cleaned text map for a covered surah', async () => {
-    stubFetch({ '/data/quran-center/asbab/2.json': { '25': 'نص الرواية' } })
-    expect(await loadAsbab(2)).toEqual({ '25': 'نص الرواية' })
+  const entry = { text: 'نص الرواية', source: 'صحيح البخاري', reference: 'صحيح البخاري 399', grade: 'صحيح' }
+  it('returns the verified narration entries for a covered surah', async () => {
+    stubFetch({ '/data/quran-center/asbab/2.json': { '25': [entry] } })
+    expect(await loadAsbab(2)).toEqual({ '25': [entry] })
   })
   it('returns null for an uncovered surah', async () => {
     stubFetch({})
     expect(await loadAsbab(55)).toBeNull()
   })
-  it('rejects non-string entries', async () => {
+  it('rejects malformed entries', async () => {
     stubFetch({ '/data/quran-center/asbab/2.json': { '25': 7 } })
+    expect(await loadAsbab(2)).toBeNull()
+    stubFetch({ '/data/quran-center/asbab/2.json': { '25': [{ text: 'نص' }] } })
+    expect(await loadAsbab(2)).toBeNull()
+    stubFetch({ '/data/quran-center/asbab/2.json': { '25': [] } })
     expect(await loadAsbab(2)).toBeNull()
   })
 })

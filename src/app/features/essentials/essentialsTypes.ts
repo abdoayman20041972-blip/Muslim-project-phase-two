@@ -36,6 +36,8 @@ export type Chapter = {
   id: string
   title: string
   audience: 'universal' | 'situational'
+  /** Optional heading the list groups chapters under (for example الطهارة). Chapters without one are grouped by audience. */
+  topic?: string
   /** Short line on the list: who needs this and why. */
   summary: string
   sections: Partial<Record<SectionKind, SectionBody>>

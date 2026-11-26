@@ -96,18 +96,25 @@ describe.skipIf(!hasPack)('bundled Quran-center data', () => {
     expect([...heritageBooks].sort()).toEqual(['التبيان في تفسير غريب القرآن', 'تذكرة الأريب في تفسير الغريب'].sort())
   })
 
-  it.skipIf(!hasAsbab)('bundles exactly the 564 verified al-Wahidi positions, markup-free', () => {
+  it.skipIf(!hasAsbab)('ships only reviewed asbab narrations, markup-free, matching the frozen pins', () => {
+    const pins = readJson('verified-asbab.json')
+    expect(Array.isArray(pins.entries)).toBe(true)
     const files = readdirSync(path.join(DIR, 'asbab')).filter((f) => f.endsWith('.json'))
     let count = 0
     for (const file of files) {
       const map = readJson(path.join('asbab', file))
-      for (const text of Object.values(map)) {
-        count++
-        expect((text as string).trim().length).toBeGreaterThan(0)
-        expect(text as string).not.toMatch(htmlTag)
+      for (const list of Object.values(map)) {
+        for (const entry of list as Array<{ text: string; source: string; reference: string; grade: string }>) {
+          count++
+          expect(entry.text.trim().length).toBeGreaterThan(0)
+          expect(entry.text).not.toMatch(htmlTag)
+          expect(entry.source.trim().length).toBeGreaterThan(0)
+          expect(entry.reference.trim().length).toBeGreaterThan(0)
+          expect(entry.grade.trim().length).toBeGreaterThan(0)
+        }
       }
     }
-    expect(count).toBe(564)
+    expect(count).toBe(pins.entries.length)
   })
 
 })

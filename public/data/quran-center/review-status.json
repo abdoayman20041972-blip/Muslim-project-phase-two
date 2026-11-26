@@ -1,5 +1,5 @@
 {
- "batch": "corrections-v6-public-heritage12",
+ "batch": "corrections-v6-public-heritage12+asbab-verified-v2.1",
  "scopes": {
   "gharib": {
    "status": "verified",
@@ -10,8 +10,8 @@
    "note": "Fidelity 114/114 verified by the independent reviewer; makki/madani + descentOrder labeling decision still open (review report §3D/§3E)."
   },
   "asbab": {
-   "status": "pending-review",
-   "note": "al-Wahidi chains ungraded (weak/fabricated reports); per-report takhrij + notice posture await the specialist."
+   "status": "verified",
+   "note": "VERIFIED SUBSET ONLY: 65 revelation-cause narrations (26 surahs) from al-Wahidi, each independently confirmed in a graded source (62 in the Sahihayn + 3 in graded Sunan collections), listed one by one in verified-asbab.json with frozen reviewed bytes (textSha256) and exact reference. v2: independent audit corrections applied - 5 reference fixes to the verified explicit-cause parallel, unsupported sub-narratives trimmed, 113:1 held (cause not in any graded source). v2.1: further scope trims (33:51 commentary takhyir narrative, 49:2 reaction-vs-cause intro) so no displayed causal claim outruns its graded source. Positions without a verified report ship NOTHING; the rest of the ungraded al-Wahidi material stays held. No one-per-ayah coverage is claimed."
   },
   "virtues": {
    "status": "pending-review",

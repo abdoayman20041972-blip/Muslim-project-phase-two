@@ -28,7 +28,7 @@ const gharibData = {
     words: [{ text: 'الم', meaning: 'من حروف الهجاء في أوائل السور' }],
   }],
 }
-const asbabData = { '1': 'نص سبب النزول كما روي' }
+const asbabData = { '1': [{ text: 'نص سبب النزول كما روي', source: 'صحيح البخاري', reference: 'صحيح البخاري 4592', grade: 'صحيح' }] }
 
 function stubFetch(routes: Record<string, unknown>) {
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
@@ -107,38 +107,50 @@ describe('AyahCenterCard', () => {
     expect(screen.queryByText('من حروف الهجاء في أوائل السور')).toBeNull()
   })
 
-  it('always shows the takhrij notice next to a narrated revelation cause', async () => {
+  it('shows the verified narration with its grade and reference', async () => {
     stubFetch({ '/data/quran-center/review-status.json': { scopes: { asbab: { status: 'verified' } } }, '/data/quran-center/asbab/2.json': asbabData })
     renderCard()
     fireEvent.click(screen.getByRole('tab', { name: 'سبب النزول' }))
     await waitFor(() => expect(screen.getByText('نص سبب النزول كما روي')).toBeTruthy())
-    expect(screen.getByRole('note').textContent).toContain('تحتاج إلى تخريجٍ ومراجعةٍ علمية')
-    expect(screen.getAllByText(/الواحدي/).length).toBeGreaterThan(0)
+    expect(screen.getByText('صحيح البخاري 4592')).toBeTruthy()
+    expect(screen.getByText('صحيح')).toBeTruthy()
+    const note = screen.getByRole('note').textContent
+    expect(note).toContain('سبب النزول بحسب المرجع المذكور')
+    expect(note).toContain('التغطية تقتصر على الروايات المراجعة في هذه النسخة')
+  })
+
+  it('labels a non-causal related narration neutrally instead of as the proven cause', async () => {
+    const related = { '1': [{ text: 'نص رواية متعلقة بالآية', source: 'صحيح مسلم', reference: 'صحيح مسلم 119a', grade: 'صحيح', relation: 'متعلقة' }] }
+    stubFetch({ '/data/quran-center/review-status.json': { scopes: { asbab: { status: 'verified' } } }, '/data/quran-center/asbab/2.json': related })
+    renderCard()
+    fireEvent.click(screen.getByRole('tab', { name: 'سبب النزول' }))
+    await waitFor(() => expect(screen.getByText('نص رواية متعلقة بالآية')).toBeTruthy())
+    expect(screen.getByText('رواية متعلقة بنزول الآية')).toBeTruthy()
   })
 
   it('says plainly when no cause is narrated for the ayah', async () => {
     stubFetch({ '/data/quran-center/review-status.json': { scopes: { asbab: { status: 'verified' } } }, '/data/quran-center/asbab/2.json': {} })
     renderCard()
     fireEvent.click(screen.getByRole('tab', { name: 'سبب النزول' }))
-    await waitFor(() => expect(screen.getByText(/لم يُروَ عن هذه الآية سببُ نزولٍ/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/لا تتوفر روايةُ سببِ نزولٍ مدققة لهذه الآية/)).toBeTruthy())
   })
 
   it('locks narrated causes behind the review gate even when data is present, without fetching them', async () => {
     stubFetch({ '/data/quran-center/review-status.json': { scopes: { asbab: { status: 'pending-review' } } }, '/data/quran-center/asbab/2.json': asbabData })
     renderCard()
     fireEvent.click(screen.getByRole('tab', { name: 'سبب النزول' }))
-    await waitFor(() => expect(screen.getByText(/قيد المراجعة العلمية/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/لا تتوفر روايةُ سببِ نزولٍ مدققة لهذه الآية في النسخة الحالية/)).toBeTruthy())
     expect(screen.queryByText('نص سبب النزول كما روي')).toBeNull()
     const urls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]))
     expect(urls.some((u) => u.includes('/asbab/'))).toBe(false)
   })
 
-  it('says the narrations are under review when no asbab pack is installed', async () => {
-    stubFetch({})
+  it('uses the same honest current-version wording when a surah ships no narrations', async () => {
+    stubFetch({ '/data/quran-center/review-status.json': { scopes: { asbab: { status: 'verified' } } } })
     renderCard()
     fireEvent.click(screen.getByRole('tab', { name: 'سبب النزول' }))
-    await waitFor(() => expect(screen.getByText(/قيد المراجعة العلمية/)).toBeTruthy())
-    expect(screen.queryByText(/لم يُروَ عن هذه الآية/)).toBeNull()
+    await waitFor(() => expect(screen.getByText(/لا تتوفر روايةُ سببِ نزولٍ مدققة لهذه الآية في النسخة الحالية/)).toBeTruthy())
+    expect(screen.queryByText(/ستُتاح|قيد المراجعة العلمية/)).toBeNull()
   })
 
   it('loads the tafsir lazily when its tab becomes active', () => {

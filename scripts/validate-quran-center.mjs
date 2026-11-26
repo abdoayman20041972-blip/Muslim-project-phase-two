@@ -124,18 +124,50 @@ console.log(`[quran-center] per-entry provenance verified (${verified.entries.le
 
 let asbabCount = 0
 const asbabPresent = existsSync(path.join(DIR, 'asbab'))
-for (let surah = 1; surah <= 114 && asbabPresent; surah++) {
-  const file = path.join(DIR, 'asbab', `${surah}.json`)
-  if (!existsSync(file)) continue
-  const map = readJson(file)
-  for (const [ayah, text] of Object.entries(map)) {
-    if (!isNonEmpty(text) || htmlTag.test(text)) fail(`asbab/${surah}.json:${ayah} empty or still HTML`)
-    asbabCount++
+if (asbabPresent) {
+  // Asbab ships ONLY as the independently verified subset: every shipped
+  // narration must match, byte for byte, a frozen pin in verified-asbab.json,
+  // and every pin must ship. Anything else fails the build.
+  const verifiedAsbabPath = path.join(DIR, 'verified-asbab.json')
+  if (!existsSync(verifiedAsbabPath)) fail('asbab/ present without verified-asbab.json: unverified narrations may not ship')
+  const verifiedAsbab = readJson(verifiedAsbabPath)
+  if (!Array.isArray(verifiedAsbab?.entries) || !verifiedAsbab.entries.length) fail('verified-asbab.json has no entries')
+  const pins = new Map()
+  for (const e of verifiedAsbab.entries) {
+    const key = `${e.surah}:${e.ayah}`
+    if (pins.has(key)) fail(`verified-asbab.json: duplicate position ${key}`)
+    if (!/^[0-9a-f]{64}$/.test(e.textSha256 || '')) fail(`verified-asbab ${key}: missing frozen textSha256`)
+    for (const field of ['source', 'reference', 'grade']) if (!isNonEmpty(e[field])) fail(`verified-asbab ${key}: missing ${field}`)
+    if (e.relation !== undefined && e.relation !== 'سبب' && e.relation !== 'متعلقة') fail(`verified-asbab ${key}: relation must be سبب or متعلقة`)
+    pins.set(key, e)
   }
+  const shipped = new Set()
+  for (let surah = 1; surah <= 114; surah++) {
+    const file = path.join(DIR, 'asbab', `${surah}.json`)
+    if (!existsSync(file)) continue
+    const map = readJson(file)
+    for (const [ayah, list] of Object.entries(map)) {
+      if (!Array.isArray(list) || list.length !== 1) fail(`asbab/${surah}.json:${ayah} must be a single-entry list`)
+      const entry = list[0]
+      const key = `${surah}:${ayah}`
+      const pin = pins.get(key)
+      if (!pin) fail(`asbab/${surah}.json:${ayah} ships without a frozen pin in verified-asbab.json`)
+      for (const field of ['text', 'source', 'reference', 'grade']) {
+        if (!isNonEmpty(entry[field]) || htmlTag.test(entry[field])) fail(`asbab/${surah}.json:${ayah} ${field} empty or still HTML`)
+      }
+      if (sha256Text(entry.text) !== pin.textSha256)
+        fail(`asbab ${key}: text bytes differ from the reviewed bytes pinned in verified-asbab.json; mutation + manifest regeneration does not pass`)
+      for (const field of ['source', 'reference', 'grade'])
+        if (entry[field] !== pin[field]) fail(`asbab ${key}: ${field} differs from the pinned citation`)
+      if ((entry.relation ?? undefined) !== (pin.relation ?? undefined)) fail(`asbab ${key}: relation differs from the pinned citation`)
+      shipped.add(key)
+      asbabCount++
+    }
+  }
+  for (const key of pins.keys()) if (!shipped.has(key)) fail(`verified-asbab ${key}: pinned narration missing from the shipped pack`)
+  if (asbabCount !== pins.size) fail(`shipped asbab (${asbabCount}) != verified-asbab pins (${pins.size})`)
+  console.log(`[quran-center] asbab provenance verified (${asbabCount} reviewed narrations, frozen bytes)`)
 }
-// Asbab ships only after the scholarly review passes; when it does ship, its
-// coverage is pinned to the verified dump.
-if (asbabPresent && asbabCount !== 564) fail(`asbab positions changed: ${asbabCount} (expected 564 from the pinned dump)`)
 
 // ---- shipped-file hash verification: the pack must match its pinned manifest ----
 // counts alone prove nothing about WHICH bytes ship; every file's sha256 is
@@ -169,4 +201,4 @@ for (const rel of Object.keys(actual)) {
 }
 console.log(`[quran-center] file hashes verified (${Object.keys(pinned).length} files)`)
 
-console.log(`[quran-center] OK - 114 surah infos, ${gharibAyahs} gharib ayahs${asbabPresent ? `, ${asbabCount} asbab positions` : ', asbab pending review'} (dump ${version.dumpVersion})`)
+console.log(`[quran-center] OK - 114 surah infos, ${gharibAyahs} gharib ayahs${asbabPresent ? `, ${asbabCount} verified asbab narrations` : ', asbab pending review'} (dump ${version.dumpVersion})`)

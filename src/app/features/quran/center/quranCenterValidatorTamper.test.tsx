@@ -93,6 +93,41 @@ describe.skipIf(!packInstalled)('quran-center validator frozen reviewed bytes', 
     }
   })
 
+  it('fails when an asbab narration text is mutated and files-manifest.json is regenerated over it', () => {
+    const tmp = freshCopy()
+    try {
+      const file = path.join(tmp, 'quran-center', 'asbab', '2.json')
+      if (!existsSync(file)) return // asbab pack not installed in this tree
+      const map = JSON.parse(readFileSync(file, 'utf8'))
+      const firstAyah = Object.keys(map)[0]
+      map[firstAyah][0].text += ' زيادة مزيفة'
+      writeFileSync(file, JSON.stringify(map, null, 1))
+      regenerateManifest(tmp)
+      const result = runValidator(tmp)
+      expect(result.ok).toBe(false)
+      expect(result.output).toContain('text bytes differ from the reviewed bytes pinned in verified-asbab.json')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('fails when an unpinned asbab narration is added and files-manifest.json is regenerated', () => {
+    const tmp = freshCopy()
+    try {
+      const file = path.join(tmp, 'quran-center', 'asbab', '2.json')
+      if (!existsSync(file)) return
+      const map = JSON.parse(readFileSync(file, 'utf8'))
+      map['999'] = [{ text: 'رواية غير محققة', source: 'x', reference: 'x', grade: 'x' }]
+      writeFileSync(file, JSON.stringify(map, null, 1))
+      regenerateManifest(tmp)
+      const result = runValidator(tmp)
+      expect(result.ok).toBe(false)
+      expect(result.output).toContain('without a frozen pin in verified-asbab.json')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
   it('fails when only word diacritics are mutated (normalization-invisible change)', () => {
     const tmp = freshCopy()
     try {
