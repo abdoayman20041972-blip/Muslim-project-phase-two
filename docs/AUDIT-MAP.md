@@ -1,4 +1,4 @@
-# Audit map (snapshot of the canonical working tree, 1.4.9 plus Sifat removal)
+# Audit map (snapshot of the audited tree, shipped as 1.4.10 code 13)
 
 Stack: React + TanStack Router/Vite, Capacitor Android, Vitest (jsdom). Two local Capacitor plugins in plugins/ (background audio, exact alarms). Native glue is patched in by scripts/patch-android.mjs during CI (workflow .github/workflows/build-apk.yml). The android/ folder is generated in CI, not in the repo.
 
