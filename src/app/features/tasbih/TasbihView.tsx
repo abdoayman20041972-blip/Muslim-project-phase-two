@@ -264,7 +264,7 @@ export function TasbihView({
                     <span
                       key={index}
                       className={`tasbih-bead ${index < litRegularBeads ? 'is-lit' : ''}`}
-                      style={{ transform: `rotate(${angle}deg) translateY(-8.55rem) rotate(-${angle}deg)` }}
+                      style={{ transform: `rotate(${angle}deg) translateY(calc(var(--ts) * -0.4)) rotate(-${angle}deg)` }}
                     />
                   )
                 })}
@@ -277,7 +277,7 @@ export function TasbihView({
                 className={`tasbih-count-button tasbih-color-${buttonColor}`}
               >
                 <span className="tasbih-count-mark" aria-hidden="true">✦</span>
-                <span className="tasbih-count">{toArabicNumber(currentRound)}</span>
+                <span className="tasbih-count" dir="ltr">{currentRound}</span>
                 <span className="tasbih-count-goal">من {toArabicNumber(currentWord?.goal ?? 0)}</span>
               </button>
               <span className={`tasbih-imam-bead ${imamBeadLit ? 'is-lit' : ''}`} aria-hidden="true" />
@@ -285,8 +285,8 @@ export function TasbihView({
             </div>
 
             <div className="tasbih-progress-copy">
-              <span>{toArabicNumber(currentRound)} / {toArabicNumber(currentWord?.goal ?? 0)}</span>
-              <span>{toArabicNumber(Math.round(progress * 100))}%</span>
+              <span dir="ltr">{toArabicNumber(currentRound)} / {toArabicNumber(currentWord?.goal ?? 0)}</span>
+              <span dir="ltr">{toArabicNumber(Math.round(progress * 100))}%</span>
             </div>
 
             <div className="tasbih-session-meta" aria-label="إحصاءات السبحة">
