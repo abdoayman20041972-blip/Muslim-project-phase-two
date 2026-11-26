@@ -40,6 +40,34 @@ import org.json.JSONObject;
 @CapacitorPlugin(name = "ExactAlarms")
 public class ExactAlarmsPlugin extends Plugin {
 
+    private TapSounds tapSounds;
+
+    @Override
+    public void load() {
+        try {
+            tapSounds = new TapSounds(getContext());
+        } catch (RuntimeException unavailable) {
+            tapSounds = null;
+        }
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        if (tapSounds != null) {
+            tapSounds.release();
+            tapSounds = null;
+        }
+    }
+
+    /** Plays the native click sound (low latency, no WebView audio). Fire and forget: nothing is returned. */
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void tapSound(PluginCall call) {
+        TapSounds sounds = tapSounds;
+        if (sounds != null) {
+            sounds.play(call.getString("kind", "ui"));
+        }
+    }
+
     @PluginMethod
     public void schedule(PluginCall call) {
         JSONArray alarms = call.getArray("alarms");
