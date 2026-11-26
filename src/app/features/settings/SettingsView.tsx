@@ -32,6 +32,7 @@ import { TasbihSection } from './sections/TasbihSection'
 import { MotivationSection } from './sections/MotivationSection'
 import { PrivacySection } from './sections/PrivacySection'
 import { GeneralSection } from './sections/GeneralSection'
+import { BackButton } from '../../components/app-chrome'
 
 type Props = {
   darkMode: boolean
@@ -283,9 +284,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
     return (
       <div dir="rtl">
         <div className="mb-5 flex items-center gap-3">
-          <button onClick={onBack} className="h-10 w-10 rounded-full border bg-azkar-card" aria-label="رجوع">
-            ‹
-          </button>
+          <BackButton onClick={onBack} />
           <div>
             <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
             <div className="text-[0.6875rem] text-azkar-ink-faint">كل التفضيلات في مكان واحد</div>
