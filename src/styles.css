@@ -1631,6 +1631,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .q2-page{position:fixed;top:0;bottom:0;left:0;right:0;margin-inline:auto;z-index:40;box-sizing:border-box;width:100%;max-width:28rem;overflow:hidden;display:flex;flex-direction:column;align-items:center;
   padding:max(.7rem,env(safe-area-inset-top)) 1rem calc(4.4rem + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,rgba(3,20,17,.6),rgba(3,20,17,.12) 24%,rgba(3,20,17,0) 42%),url("/img/azkar-evening-wide-sunset-mosque.jpg") center 50%/auto 150% no-repeat,#0d2a24;}
+.q2-back-slot{position:absolute;top:max(.7rem,env(safe-area-inset-top));inset-inline-start:1rem;z-index:2}
 .q2-back{position:absolute;top:max(.7rem,env(safe-area-inset-top));inset-inline-start:1rem;z-index:2;display:flex;align-items:center;justify-content:center;width:2.75rem;height:2.75rem;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.9);color:hsl(var(--azkar-teal-deep));box-shadow:0 6px 16px rgba(0,0,0,.25);}
 .q2-title{display:flex;flex-direction:column;align-items:center;gap:.15rem;margin-top:1.9rem;flex:none;}
 .q2-title h1{margin:0;font-size:2.1rem;line-height:1.2;color:#f6e7b8;text-shadow:0 2px 10px rgba(0,0,0,.65);}
@@ -2028,3 +2029,87 @@ html.reduce-motion .dpad-pad:active:not(:disabled){transform:none}
 @keyframes pdf-in-back{from{opacity:.3;transform:translateX(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.pdf-turn-fwd,.pdf-turn-back{animation:none}}
 .pdf-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:1rem;text-align:center;font-weight:700;color:#5b6b65;background:rgba(251,246,232,.85)}
+
+/* One back button for the whole app. Arrow points right: the direction of "back" in a right-to-left layout. */
+.app-back{display:flex;flex-shrink:0;height:2.75rem;width:2.75rem;align-items:center;justify-content:center;border-radius:999px;border:1px solid hsl(var(--azkar-hairline));background:hsl(var(--azkar-card));color:hsl(var(--azkar-teal-deep));box-shadow:var(--shadow-1);}
+.app-back:focus-visible{outline:2px solid hsl(var(--azkar-teal));outline-offset:2px}
+.app-back-icon{height:1.25rem;width:1.25rem}
+.app-back-overlay{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.92);box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.dark .app-back{background:rgba(20,39,34,.91);color:#e9eee7}
+
+/* Library redesign: shared header, list rows, shelf cards, flat reader */
+.lib-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.9rem}
+.lib-header-title{font-family:'Amiri',serif;font-weight:700;font-size:1.5rem;line-height:1.35;color:hsl(var(--azkar-teal-ink));overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.lib-header-sub{margin-top:.1rem;font-size:.75rem;font-weight:600;color:hsl(var(--azkar-ink-soft));overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.lib-note{margin:0 0 .75rem;padding:.65rem .85rem;border-radius:.85rem;background:hsl(var(--azkar-teal-tint));font-size:.8125rem;font-weight:600;line-height:1.7;color:hsl(var(--azkar-teal-ink))}
+.lib-note-warn{background:#fdf1dc;border:1px solid #d9a65a;color:#8a4b12;font-weight:700}
+.lib-continue{display:flex;flex-direction:column;gap:.1rem;width:100%;margin-bottom:.75rem;padding:.7rem .95rem;border-radius:.95rem;background:hsl(var(--azkar-teal-deep));color:#f4ecd2;text-align:right}
+.lib-continue-label{font-size:.6875rem;font-weight:700;opacity:.8}
+.lib-continue-title{font-family:'Amiri',serif;font-weight:700;font-size:1.0625rem;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.lib-search{width:100%;margin-bottom:.6rem;padding:.7rem 1rem;border:1px solid hsl(var(--azkar-hairline));border-radius:.85rem;background:hsl(var(--azkar-card));text-align:right;font-weight:600}
+.lib-list{display:flex;flex-direction:column;gap:.45rem;list-style:none;margin:0;padding:0}
+.lib-row{display:flex;align-items:center;gap:.7rem;width:100%;min-height:3rem;padding:.55rem .85rem;border:1px solid hsl(var(--azkar-hairline));border-radius:.85rem;background:hsl(var(--azkar-card));text-align:right;color:hsl(var(--azkar-teal-ink))}
+.lib-row-n{flex:0 0 2rem;font-size:.75rem;font-weight:700;color:hsl(var(--azkar-ink-soft));text-align:center}
+.lib-row-t{flex:1;min-width:0;font-weight:700;line-height:1.55}
+.lib-row-count{font-size:.75rem;font-weight:600;color:hsl(var(--azkar-ink-soft));white-space:nowrap}
+.lib-row-vol .lib-row-t{font-family:'Amiri',serif;font-size:1.1875rem}
+.lib-credit{margin:.9rem 0 0;text-align:center;font-size:.6875rem;line-height:1.6;color:hsl(var(--azkar-ink-faint))}
+.lib-shelf{margin-top:1.1rem}
+.lib-shelf-title{font-family:'Amiri',serif;font-weight:700;font-size:1.25rem;color:hsl(var(--azkar-teal-ink))}
+.lib-shelf-hint{margin-bottom:.5rem;font-size:.75rem;font-weight:600;color:hsl(var(--azkar-ink-soft))}
+.lib-cards{display:flex;flex-direction:column;gap:.5rem}
+.lib-card{display:flex;align-items:center;gap:.85rem;width:100%;padding:.7rem .85rem;border:1px solid hsl(var(--azkar-hairline));border-radius:1rem;background:hsl(var(--azkar-card));text-align:right}
+.lib-card:disabled{opacity:.6}
+.lib-card-cover{flex:0 0 3.6rem}
+.lib-card-cover .book-cover{font-size:.6em}
+.lib-card-icon{display:flex;flex:0 0 3.6rem;height:3.6rem;align-items:center;justify-content:center;border-radius:999px;background:hsl(var(--azkar-teal-tint));color:hsl(var(--azkar-teal-ink))}
+.lib-card-text{display:flex;flex:1;min-width:0;flex-direction:column;gap:.15rem}
+.lib-card-title{font-family:'Amiri',serif;font-weight:700;font-size:1.1875rem;line-height:1.45;color:hsl(var(--azkar-teal-ink))}
+.lib-card-meta{font-size:.75rem;font-weight:600;line-height:1.5;color:hsl(var(--azkar-ink-soft))}
+.lib-card-tag{align-self:flex-start;margin-top:.15rem;padding:.1rem .55rem;border-radius:999px;background:hsl(var(--azkar-teal-tint));font-size:.6875rem;font-weight:700;color:hsl(var(--azkar-teal-ink))}
+.book-reader{height:calc(100dvh - 16.5rem);min-height:22rem}
+.book-spread{padding:.3rem .35rem .3rem .25rem;border-radius:.75rem}
+.book-controls{align-items:center;padding-top:.55rem}
+.book-count{font-size:.8125rem;font-weight:700;color:hsl(var(--azkar-ink-soft));min-width:6rem;text-align:center;white-space:nowrap}
+.book-reader-top{justify-content:space-between;align-items:center;padding:0 .25rem .4rem;gap:.5rem}
+.pdf-offline{font-size:.75rem;font-weight:700;color:hsl(var(--azkar-teal-deep))}
+.pdf-offline-btn{display:inline-flex;align-items:center;gap:.35rem;min-height:2.5rem;padding:.35rem .8rem;border-radius:999px;background:hsl(var(--azkar-teal-tint));font-size:.75rem;font-weight:700;color:hsl(var(--azkar-teal-ink))}
+.book-reader-top .book-reader-count{flex-basis:auto}
+.lib-card-cover .book-cover-title{font-size:.6rem;line-height:1.3}
+.lib-card-cover .book-cover-author,.lib-card-cover .book-cover-ornament{display:none}
+.lib-card-cover .book-cover-frame{padding:.2em}
+
+/* Tablet and landscape: library screens use a wider reading column, and the bottom bar is slimmer in short landscape. */
+@media (min-width:768px){.app-content:has(.lib-header){max-width:44rem}.app-content:has(.lib-header) .book-reader{height:calc(100dvh - 15rem)}.app-content:has(.lib-header) .book-page{font-size:1.18em}}
+@media (min-width:1024px){.app-content:has(.lib-header){max-width:50rem}}
+@media (max-height:520px) and (orientation:landscape){.nav-float .dashboard-nav-item,.dashboard-nav-item{min-height:2.6rem}.dashboard-nav-item .dashboard-nav-icon{height:1.2rem;width:1.2rem}.dashboard-nav-item{gap:0}.app-content:has(.lib-header) .book-reader{height:calc(100dvh - 12rem);min-height:14rem}}
+
+/* Availability dot on a card edge: blue = the content is inside the app, red = needs the internet. */
+.lib-card{position:relative}.lib-dot{position:absolute;top:.7rem;left:.7rem;width:.7rem;height:.7rem;border-radius:999px;box-shadow:0 0 0 2px #fff}.lib-dot-local{background:#1d6fe0}.lib-dot-net{background:#d92d20}
+
+/* Short phone landscape while reading: drop the decoration so the text gets the height (header, credit and gold frame shrink). */
+@media (max-height:520px) and (orientation:landscape){
+.app-content:has(.book-reader) .lib-header{margin-bottom:.25rem;gap:.5rem}
+.app-content:has(.book-reader) .lib-header-title{font-size:1.05rem;-webkit-line-clamp:1;line-height:1.3}
+.app-content:has(.book-reader) .lib-header-sub{display:none}
+.app-content:has(.book-reader) .app-back{width:2.25rem;height:2.25rem;min-width:2.25rem}
+.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 9.2rem);min-height:10rem}
+.app-content:has(.book-reader) .book-spread{padding:0;background:#fbf6e8;border-radius:.5rem;box-shadow:0 0 0 1px rgba(120,90,40,.25)}
+.app-content:has(.book-reader) .book-controls{padding-top:.3rem}
+.app-content:has(.book-reader) .book-btn{min-height:2.3rem;padding-top:0;padding-bottom:0}
+.app-content:has(.book-reader) .book-credit{display:none}
+.app-content:has(.book-reader) .book-reader-top{display:none}
+}
+
+/* Library polish: gold number badges, a colored start edge on volume rows, lighter card tints, and a bigger reading page. */
+.lib-row-n{display:inline-flex;flex:0 0 1.9rem;height:1.9rem;align-items:center;justify-content:center;border-radius:999px;background:linear-gradient(135deg,#f0d98a,#d4a944);color:#4a3508;font-weight:800;font-size:.8rem}
+.lib-row{border-inline-start:4px solid #2f8f7b;background:linear-gradient(90deg,hsl(var(--azkar-teal-tint)/.45),transparent 60%),#fcfbf6}
+.lib-row-vol{border-inline-start-color:#c99a2e}
+.dark .lib-row{background:linear-gradient(90deg,rgba(47,143,123,.18),transparent 60%),rgba(20,39,34,.92)}
+.lib-card{background:linear-gradient(135deg,#fffdf6,#f1efe2)}
+.dark .lib-card{background:linear-gradient(135deg,rgba(26,52,45,.95),rgba(16,34,29,.95))}
+.lib-note{border-inline-start:4px solid #c99a2e}
+.app-content:has(.book-reader){padding-left:.7rem;padding-right:.7rem}
+.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 14.5rem)}
+.app-content:has(.book-reader) .book-page{font-size:1.1em}
+@media (max-height:520px) and (orientation:landscape){.app-content:has(.book-reader) .book-reader{height:calc(100dvh - 9.2rem)}}
