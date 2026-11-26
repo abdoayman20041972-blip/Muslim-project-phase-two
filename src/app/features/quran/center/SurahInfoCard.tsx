@@ -23,6 +23,10 @@ function trapDialogFocus(e: ReactKeyboardEvent<HTMLDivElement>) {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
 }
 
+// Reviewed caption (content round 3, batch1-metadata-captions-15b52e6a).
+const META_CAPTION = 'تصنيف مكي/مدني: وفق مصحف المدينة النبوية (مجمع الملك فهد). ترتيب النزول: اجتهادي، وللعلماء فيه أقوال أخرى، وليس قطعيًا في كل السور. القائمة المعتمدة هنا هي المروية عن جابر بن زيد، كما نقلها السيوطي في الإتقان.'
+const META_SOURCES = 'مصادر النوع والترتيب: مصحف المدينة النبوية (مجمع الملك فهد)، فهرس أسماء السور وبيان نوعها؛ والإتقان في علوم القرآن للسيوطي، النوع الأول.'
+
 function Chip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-center">
@@ -102,6 +106,7 @@ export function SurahInfoCard({ surah, onClose }: { surah: SurahMeta; onClose: (
                 <Chip label="عدد آياتها" value={toArabicNumber(surah.numberOfAyahs)} />
                 <Chip label="عدد ألفاظها" value={info.wordsCount ? toArabicNumber(info.wordsCount) : '—'} />
               </div>
+              <p className="text-[0.75rem] leading-6 text-azkar-ink-soft" data-testid="surah-meta-caption">{META_CAPTION}</p>
               {info.introduction && (
                 <section aria-label="نبذة عن السورة">
                   <h3 className="mb-2 text-sm font-bold text-azkar-teal-ink">نبذة عن السورة</h3>
@@ -118,6 +123,7 @@ export function SurahInfoCard({ surah, onClose }: { surah: SurahMeta; onClose: (
                 </section>
               )}
               <div className="text-center text-[0.6875rem] leading-5 text-azkar-ink-soft">
+                {META_SOURCES}<br />
                 المصدر: الموسوعة القرآنية (quranpedia.net){version ? ` · إصدار البيانات ${version}` : ''}
               </div>
             </div>
