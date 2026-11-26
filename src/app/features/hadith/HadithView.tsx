@@ -13,6 +13,7 @@ import { HADITH_SOURCE_URLS } from './hadithSources'
 import { highlightParts, matches } from './hadithSearch'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits, toArabicNumber } from '../../constants'
+import { BackButton } from '../../components/app-chrome'
 
 type GroupKey = 'curated' | 'nawawi' | 'qudsi' | 'dehlawi'
 
@@ -161,7 +162,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
 
   const header = (title: string, subtitle: string, back: () => void) => (
     <header className="hadith-header">
-      <button type="button" onClick={back} aria-label="رجوع" className="u-pressable hadith-icon-button">←</button>
+      <BackButton onClick={back} />
       <div className="min-w-0 flex-1">
         <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{title}</h1>
         <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">{subtitle}</p>
