@@ -2097,3 +2097,29 @@ html.tab .q2-dial{width:min(60vw,22rem,36vh)}
   html.tab .quran-mini-player.max-w-md{max-width:38rem!important;width:min(92vw,38rem)!important}
 
 html.tab [class*="rounded-t-[1.6rem]"].max-w-md{max-width:38rem!important}
+
+/* Tasbeeh geometry v2: everything is sized from one stage variable (--ts) so the bead ring, progress ring, centre button, imam bead and tassel stay concentric on phone and tablet. */
+.tasbih-bead-stage{--ts:min(70vw,18.5rem)!important;width:var(--ts)!important;height:var(--ts)!important;margin:2.9rem auto .5rem!important}
+html.tab .tasbih-bead-stage{--ts:24rem!important;width:var(--ts)!important;height:var(--ts)!important}
+.tasbih-bead-stage::before,.tasbih-bead-stage::after{display:none!important}
+.tasbih-bead-stage .tasbih-outer-ring{inset:2%!important}
+.tasbih-bead-stage .tasbih-progress-ring{inset:calc(var(--ts) * .1)!important}
+.tasbih-bead-stage .tasbih-beads{inset:0!important}
+.tasbih-bead,html.tab .tasbih-bead{width:calc(var(--ts) * .056)!important;height:calc(var(--ts) * .056)!important}
+.tasbih-count-button{inset:28%!important}
+.tasbih-count{font-family:system-ui,-apple-system,Roboto,sans-serif!important;font-size:calc(var(--ts) * .15)!important;font-weight:800!important;line-height:1!important;letter-spacing:0!important}
+html.tab .tasbih-count{font-size:calc(var(--ts) * .15)!important}
+.tasbih-imam-bead{bottom:auto!important;top:calc(50% - var(--ts) * .4 - var(--ts) * .04)!important;width:calc(var(--ts) * .08)!important;height:calc(var(--ts) * .08)!important;left:50%!important;transform:translateX(-50%)!important}
+.tasbih-tassel{bottom:auto!important;top:calc(50% - var(--ts) * .4 - var(--ts) * .04 - 2.1rem)!important;left:50%!important;width:1.1rem!important;height:2.3rem!important;transform:translateX(-50%)!important}
+.tasbih-progress-copy{width:min(88%,22rem)!important;white-space:nowrap!important}
+.tasbih-progress-copy span{unicode-bidi:isolate}
+.tasbih-session-meta{width:min(100%,26rem)!important;margin-inline:auto!important;display:flex!important;gap:.4rem!important}
+.tasbih-stat{align-items:center!important;text-align:center!important;min-width:0!important;padding:.4rem .2rem!important}
+.tasbih-stat strong,.tasbih-stat small{display:block;width:100%;text-align:center!important;white-space:nowrap!important}
+.tasbih-stat small{font-size:.72rem!important}
+html.tab .tasbih-session-meta{width:min(100%,30rem)!important}
+
+/* Resource use: blur filters on small decorative blobs and backdrop blurs on tiny tile chips cost GPU/battery on every repaint. The blobs already carry a soft radial gradient, so the filter is dropped. */
+.azkar-category-card-orb{filter:none!important}
+.azkar-primary-glow{filter:none!important;background:radial-gradient(circle,hsl(var(--azkar-gold)/.16),transparent 68%)!important}
+.home-tile-icon,.home-tile-arrow{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
