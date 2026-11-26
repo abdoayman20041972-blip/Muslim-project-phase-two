@@ -58,6 +58,8 @@ export interface ExactAlarmsPlugin {
   clearFireLog(): Promise<void>
   /** Native-only facts: battery optimization exemption, notifications enabled, plan needing a rebuild. */
   status(): Promise<NativeStatus>
+  /** Native low-latency click. Fire and forget; the native side returns nothing. */
+  tapSound(options: { kind: 'ui' | 'tasbih' | 'tasbih-complete' }): Promise<void> | void
 }
 
 export type FireResult =
