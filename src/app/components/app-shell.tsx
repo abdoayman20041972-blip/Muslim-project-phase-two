@@ -80,6 +80,24 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   // reload, no loading indicator, and the scroll position survives too.
   // The qibla screen is deliberately excluded: its compass sensors must stop
   // when the user leaves it.
+  // Tablet classes on <html>, set from the measured width. The old Android
+  // System WebView on tablets drops @media (width>=...) rules, so tablet layout
+  // cannot depend on media queries.
+  useEffect(() => {
+    const apply = () => {
+      const w = document.documentElement.clientWidth || window.innerWidth
+      const list = document.documentElement.classList
+      if (w >= 600) list.add('tab'); else list.remove('tab')
+      if (w >= 1000) list.add('tabw'); else list.remove('tabw')
+    }
+    apply()
+    window.addEventListener('resize', apply)
+    window.addEventListener('orientationchange', apply)
+    return () => {
+      window.removeEventListener('resize', apply)
+      window.removeEventListener('orientationchange', apply)
+    }
+  }, [])
   const [visited, setVisited] = useState<Set<string>>(() => new Set(['home', view.name]))
   useEffect(() => {
     setVisited((previous) => (previous.has(view.name) ? previous : new Set(previous).add(view.name)))
