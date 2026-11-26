@@ -122,9 +122,9 @@ export class PdfBookReader extends Component<Props, GuardState> {
   render(): ReactNode {
     if (this.state.failed) {
       return (
-        <div className="book-reader pdf-reader" data-testid="pdf-book-fallback">
-          <div className="pdf-note" role="alert">تعذر عرض هذه الصفحة.</div>
-          <div className="book-controls"><button type="button" data-sound="none" className="book-btn" onClick={() => this.setState((s) => ({ failed: false, attempt: s.attempt + 1 }))}>إعادة المحاولة</button></div>
+        <div data-testid="pdf-book-fallback" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem 1rem' }}>
+          <p role="alert" className="pdf-note" style={{ position: 'static', transform: 'none' }}>تعذر عرض هذه الصفحة.</p>
+          <button type="button" data-sound="none" className="book-btn" onClick={() => this.setState((s) => ({ failed: false, attempt: s.attempt + 1 }))}>إعادة المحاولة</button>
         </div>
       )
     }
