@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, Pause, Play, Radio, RefreshCw, Search, Square } from 'lucide-react'
 import { useRadio } from './RadioProvider'
 import { loadStations, orderedStations, type RadioGroup, type RadioStation } from './radioData'
+import { BackButton } from '../../components/app-chrome'
 
 const GROUPS: Array<{ id: RadioGroup; label: string }> = [
   { id: 'all', label: 'الكل' },
@@ -67,9 +68,7 @@ export function RadioView({ onBack }: { onBack: () => void }) {
   return (
     <section dir="rtl" className="w-full min-w-0" data-testid="radio-view">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="رجوع" className="u-pressable flex h-10 w-10 items-center justify-center rounded-full border border-azkar-hairline bg-azkar-card text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold">
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        <BackButton onClick={onBack} />
         <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">إذاعة القرآن الكريم</h1>
       </div>
 
