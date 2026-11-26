@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BackButton } from '../../components/app-chrome'
 import { acquireLocation, locationFailureMessage } from '../location/acquireLocation'
 import { saveCoords } from '../location/coords'
+import { PrayerSourceCard, PRAYER_CITIES } from './PrayerSourceCard'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { formatLocalizedDate } from '../../constants'
 import {
@@ -33,34 +34,7 @@ const METHOD_LABELS: Record<string, string> = {
   '4': 'جامعة أم القرى',
   '5': 'الهيئة المصرية العامة للمساحة',
 }
-const CITIES = [
-  // M7 fix: expanded preset list — every Egyptian governorate capital, all offline.
-  ['القاهرة', 30.0444, 31.2357],
-  ['الجيزة', 30.0131, 31.2089],
-  ['الإسكندرية', 31.2001, 29.9187],
-  ['المنصورة', 31.0409, 31.3785],
-  ['شبين القناطر', 30.3127, 31.3202],
-  ['طنطا', 30.7865, 30.9982],
-  ['الزقازيق', 30.5877, 31.5020],
-  ['دمنهور', 31.0341, 30.4682],
-  ['كفر الشيخ', 31.1114, 30.9478],
-  ['بورسعيد', 31.2653, 32.3019],
-  ['الإسماعيلية', 30.5965, 32.2715],
-  ['السويس', 29.9668, 32.5498],
-  ['دمياط', 31.4165, 31.8133],
-  ['العريش', 31.1296, 33.8004],
-  ['بني سويف', 29.0661, 31.0994],
-  ['الفيوم', 29.3084, 30.8428],
-  ['المنيا', 28.1099, 30.7503],
-  ['أسيوط', 27.181, 31.1837],
-  ['سوهاج', 26.5591, 31.6957],
-  ['قنا', 26.1551, 32.716],
-  ['الأقصر', 25.6872, 32.6396],
-  ['أسوان', 24.0889, 32.8998],
-  ['الغردقة', 27.2579, 33.7959],
-  ['مرسى مطروح', 31.3534, 27.2243],
-  ['الخارجة', 25.4514, 30.5464],
-] as const
+const CITIES = PRAYER_CITIES
 function CompassIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
@@ -355,6 +329,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
               </div>
             ))}
           </div>
+          <PrayerSourceCard />
           <div className="text-center text-[0.6875rem] text-azkar-ink-faint">
             طريقة الحساب: {METHOD_LABELS[methodLabel] || methodLabel} · المدرسة الفقهية للعصر:{' '}
             {currentSchool() === '1' ? 'حنفي' : 'شافعي/قياسي'} · آخر تحديث للموقع:{' '}
