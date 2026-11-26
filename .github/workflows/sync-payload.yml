@@ -1,0 +1,44 @@
+name: Sync payload
+on:
+  push:
+    branches: [main-2]
+    paths: ['.github/workflows/sync-payload.yml']
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply payload
+        run: |
+          set -e
+          ls -la
+          ls sync/sync
+          cat sync/sync/pchunk* | tr -d '\n' | base64 -d > /tmp/payload.tgz
+          echo "7c59b1f91bf388377c1bba402733d05ec2786cf0821a1f4fe3028a8fcf1bd8fb  /tmp/payload.tgz" | sha256sum -c -
+          mkdir /tmp/pl && tar xzf /tmp/payload.tgz -C /tmp/pl
+          while read -r f; do [ -n "$f" ] && git rm -q -f -- "$f"; done < /tmp/pl/deletions.txt
+          while read -r f; do mkdir -p "$(dirname "$f")"; cp /tmp/pl/"$f" "$f"; done < /tmp/pl/files.txt
+          git rm -q -r -f -- sync
+          git add -A
+      - name: Verify against canonical sha list
+        run: |
+          set -e
+          cd /tmp/pl
+          grep -v -E 'bidaya-history.json|bidaya-history.posmap.json|bidaya-seerah.posmap.json' shas.txt > exp.txt
+          cd "$GITHUB_WORKSPACE"
+          bad=0
+          while read -r h f; do echo "$h  $f" | sha256sum -c --quiet - || bad=1; done < /tmp/pl/exp.txt
+          git ls-files | grep -v '^.github/' | sed 's#^#./#' | sort > have.txt
+          awk '{print $2}' /tmp/pl/shas.txt | sort > want.txt
+          diff have.txt want.txt && echo "FILE SET MATCH" || bad=1
+          rm -f have.txt want.txt
+          test $bad -eq 0
+      - name: Commit
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git commit -q -m "Apply audited tree (sync payload)"
+          git push origin HEAD:main-2
+          git log --oneline -1
