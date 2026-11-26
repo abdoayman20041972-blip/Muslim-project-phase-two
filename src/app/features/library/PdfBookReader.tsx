@@ -9,6 +9,15 @@ type Doc = { numPages: number; getPage: (n: number) => Promise<{ getViewport: (o
  * Scanned-book reader: shows the original printed page as an image, one page at a time, loaded on demand from the PDF
  * (HTTP range requests, so only the pages you open are downloaded). No text layer, no search. pdf.js is loaded on first use.
  */
+const CACHE_NAME = 'library-scans-v1'
+async function readCache(url: string): Promise<ArrayBuffer | null> {
+  try { if (typeof caches === 'undefined') return null; const hit = await (await caches.open(CACHE_NAME)).match(url); return hit ? await hit.arrayBuffer() : null } catch { return null }
+}
+
+async function readLocal(url: string): Promise<ArrayBuffer | null> {
+  try { const r = await fetch(url); return r.ok ? await r.arrayBuffer() : null } catch { return null }
+}
+
 export function PdfBookReader({ title, pdfUrl, credit, firstPage = 1 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -27,7 +36,9 @@ export function PdfBookReader({ title, pdfUrl, credit, firstPage = 1 }: Props) {
         const pdfjs = await import('pdfjs-dist')
         const worker = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
         pdfjs.GlobalWorkerOptions.workerSrc = worker
-        const doc = (await pdfjs.getDocument({ url: pdfUrl, rangeChunkSize: 65536, wasmUrl: `${import.meta.env.BASE_URL}pdfjs/wasm/` }).promise) as unknown as Doc
+        const wasmUrl = `${import.meta.env.BASE_URL}pdfjs/wasm/`
+        const cached = pdfUrl.startsWith('http') ? await readCache(pdfUrl) : await readLocal(pdfUrl)
+        const doc = (await pdfjs.getDocument(cached ? { data: new Uint8Array(cached), wasmUrl } : { url: pdfUrl, rangeChunkSize: 65536, wasmUrl }).promise) as unknown as Doc
         if (cancelled) { void doc.destroy(); return }
         docRef.current = doc
         setPages(doc.numPages)
@@ -46,10 +57,11 @@ export function PdfBookReader({ title, pdfUrl, credit, firstPage = 1 }: Props) {
       try {
         const p = await doc.getPage(Math.min(Math.max(page, 1), doc.numPages))
         const base = p.getViewport({ scale: 1 })
-        const scale = (stage.clientWidth / base.width) * zoom * Math.min(window.devicePixelRatio || 1, 2)
+        const fit = 1
+        const scale = (stage.clientWidth / base.width) * fit * zoom * Math.min(window.devicePixelRatio || 1, 2)
         const viewport = p.getViewport({ scale })
         canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height)
-        canvas.style.width = `${zoom * 100}%`
+        canvas.style.width = `${zoom * fit * 100}%`; canvas.style.margin = fit < 1 ? '0 auto' : ''
         const ctx = canvas.getContext('2d')
         if (!ctx) throw new Error('no canvas')
         await p.render({ canvasContext: ctx, viewport, canvas }).promise
@@ -71,7 +83,8 @@ export function PdfBookReader({ title, pdfUrl, credit, firstPage = 1 }: Props) {
 
   return (
     <div className="book-reader pdf-reader" data-testid="pdf-book-reader">
-      <div className="book-reader-top"><span className="book-reader-title">{title}</span><span className="book-reader-count">{pages ? `صفحة ${toArabicNumber(page)} من ${toArabicNumber(pages)} في الملف` : ''}</span></div>
+      <div className="book-reader-top"><span className="book-reader-count" aria-label={title}>{pages ? `صفحة ${toArabicNumber(page)} من ${toArabicNumber(pages)} في الملف` : ''}</span>
+      </div>
       <div className="book-spread">
         <div ref={stageRef} className="book-stage pdf-stage">
           <canvas ref={canvasRef} className={`pdf-canvas ${turn ? `pdf-turn-${turn}` : ''}`} aria-label={`صفحة ${page} من الكتاب المصور`} />
@@ -85,8 +98,8 @@ export function PdfBookReader({ title, pdfUrl, credit, firstPage = 1 }: Props) {
         <button type="button" data-sound="none" onClick={() => setZoom((z) => Math.min(3, +(z + 0.5).toFixed(1)))} disabled={zoom >= 3} aria-label="تكبير" className="book-btn"><Plus className="h-5 w-5" /></button>
       </div>
       <div className="book-controls">
-        <button type="button" data-sound="none" onClick={() => go(1)} disabled={!pages || page >= pages} aria-label="الصفحة التالية" className="book-btn"><ChevronRight className="h-5 w-5" />التالية</button>
-        <button type="button" data-sound="none" onClick={() => go(-1)} disabled={page <= 1} aria-label="الصفحة السابقة" className="book-btn">السابقة<ChevronLeft className="h-5 w-5" /></button>
+        <button type="button" data-sound="none" onClick={() => go(-1)} disabled={page <= 1} aria-label="الصفحة السابقة" className="book-btn"><ChevronRight className="h-5 w-5" />السابقة</button>
+        <button type="button" data-sound="none" onClick={() => go(1)} disabled={!pages || page >= pages} aria-label="الصفحة التالية" className="book-btn">التالية<ChevronLeft className="h-5 w-5" /></button>
       </div>
       <p className="book-credit">{credit}</p>
     </div>
