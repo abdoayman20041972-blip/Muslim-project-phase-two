@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction } from 'react'
 import { APP_SETTINGS_KEYS } from '../../../settings'
 import { Row, Section, Choice } from '../settingsPrimitives'
+import { PrayerSourceCard } from '../../prayer/PrayerSourceCard'
 
 type PrayerSectionProps = {
   calc: string
@@ -18,6 +19,7 @@ export function PrayerSection({
 }: PrayerSectionProps) {
   return (
     <Section title="الصلاة">
+      <PrayerSourceCard />
       <Row title="طريقة حساب مواقيت الصلاة" stacked>
         <Choice current={calc} onChange={(v) => { setCalc(v); save(APP_SETTINGS_KEYS.prayerCalcMethod, v) }} labels={{
           '3': 'رابطة العالم الإسلامي', '4': 'أم القرى مكة', '5': 'الهيئة المصرية العامة للمساحة',
