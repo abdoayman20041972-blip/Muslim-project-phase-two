@@ -147,8 +147,8 @@ jobs:
 
       - name: Set version name and version code
         env:
-          VERSION_NAME: "1.4.19"
-          VERSION_CODE: "22"
+          VERSION_NAME: "1.4.20"
+          VERSION_CODE: "23"
         run: |
           # versionCode must strictly increase with every release APK, otherwise
           # Android refuses the new file as an update. Bump both values together.
@@ -163,7 +163,7 @@ jobs:
       # a manual bump upward is always accepted).
       - name: Check versionCode is an integer and did not decrease
         run: |
-          # Accepts VERSION_CODE: "22", '22' or 22 (optionally followed by a comment).
+          # Accepts VERSION_CODE: "23", '22' or 22 (optionally followed by a comment).
           parse() { grep -E '^\s*VERSION_CODE:' | head -n 1 | sed -E 's/^[^:]*:[[:space:]]*//; s/[[:space:]]*#.*$//' | tr -d "\"' \t\r"; }
           NOW=$(parse < .github/workflows/build-apk.yml)
           case "$NOW" in ''|*[!0-9]*) echo "::error::VERSION_CODE in the current workflow is not a plain integer (got '$NOW')"; exit 1;; esac
