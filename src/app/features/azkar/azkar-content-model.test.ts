@@ -62,7 +62,7 @@ describe('azkar content model', () => {
     expect(amsayna[0].text).toContain('الْكَسَلِ')
     expect(amsayna[0].text).toContain('سُوءِ الْكِبَرِ')
     expect(amsayna[0].source).toContain('٢٧٢٣')
-    expect(evening.items.length).toBe(11)
+    expect(evening.items.length).toBe(13)
   })
 
   it('fixes the kufr/faqr dua to the Abu Dawud 5090 wording with its count of three', () => {
@@ -112,6 +112,6 @@ describe('azkar content model', () => {
   })
 
   it('keeps the catalog smaller after dedup', () => {
-    expect(totalAzkarCount).toBe(134)
+    expect(totalAzkarCount).toBe(138)
   })
 })
