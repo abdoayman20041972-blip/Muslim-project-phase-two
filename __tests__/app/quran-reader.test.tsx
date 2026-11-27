@@ -129,7 +129,8 @@ describe('QuranReaderView', () => {
 
     const toolbar = await screen.findByRole('toolbar', { name: 'إجراءات الآية ١' })
     expect(toolbar).toHaveStyle({ top: '52px', left: '8px' })
-    expect(screen.getAllByRole('button').filter((button) => toolbar.contains(button))).toHaveLength(3)
+    const tools = screen.getAllByRole('button').filter((button) => toolbar.contains(button))
+    expect(tools.map((button) => button.getAttribute('aria-label'))).toEqual(['مشاركة الآية', 'نسخ الآية', 'تفسير الآية', 'استماع للآية'])
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('toolbar', { name: 'إجراءات الآية ١' })).toBeNull()
