@@ -69,8 +69,15 @@ const toBase64Utf8 = (text: string) => {
  * Saves a backup file. Native: written to the cache folder and handed to the system share
  * sheet (same path as share cards). Web: normal anchor download. Returns false on failure.
  */
+let nativeExportBusy = false
+
 export async function saveBackupFile(json: string, filename: string): Promise<boolean> {
   if (Capacitor.isNativePlatform()) {
+    // A second tap while an export is open is ignored, so its cleanup can never delete the
+    // file the first share sheet is still reading.
+    if (nativeExportBusy) return true
+    nativeExportBusy = true
+    let handedOff = false
     try {
       const { Filesystem, Directory } = await import('@capacitor/filesystem')
       const { Share } = await import('@capacitor/share')
@@ -80,6 +87,7 @@ export async function saveBackupFile(json: string, filename: string): Promise<bo
       await Filesystem.rmdir({ path: 'backups', directory: Directory.Cache, recursive: true }).catch(() => undefined)
       await Filesystem.writeFile({ path, data: toBase64Utf8(json), directory: Directory.Cache, recursive: true })
       const { uri } = await Filesystem.getUri({ path, directory: Directory.Cache })
+      handedOff = true
       await Share.share({ files: [uri], dialogTitle: 'حفظ النسخة الاحتياطية' })
       return true
     } catch (error) {
@@ -87,12 +95,17 @@ export async function saveBackupFile(json: string, filename: string): Promise<bo
       // Closing the share sheet is not a failure.
       if (/cancel/i.test(message)) return true
       console.error('[backup] native export failed', error)
-      // Nothing was shared: do not leave the file behind.
-      try {
-        const { Filesystem, Directory } = await import('@capacitor/filesystem')
-        await Filesystem.rmdir({ path: 'backups', directory: Directory.Cache, recursive: true })
-      } catch { /* nothing to clean */ }
+      // Once the file reached the share sheet it may still be read, so only a failure
+      // before that point (write or URI) cleans up; the next export clears the rest.
+      if (!handedOff) {
+        try {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem')
+          await Filesystem.rmdir({ path: 'backups', directory: Directory.Cache, recursive: true })
+        } catch { /* nothing to clean */ }
+      }
       return false
+    } finally {
+      nativeExportBusy = false
     }
   }
   try {
