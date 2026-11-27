@@ -31,4 +31,26 @@ describe('backup export on native (mocked plugins; real device untested)', () =>
     // A failed export leaves no file behind.
     expect(rmdir.mock.calls.length).toBeGreaterThanOrEqual(2)
   })
+  it('ignores a second export while one is open and keeps the file after a share error', async () => {
+    const { saveBackupFile } = await import('../../src/app/backupIO')
+    rmdir.mockClear(); writeFile.mockClear(); share.mockReset()
+    let finish: (v?: unknown) => void = () => undefined
+    share.mockImplementationOnce(() => new Promise((r) => { finish = r }))
+    const first = saveBackupFile('{}', 'b.json')
+    await vi.waitFor(() => expect(share).toHaveBeenCalledTimes(1))
+    // Second tap while the first share sheet is open: no new write, no cleanup.
+    expect(await saveBackupFile('{}', 'b.json')).toBe(true)
+    expect(writeFile).toHaveBeenCalledTimes(1)
+    expect(rmdir).toHaveBeenCalledTimes(1)
+    finish({})
+    expect(await first).toBe(true)
+    // A real share error after hand-off reports failure but does not delete the file.
+    rmdir.mockClear()
+    share.mockRejectedValueOnce(new Error('share target crashed'))
+    expect(await saveBackupFile('{}', 'b.json')).toBe(false)
+    expect(rmdir).toHaveBeenCalledTimes(1) // only the pre-write clear of the previous export
+    // The busy flag is released afterwards.
+    share.mockResolvedValueOnce({})
+    expect(await saveBackupFile('{}', 'b.json')).toBe(true)
+  })
 })
