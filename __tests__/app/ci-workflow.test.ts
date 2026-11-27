@@ -93,6 +93,14 @@ describe('build-apk.yml hardening (static checks; the workflow itself runs only 
     expect(smoke).toContain('exit 1')
   })
 
+  it('runs lint as an advisory (non-blocking) step through scripts/lint.sh', () => {
+    const s = step('Lint (non-blocking)')
+    expect(s).toContain('continue-on-error: true')
+    expect(s).toContain('bash scripts/lint.sh')
+    expect(yml.indexOf('- name: Lint (non-blocking)')).toBeGreaterThan(yml.indexOf('- name: Tests (blocking)'))
+    expect(yml.indexOf('- name: Lint (non-blocking)')).toBeLessThan(yml.indexOf('- name: Build web app'))
+  })
+
   it('does not publish a release or push anything', () => {
     expect(yml).not.toMatch(/gh release|softprops|create-release|git push|contents: write/)
   })
