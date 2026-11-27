@@ -40,3 +40,26 @@ export function formatPrayerTime(value:string){
 export * from './prayerCoords'
 export * from './prayerTimings'
 export * from './nextPrayer'
+
+// Manual per-prayer fine-tuning, -5..+5 minutes, default 0. Stored raw times
+// (cache, adhan output) never include it: it is applied on the way out.
+export const OFFSET_PRAYERS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'] as const
+export const MAX_PRAYER_OFFSET = 5
+export type PrayerOffsets = Record<typeof OFFSET_PRAYERS[number], number>
+export function clampOffset(v:unknown):number{const n=Math.round(Number(v));return Number.isFinite(n)?Math.max(-MAX_PRAYER_OFFSET,Math.min(MAX_PRAYER_OFFSET,n)):0}
+export function readPrayerOffsets():PrayerOffsets{
+  let raw:Record<string,unknown>={}
+  try{const p=JSON.parse(readSetting(APP_SETTINGS_KEYS.prayerOffsets,'{}'));if(p&&typeof p==='object')raw=p as Record<string,unknown>}catch{raw={}}
+  return Object.fromEntries(OFFSET_PRAYERS.map(k=>[k,clampOffset(raw[k])])) as PrayerOffsets
+}
+export function prayerOffsetsKey():string{const o=readPrayerOffsets();return OFFSET_PRAYERS.map(k=>o[k]).join(',')}
+function shiftHHMM(value:string,minutes:number):string{
+  const m=/^(\d{1,2}):(\d{2})(.*)$/.exec(value);if(!m||!minutes)return value
+  const t=((Number(m[1])*60+Number(m[2])+minutes)%1440+1440)%1440
+  return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')+m[3]
+}
+export function applyPrayerOffsets(t:Timings,offsets:PrayerOffsets=readPrayerOffsets()):Timings{
+  const out:Timings={...t}
+  for(const k of OFFSET_PRAYERS)if(typeof out[k]==='string')out[k]=shiftHHMM(out[k],offsets[k])
+  return out
+}
