@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { shareQuoteCard } from './shareActions'
 import { CopyButton } from './CopyButton'
+import { parseReference } from './zikrReference'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
 import { toArabicDigits, toArabicNumber, type View } from '../../constants'
@@ -85,6 +86,8 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
               ? <div className="px-5 py-10 text-center"><div className="font-cairo text-[1.125rem] font-bold text-azkar-ink">لا توجد نتائج</div><div className="mt-1 text-[0.6875rem] text-azkar-ink-faint">جرّب نصًا آخر أو اختر قسمًا مختلفًا.</div></div>
               : visibleFavorites.map(({ key, category, item }) => {
                   const counted = isCountedZikr(item)
+                  const parsedSource = item.source ? parseReference(item.source) : undefined
+                  const displaySource = parsedSource && !parsedSource.ignored ? parsedSource.value : undefined
                   const kindLabel = item.kind === 'fadl' ? 'فضل وخبر' : item.kind === 'guidance' ? 'إرشاد وآداب' : undefined
                   const target = itemTarget(item.repeat)
                   const current = itemCount(isOccasionalCategory(category.id) ? occasionCounts[category.id] || {} : progress, key, item.repeat)
@@ -108,7 +111,7 @@ export function FavoritesView({ favorites, onToggleFavorite, onBack, setView }: 
                     </div>}
                     <div className="relative mt-4 flex items-center gap-2 border-t border-azkar-hairline pt-3">
                       <button onClick={() => setView?.({ name: 'category', id: category.id })} aria-label={`فتح ${category.label}`} className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-teal/20 bg-azkar-teal-tint px-3 text-[0.8125rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">فتح في القسم</button>
-                      <CopyButton text={toArabicDigits(item.text)} label="نسخ الذكر" className="h-9" />
+                      <CopyButton text={toArabicDigits(item.text)} reference={displaySource ? toArabicDigits(displaySource) : undefined} label="نسخ الذكر" className="h-9" />
                       <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable flex h-9 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.8125rem] font-bold text-azkar-teal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal"><ShareIcon/>مشاركة</button>
                     </div>
                   </article>
