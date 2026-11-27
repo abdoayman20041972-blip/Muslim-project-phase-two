@@ -11,7 +11,7 @@ export function QiblaView({ onBack, onOpenLocation }: { onBack: () => void; onOp
       <span className="q2-back-slot"><BackButton onClick={onBack} overlay /></span>
 
       <header className="q2-title">
-        <h1 className="font-amiri">القبلة</h1>
+        <h1 className="font-cairo">القبلة</h1>
         <svg viewBox="0 0 64 64" className="q2-kaaba" aria-hidden="true">
           <path d="M13 24 32 15l19 9-19 9-19-9Z" fill="#111816" stroke="#d8b45c" strokeWidth="1.6" />
           <path d="M13 24v22l19 10V33L13 24Z" fill="#161d1b" stroke="#d8b45c" strokeWidth="1.4" />
