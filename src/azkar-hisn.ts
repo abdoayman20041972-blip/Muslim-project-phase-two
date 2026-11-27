@@ -1,5 +1,6 @@
 // Content sourced from Hisn al-Muslim (hisnmuslim.com), baked in for full offline use.
-// Texts cleaned from raw dataset brackets; each item carries a stable id and a content kind:
+// Raw dataset brackets, digits and markup were stripped. Known leftover: two verse items (11 separators) still carry the dataset's
+// " * " verse separators (see __tests__/app/azkar-hisn-text-state.test.ts); they were NOT rewritten here. Each item carries a stable id and a content kind:
 // counted dhikr (default), fadl (virtue/report shown without a counter), guidance (etiquette without a counter).
 import type { ZikrCategory } from './azkar-data'
 
