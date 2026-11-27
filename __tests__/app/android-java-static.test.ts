@@ -32,6 +32,16 @@ describe('AdhanService (source checks, compiled only in CI)', () => {
     expect(adhan).toContain('putExtra("channel", entry.channelId)')
   })
 
+  it('gives the fallback notification a sound on every API level and checks POST_NOTIFICATIONS first', () => {
+    const fb = adhan.slice(adhan.indexOf('private void postFallbackNotification('), adhan.indexOf('private Notification buildNotification('))
+    expect(fb).toContain('Manifest.permission.POST_NOTIFICATIONS')
+    expect(fb).toContain('Log.w(TAG')
+    expect(fb.indexOf('POST_NOTIFICATIONS')).toBeLessThan(fb.indexOf('manager.notify('))
+    expect(fb).toContain('RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)')
+    expect(fb).toContain('fallback.setSound(sound')
+    expect(fb).toContain('.setSound(sound)')
+  })
+
   it('keeps the existing audio usage (silent and do-not-disturb behaviour unchanged)', () => {
     expect(adhan).toContain('AudioAttributes.USAGE_NOTIFICATION')
     expect(adhan).not.toContain('USAGE_ALARM')
