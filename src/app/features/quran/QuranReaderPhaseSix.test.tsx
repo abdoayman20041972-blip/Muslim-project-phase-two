@@ -110,12 +110,19 @@ describe('Quran reader phase six', () => {
     delete (window.HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView
   })
 
-  it('has no copy action on an ayah, only share and tafsir', async () => {
+  it('has a copy action in the ayah menu that copies the ayah text with its surah and number', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
     renderReader()
     const options = await screen.findAllByLabelText(/خيارات الآية/)
     fireEvent.click(options[1])
     expect(await screen.findByRole('button', { name: 'مشاركة الآية' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'نسخ الآية' })).toBeNull()
-    expect(screen.queryByText('نسخ نص الآية')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'نسخ الآية' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const copied = String(writeText.mock.calls[0][0])
+    const [body, reference] = copied.split('\n')
+    expect(body.length).toBeGreaterThan(0)
+    expect(reference).toMatch(/^سورة .+ — آية ٢$/)
+    await waitFor(() => expect(screen.getByTestId('copy-done').textContent).toBe('تم النسخ'))
   })
 })

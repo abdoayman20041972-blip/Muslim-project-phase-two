@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { shareQuoteCard } from '../azkar/shareActions'
+import { CopyButton } from '../azkar/CopyButton'
 import { BookOpen, ChevronLeft, ChevronRight, ExternalLink, Search, Share2, Sparkles, X } from 'lucide-react'
 import {
   API_EDITIONS,
@@ -235,6 +236,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
               )}
               {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[0.8125rem] leading-relaxed text-azkar-ink-soft"><span className="block font-bold">ملاحظة توضيحية</span>{item.note}</p>}
               <div className="mt-3 flex gap-2 border-t border-azkar-hairline pt-3">
+                <CopyButton text={item.text} reference={item.source ? toArabicDigits(item.source) : undefined} label="نسخ الحديث" className="min-h-11 flex-1 justify-center" />
                 <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[0.8125rem] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
               </div>
               <p role="status" className="mt-1 min-h-4 text-center text-[0.6875rem] text-azkar-ink-faint">{status}</p>

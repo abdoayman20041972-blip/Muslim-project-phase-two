@@ -1,3 +1,4 @@
+import { CopyButton } from '../azkar/CopyButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft } from 'lucide-react'
 import { setMoreSubBackHandler } from '../home/moreNav'
@@ -203,6 +204,7 @@ export function EssentialsChapter({ chapter, onBack, position, isRead, onToggleR
                   ? <ul className="ess-qs">{body.items.map((t, i) => <li key={i}>{t}</li>)}</ul>
                   : <ul className="ess-list ess-bullets">{body.items.map((t, i) => <li key={i}>{t}</li>)}</ul>
             )}
+            <CopyButton text={[sectionTitle(chapter, kind), ...(body.paragraphs ?? []), ...(body.items ?? [])].join('\n')} reference={`${chapter.title} · ${chapter.sources.map((x) => x.title).join('، ')}`} label="نسخ القسم" />
           </section>
         )
       })}

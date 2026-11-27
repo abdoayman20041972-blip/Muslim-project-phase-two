@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toArabicNumber } from '../../constants'
 import type { DailyAyah } from '../../../daily-ayahs'
-import { showShareFailure } from '../azkar/shareActions'
+import { copyWithToast, showShareFailure } from '../azkar/shareActions'
 import { shareCardImage } from '../azkar/shareCard'
 import { useQuranTafsir } from '../quran/useQuranTafsir'
 import { dailyAyahReference, fullTextForDailyAyah, surahNumberForDailyAyah } from './dailyAyahFull'
@@ -71,6 +71,10 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
     const full = await ensureFull()
     return { text: full ?? ayah.text, complete: Boolean(full) }
   }
+  async function onCopy() {
+    const { text } = await payload()
+    await copyWithToast(text, reference)
+  }
   async function onShare() {
     const { text } = await payload()
     try {
@@ -110,6 +114,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       <div className="mt-2.5 flex items-center gap-1 px-3" role="group" aria-label="إجراءات آية اليوم">
         <button type="button" className={primary} aria-expanded={panel === 'full'} onClick={toggleFull}>الآية كاملة</button>
         <button type="button" className={quiet} aria-expanded={panel === 'tafsir'} onClick={toggleTafsir}>التفسير</button>
+        <button type="button" className={quiet} onClick={onCopy} aria-label="نسخ الآية">نسخ</button>
         <button type="button" className={quiet} onClick={onShare}>مشاركة</button>
       </div>
       <div className="mt-1.5 text-[0.6875rem] font-semibold text-white/75">{reference}</div>

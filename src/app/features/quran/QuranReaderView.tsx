@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { shareImageBlob } from '../azkar/shareCard'
-import { showShareFailure } from '../azkar/shareActions'
+import { copyWithToast, showShareFailure } from '../azkar/shareActions'
 import { useBackHandler } from '../../backStack'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
@@ -36,6 +36,14 @@ function ShareIcon() {
       <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.6" />
       <path d="m8.2 10.8 7.5-4.5M8.2 13.2l7.5 4.5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  )
+}
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+      <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }
@@ -720,6 +728,18 @@ export function QuranReaderView({ view, setView }: Props) {
               >
                 <ShareIcon />
                 مشاركة
+              </button>
+              <button
+                onClick={() => {
+                  const a = panel
+                  setPanel(null)
+                  void copyWithToast(a.text, `سورة ${activeSurah!.shortName} — آية ${toArabicNumber(a.numberInSurah)}`)
+                }}
+                aria-label="نسخ الآية"
+                className="quran-tool-btn u-pressable"
+              >
+                <CopyIcon />
+                نسخ
               </button>
               <button
                 onClick={() => openCenter(panel)}

@@ -1,5 +1,6 @@
 import { useEffect,useMemo,useState } from 'react'
 import { shareQuoteCard } from './shareActions'
+import { CopyButton } from './CopyButton'
 import type { ZikrCategory } from '../../../azkar-data'
 import { BackButton } from '../../components/app-chrome'
 import { useConfirmDialog } from '../../components/confirm-dialog'
@@ -273,10 +274,13 @@ export function CategoryView({ category, favorites, onToggleFavorite, onBack, hi
             {item.reference?.grade && <span className="rounded-full border border-azkar-hairline bg-azkar-surface-1 px-2 py-0.5 text-[0.6875rem] font-bold text-azkar-ink-soft">{item.reference.grade}</span>}
             {item.reference?.url && <a href={item.reference.url} target="_blank" rel="noreferrer" className="inline-flex min-h-[2.5rem] items-center px-1 text-[0.8125rem] font-bold text-azkar-teal underline underline-offset-2">المصدر</a>}
             </div>
+            <div className="flex shrink-0 items-center gap-2">
+            <CopyButton text={toArabicDigits(item.text)} reference={displaySource ? toArabicDigits(displaySource) : undefined} label="نسخ الذكر" />
             <button onClick={() => void shareQuoteCard({ text: toArabicDigits(item.text), reference: displaySource ? toArabicDigits(displaySource) : undefined, heading: category.label, filename: 'zikr.png' })} aria-label="مشاركة الذكر" className="u-pressable inline-flex h-8 items-center gap-2 rounded-full border border-azkar-hairline bg-azkar-surface-1 px-3 text-[0.8125rem] font-bold text-azkar-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-teal">
               <ShareIcon />
               <span>مشاركة</span>
             </button>
+            </div>
           </div>
         </article>
       })}

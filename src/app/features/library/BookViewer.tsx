@@ -72,6 +72,8 @@ export function BookViewer({ book, onClose }: { book: LibraryBook; onClose: () =
         <BookReader
           key={chapter}
           paragraphs={c.p}
+          copyText={c.p.join('\n\n')}
+          copyReference={`${book.title} · ${c.t}`}
           credit="ويكي مصدر · CC BY-SA 4.0"
           hasNextChapter={chapter < last}
           hasPrevChapter={chapter > 0}
