@@ -18,6 +18,7 @@ import { useConfirmDialog } from '../../components/confirm-dialog'
 import { removeFromMirror, replaceMirror } from '../storage/preferencesMirror'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
 import { validateBackupEntries } from '../../backupValidation'
+import { applyBackupAtomically, saveBackupFile } from '../../backupIO'
 import { dropPrayerPlanCarryover } from '../notifications/nativeNotifications'
 import { readPrayerCoords } from '../prayer/prayerTimes'
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
@@ -191,27 +192,20 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         const v = localStorage.getItem(k)
         if (v !== null) data[k] = v
       })
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            app: 'مسلم',
-            format: 'muslim-local-backup',
-            version: 2,
-            exportedAt: new Date().toISOString(),
-            data,
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: 'application/json' },
+    const json = JSON.stringify(
+      {
+        app: 'مسلم',
+        format: 'muslim-local-backup',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data,
+      },
+      null,
+      2,
     )
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'muslim-backup-' + new Date().toISOString().slice(0, 10) + '.json'
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    void saveBackupFile(json, 'muslim-backup-' + new Date().toISOString().slice(0, 10) + '.json').then((ok) => {
+      if (!ok) void alert({ message: 'تعذّر حفظ النسخة الاحتياطية. حاول مرة أخرى.' })
+    })
   }
   const importData = async (file: File) => {
     try {
@@ -222,12 +216,13 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
       if (!entries.length) throw 0
       const skipNote = rejected.length ? ` سيتم تجاهل ${rejected.length} عنصر تالف في الملف.` : ''
       if (!(await confirm({ message: 'استبدال البيانات الحالية بالنسخة الاحتياطية؟' + skipNote }))) return
-      Object.keys(localStorage)
-        .filter(isBackupKey)
-        .forEach((k) => localStorage.removeItem(k))
-      entries.forEach(([k, v]) => localStorage.setItem(k, v))
-      if (!(await replaceMirror(entries))) {
-        await alert({ message: 'تم استيراد النسخة، لكن تعذّر تحديث التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود بيانات قديمة. حاول الاستيراد مرة أخرى.' })
+      const applied = await applyBackupAtomically(entries, isBackupKey, replaceMirror)
+      if (!applied.ok) {
+        await alert({
+          message: applied.restored
+            ? 'تعذّر استيراد النسخة، وأُعيدت بياناتك السابقة كما كانت. لم يتغير شيء. حاول مرة أخرى.'
+            : 'تعذّر استيراد النسخة، وتعذّرت إعادة بعض البيانات السابقة بالكامل. لا تُغلق التطبيق قبل التحقق من إعداداتك، وحاول الاستيراد مرة أخرى.',
+        })
         return
       }
       // A backup without a usable location must not leave prayer alarms from the old one.
