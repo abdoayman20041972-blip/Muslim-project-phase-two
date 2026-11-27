@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import { ConfirmDialogProvider, useConfirmDialog } from '../../src/app/components/confirm-dialog'
@@ -25,5 +26,26 @@ describe('hardware back closes overlays first', () => {
     expect(results).toEqual([false])
     expect(backHandlerCount()).toBe(0)
     expect(runTopBackHandler()).toBe(false)
+  })
+})
+
+describe('opening a dialog does not remount the app tree', () => {
+  it('keeps child state while a dialog opens and closes', async () => {
+    function Counter() {
+      const [n, setN] = useState(0)
+      const { alert } = useConfirmDialog()
+      return <button onClick={() => { setN(n + 1); void alert({ message: 'تنبيه' }) }}>{'n=' + n}</button>
+    }
+    render(
+      <ConfirmDialogProvider>
+        <Counter />
+      </ConfirmDialogProvider>,
+    )
+    await act(async () => { screen.getByText('n=0').click() })
+    expect(screen.getByText('تنبيه')).toBeTruthy()
+    expect(screen.getByText('n=1')).toBeTruthy()
+    // Back closes the dialog; the state survived the open dialog (no remount).
+    await act(async () => { runTopBackHandler() })
+    expect(screen.getByText('n=1')).toBeTruthy()
   })
 })
