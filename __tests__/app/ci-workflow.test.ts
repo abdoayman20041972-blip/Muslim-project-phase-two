@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -43,6 +44,29 @@ describe('build-apk.yml hardening (static checks; the workflow itself runs only 
     expect(s).toContain('android:allowBackup')
     expect(s).toContain("=(type 0x12)0x0")
     expect(s).toContain('exit 1')
+  })
+
+  it('asserts the data-extraction rules and fullBackupContent attributes and derives the APK path from the signing variant', () => {
+    const s = step('Verify APK disallows backup')
+    expect(s).toContain('android:dataExtractionRules')
+    expect(s).toContain('android:fullBackupContent')
+    expect(s).toContain('steps.signing.outputs.variant')
+    expect(s).not.toContain('apk/release/app-release.apk')
+  })
+
+  it('versionCode guard accepts quoted/unquoted values and fails loudly instead of skipping', () => {
+    const s = step('Check versionCode is an integer and did not decrease')
+    expect(s).toContain('Could not read VERSION_CODE from the previous commit')
+    expect(s).toContain('git rev-parse --verify --quiet HEAD~1')
+    expect(s).not.toMatch(/\*\[!0-9\]\*\) PREV=""/)
+    // behaviour of the parser itself, run with real bash
+    const parse = /parse\(\) \{[^\n]*\}/.exec(s)![0]
+    const run = (line: string) => execFileSync('bash', ['-c', `${parse}\nprintf '%s\\n' "$1" | parse`, 'x', line]).toString().trim()
+    expect(run('          VERSION_CODE: "22"')).toBe('22')
+    expect(run("          VERSION_CODE: '23'")).toBe('23')
+    expect(run('          VERSION_CODE: 24 # c')).toBe('24')
+    expect(run('          VERSION_CODE: "2x"')).toBe('2x')
+    expect(run('          OTHER: 1')).toBe('')
   })
 
   it('checks versionCode is an integer that did not decrease, and leaves the version values alone', () => {
