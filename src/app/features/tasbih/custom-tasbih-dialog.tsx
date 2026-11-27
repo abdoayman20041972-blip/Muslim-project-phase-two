@@ -88,7 +88,7 @@ export function useCustomTasbihDialog(): {
         aria-labelledby="custom-tasbih-dialog-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <h2 id="custom-tasbih-dialog-title" className="font-amiri text-xl font-bold text-azkar-teal-ink">
+        <h2 id="custom-tasbih-dialog-title" className="font-cairo text-xl font-bold text-azkar-teal-ink">
           {state.existing ? 'تعديل الذكر' : 'إضافة ذكر مخصص'}
         </h2>
         <div className="mt-5 text-right">
