@@ -383,4 +383,4 @@ function getNearestCityLabel(coords: ReturnType<typeof usePrayerCoords>) {
     }
   }
   return nearest[0]
-    }
+}
