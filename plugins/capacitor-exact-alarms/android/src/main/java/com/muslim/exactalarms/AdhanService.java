@@ -1,5 +1,6 @@
 package com.muslim.exactalarms;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
@@ -14,10 +16,14 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 /**
  * Plays the adhan once, from start to its natural end, as a foreground service.
@@ -43,6 +49,7 @@ public class AdhanService extends Service {
     static final String CHANNEL_ID = "adhan-playback-v1";
     static final String FALLBACK_CHANNEL_ID = "adhan-fallback-v1";
     private static final String WAKE_TAG = "muslim:adhan";
+    private static final String TAG = "AdhanService";
     /** Fallback watchdog when the recording length is unknown; normally length + 30s is used. */
     private static final long MAX_PLAY_MS = 6L * 60_000;
 
@@ -229,12 +236,25 @@ public class AdhanService extends Service {
         try {
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (manager == null) return;
+            // Same explicit check as AlarmFireReceiver: a denied POST_NOTIFICATIONS (Android 13+) drops
+            // the notification silently, so log it instead of pretending it was shown.
+            if (Build.VERSION.SDK_INT >= 33
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Adhan fallback notification not shown: POST_NOTIFICATIONS is not granted");
+                return;
+            }
+            Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             String channel = channelId;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (channel == null || channel.isEmpty() || manager.getNotificationChannel(channel) == null) {
                     channel = FALLBACK_CHANNEL_ID;
                     if (manager.getNotificationChannel(channel) == null) {
-                        manager.createNotificationChannel(new NotificationChannel(channel, "تنبيه الأذان", NotificationManager.IMPORTANCE_HIGH));
+                        NotificationChannel fallback = new NotificationChannel(channel, "تنبيه الأذان", NotificationManager.IMPORTANCE_HIGH);
+                        fallback.setSound(sound, new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build());
+                        manager.createNotificationChannel(fallback);
                     }
                 }
             } else if (channel == null) {
@@ -255,6 +275,7 @@ public class AdhanService extends Service {
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setSound(sound)
                 .setContentIntent(PendingIntent.getActivity(this, id, launch, piFlags));
             manager.notify(id == 0 ? 7001 : id, builder.build());
         } catch (RuntimeException ignored) {
