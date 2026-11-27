@@ -2,7 +2,7 @@ import { copyWithToast } from './shareActions'
 
 function CopyIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" aria-hidden="true">
+    <svg data-copy-icon="" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" aria-hidden="true">
       <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
       <path d="M5 15V6a2 2 0 0 1 2-2h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
