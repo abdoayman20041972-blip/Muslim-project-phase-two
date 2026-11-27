@@ -75,6 +75,9 @@ export async function saveBackupFile(json: string, filename: string): Promise<bo
       const { Filesystem, Directory } = await import('@capacitor/filesystem')
       const { Share } = await import('@capacitor/share')
       const path = `backups/${filename}`
+      // The share target may still be reading the previous export, so old copies are removed
+      // here, at the start of the next export, not right after the sheet closes.
+      await Filesystem.rmdir({ path: 'backups', directory: Directory.Cache, recursive: true }).catch(() => undefined)
       await Filesystem.writeFile({ path, data: toBase64Utf8(json), directory: Directory.Cache, recursive: true })
       const { uri } = await Filesystem.getUri({ path, directory: Directory.Cache })
       await Share.share({ files: [uri], dialogTitle: 'حفظ النسخة الاحتياطية' })
@@ -84,6 +87,11 @@ export async function saveBackupFile(json: string, filename: string): Promise<bo
       // Closing the share sheet is not a failure.
       if (/cancel/i.test(message)) return true
       console.error('[backup] native export failed', error)
+      // Nothing was shared: do not leave the file behind.
+      try {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem')
+        await Filesystem.rmdir({ path: 'backups', directory: Directory.Cache, recursive: true })
+      } catch { /* nothing to clean */ }
       return false
     }
   }
