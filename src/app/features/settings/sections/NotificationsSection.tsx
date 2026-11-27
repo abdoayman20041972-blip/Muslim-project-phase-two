@@ -106,7 +106,7 @@ export function NotificationsSection({
     <>
     <Section title="مركز الإشعارات">
       <Row title="السماح بالإشعارات" description={native ? (nativeStatus === 'denied' ? 'الإشعارات مغلقة من النظام، فلن يصلك أي تنبيه حتى تسمح بها.' : 'تصل الإشعارات داخل التطبيق حتى بعد إغلاقه.') : undefined}>
-        <button onClick={() => void (native ? (nativeStatus === 'denied' ? openSystemSettings('notifications') : askNative()) : notify())} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card">
+        <button onClick={() => void (native ? (nativeStatus === 'denied' ? openSystemSettings('notifications') : askNative()) : notify())} className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.8125rem] font-bold text-azkar-card">
           {(native ? nativeStatus : notificationStatus) === 'granted' ? 'مسموحة' : native && nativeStatus === 'denied' ? 'فتح الإعدادات' : 'السماح'}
         </button>
       </Row>
@@ -114,7 +114,7 @@ export function NotificationsSection({
         <Row title="تنبيهات في وقتها بالضبط" description="بدون «المنبّهات والتذكيرات» قد يؤذن التطبيق متأخرًا. فعّلها من إعدادات النظام ثم ارجع هنا.">
           <button
             type="button"
-            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card"
+            className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.8125rem] font-bold text-azkar-card"
             onClick={() => {
               void openExactAlarmSettings().then((state) => setExactAlarm(state))
             }}
@@ -126,8 +126,8 @@ export function NotificationsSection({
       {native && nativeStatus === 'granted' && !batteryHintSeen && (
         <Row title="لضمان وصول الأذان في وقته" description="اسمح للتطبيق بالعمل دون قيود البطارية، فبعض الهواتف توقف التنبيهات في الخلفية.">
           <div className="flex shrink-0 flex-col gap-2">
-            <button type="button" className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card" onClick={() => { void openSystemSettings('battery'); dismissBatteryHint() }}>فتح الإعدادات</button>
-            <button type="button" className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.6875rem] font-bold text-azkar-teal-ink" onClick={dismissBatteryHint}>لاحقًا</button>
+            <button type="button" className="rounded-xl bg-azkar-teal px-3 py-2 text-[0.8125rem] font-bold text-azkar-card" onClick={() => { void openSystemSettings('battery'); dismissBatteryHint() }}>فتح الإعدادات</button>
+            <button type="button" className="rounded-xl border border-azkar-gold-soft px-3 py-2 text-[0.8125rem] font-bold text-azkar-teal-ink" onClick={dismissBatteryHint}>لاحقًا</button>
           </div>
         </Row>
       )}
@@ -136,7 +136,7 @@ export function NotificationsSection({
       </Row>
       {denied && (
         <Row title="لم يتم التفعيل" description="الإذن بالإشعارات مرفوض. اسمح بها من إعدادات النظام ثم فعّل التذكير مرة أخرى.">
-          <button type="button" className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.6875rem] font-bold text-azkar-card" onClick={() => void openSystemSettings('notifications')}>فتح الإعدادات</button>
+          <button type="button" className="shrink-0 rounded-xl bg-azkar-teal px-3 py-2 text-[0.8125rem] font-bold text-azkar-card" onClick={() => void openSystemSettings('notifications')}>فتح الإعدادات</button>
         </Row>
       )}
       <Row title="الصلوات المفعّلة" description="أوقف أي صلاة لا تريد إشعارها، وتنطبق على الأذان والتذكير قبله." stacked>
@@ -144,7 +144,7 @@ export function NotificationsSection({
           {PRAYERS.map((name) => {
             const on = !muted.includes(name)
             return (
-              <button key={name} type="button" aria-pressed={on} onClick={() => togglePrayer(name)} className={`rounded-xl border px-1 py-2 text-[0.6875rem] font-bold ${on ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft text-azkar-teal-ink'}`}>
+              <button key={name} type="button" aria-pressed={on} onClick={() => togglePrayer(name)} className={`rounded-xl border px-1 py-2 text-[0.8125rem] font-bold ${on ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft text-azkar-teal-ink'}`}>
                 {LABELS[name]}
               </button>
             )
@@ -173,7 +173,7 @@ export function NotificationsSection({
             labels={{ '5': `${toArabicNumber(5)} د`, '10': `${toArabicNumber(10)} د`, '15': `${toArabicNumber(15)} د`, '20': `${toArabicNumber(20)} د`, '30': `${toArabicNumber(30)} د` }}
           />
           {!coords && (
-            <p className="text-[0.6875rem] leading-5 text-azkar-muted">
+            <p className="text-[0.8125rem] leading-5 text-azkar-muted">
               بدون موقع حاليًا، قد تبقى التنبيهات المضبوطة سابقًا بمدتها القديمة حتى يتوفر الموقع وتُعاد جدولة المواقيت.
             </p>
           )}
@@ -203,7 +203,7 @@ export function NotificationsSection({
           {azkarMorning && (
             <div className="flex items-center gap-2">
               <input aria-label="وقت تذكير أذكار الصباح" type="time" value={azkarMorningTime} onChange={(event) => { const value=event.target.value; if (!value) return; setAzkarMorningTime(value); writeSetting(APP_SETTINGS_KEYS.azkarMorningTime,value); emitSettingsChanged() }} className="min-w-[7rem] rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[0.8125rem]" />
-              {azkarMorningTime && <button type="button" onClick={() => { setAzkarMorningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarMorningTime,''); emitSettingsChanged() }} className="text-[0.6875rem] text-azkar-gold">تلقائي</button>}
+              {azkarMorningTime && <button type="button" onClick={() => { setAzkarMorningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarMorningTime,''); emitSettingsChanged() }} className="text-[0.8125rem] text-azkar-gold">تلقائي</button>}
             </div>
           )}
         </div>
@@ -214,7 +214,7 @@ export function NotificationsSection({
           {azkarEvening && (
             <div className="flex items-center gap-2">
               <input aria-label="وقت تذكير أذكار المساء" type="time" value={azkarEveningTime} onChange={(event) => { const value=event.target.value; if (!value) return; setAzkarEveningTime(value); writeSetting(APP_SETTINGS_KEYS.azkarEveningTime,value); emitSettingsChanged() }} className="min-w-[7rem] rounded-xl border border-azkar-gold-soft bg-azkar-card px-3 py-2 text-[0.8125rem]" />
-              {azkarEveningTime && <button type="button" onClick={() => { setAzkarEveningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarEveningTime,''); emitSettingsChanged() }} className="text-[0.6875rem] text-azkar-gold">تلقائي</button>}
+              {azkarEveningTime && <button type="button" onClick={() => { setAzkarEveningTime(''); writeSetting(APP_SETTINGS_KEYS.azkarEveningTime,''); emitSettingsChanged() }} className="text-[0.8125rem] text-azkar-gold">تلقائي</button>}
             </div>
           )}
         </div>
