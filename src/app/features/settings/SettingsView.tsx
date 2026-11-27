@@ -221,7 +221,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         await alert({
           message: applied.restored
             ? 'تعذّر استيراد النسخة، وأُعيدت بياناتك السابقة كما كانت. لم يتغير شيء. حاول مرة أخرى.'
-            : 'تعذّر استيراد النسخة، وتعذّرت إعادة بعض البيانات السابقة بالكامل. لا تُغلق التطبيق قبل التحقق من إعداداتك، وحاول الاستيراد مرة أخرى.',
+            : 'تعذّر استيراد النسخة، وتعذّرت إعادة بياناتك السابقة بالكامل. تحقق من إعداداتك قبل المتابعة، ثم حاول الاستيراد مرة أخرى.',
         })
         return
       }
@@ -281,14 +281,14 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         <div className="mb-5 flex items-center gap-3">
           <BackButton onClick={onBack} />
           <div>
-            <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
+            <div className="font-cairo text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
             <div className="text-[0.6875rem] text-azkar-ink-faint">كل التفضيلات في مكان واحد</div>
           </div>
         </div>
 
         {CATEGORY_GROUPS.map(([groupTitle, items]) => (
           <section key={groupTitle} className="mb-5" aria-label={groupTitle}>
-            <h2 className="mb-2 px-1 font-amiri text-sm font-bold text-azkar-teal-ink">{groupTitle}</h2>
+            <h2 className="mb-2 px-1 font-cairo text-sm font-bold text-azkar-teal-ink">{groupTitle}</h2>
             <div className="overflow-hidden rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card shadow-sm">
               {items.map(([id, t, d, Icon], i) => (
                 <button
@@ -300,8 +300,8 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
                     <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <b className="block font-amiri text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
-                    <span className="block text-[0.6875rem] leading-4 text-azkar-ink-soft">{d}</span>
+                    <b className="block font-cairo text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
+                    <span className="block text-[0.8125rem] leading-4 text-azkar-ink-soft">{d}</span>
                   </span>
                   <span aria-hidden="true" className="text-lg text-azkar-ink-faint">‹</span>
                 </button>
@@ -317,7 +317,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         <button onClick={back} className="h-10 w-10 rounded-full border bg-azkar-card">
           ‹
         </button>
-        <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">
+        <div className="font-cairo text-2xl font-bold text-azkar-teal-ink">
           {
             (
               {
