@@ -38,6 +38,9 @@ describe('fonts: Cairo for the UI, Amiri only for Quran verse text', () => {
     const users = files.filter((f) => /font-quran/.test(readFileSync(f, 'utf8'))).map((f) => f.replace(root + '/', ''))
     expect(users.sort()).toEqual([
       'src/app/features/home/DailyAyahCard.tsx',
+      'src/app/features/prophets/ProphetsView.tsx',
+      'src/app/features/prophets/StoryBody.tsx',
+      'src/app/features/prophets/YusufStoryBody.tsx',
       'src/app/features/quran/QuranReaderView.tsx',
       'src/app/features/quran/center/AyahCenterCard.tsx',
       'src/app/features/quran/center/MemorizePanel.tsx',
