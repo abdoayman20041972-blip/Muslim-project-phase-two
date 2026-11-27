@@ -50,9 +50,9 @@ export function AzkarSection({
           >
             <span className="mb-1 flex items-center gap-2">
               <span className="text-sm text-azkar-teal-ink">{item.icon}</span>
-              <b className="font-amiri text-sm text-azkar-teal-ink">{item.title}</b>
+              <b className="font-cairo text-sm text-azkar-teal-ink">{item.title}</b>
             </span>
-            <span className="block text-[0.6875rem] leading-4 text-azkar-ink-soft">{item.description}</span>
+            <span className="block text-[0.8125rem] leading-4 text-azkar-ink-soft">{item.description}</span>
           </button>
         ))}
       </div>
@@ -112,7 +112,7 @@ export function AzkarSection({
                   await alert({ message: 'تعذر مسح تقدم اليوم.' })
                 }
               }}
-              className="rounded-xl border border-red-200 px-3 py-2 text-[0.6875rem] font-bold text-red-600"
+              className="rounded-xl border border-red-200 px-3 py-2 text-[0.8125rem] font-bold text-red-600"
             >
               مسح تقدم اليوم
             </button>
