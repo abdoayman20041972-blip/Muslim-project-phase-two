@@ -29,6 +29,23 @@ public class BackgroundAudioPlugin extends Plugin {
 
     @Override
     public void load() {
+        // The page is RTL, so Android's native WebView scroll thumb is drawn on the
+        // LEFT edge and flashes as a thin pale strip while the first layout settles.
+        // The app has its own scrolling UI; the native thumb is never wanted.
+        try {
+            final android.webkit.WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.post(
+                    () -> {
+                        webView.setVerticalScrollBarEnabled(false);
+                        webView.setHorizontalScrollBarEnabled(false);
+                        webView.setScrollbarFadingEnabled(true);
+                    }
+                );
+            }
+        } catch (Throwable ignored) {
+            // cosmetic only
+        }
         // Forward notification buttons, media keys and seek-bar moves to the web layer.
         MediaPlaybackService.setListener(
             action -> {
