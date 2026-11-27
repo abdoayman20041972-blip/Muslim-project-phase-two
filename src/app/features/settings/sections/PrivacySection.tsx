@@ -30,7 +30,7 @@ export function PrivacySection({
           }
           last
         >
-          <span className="text-[0.6875rem] font-bold">اليوم</span>
+          <span className="text-[0.8125rem] font-bold">اليوم</span>
         </Row>
       </Section>
       <Section title="البيانات">
@@ -38,11 +38,11 @@ export function PrivacySection({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={exportData}
-              className="rounded-xl border px-3 py-2.5 text-[0.6875rem] font-bold"
+              className="rounded-xl border px-3 py-2.5 text-[0.8125rem] font-bold"
             >
               تصدير البيانات
             </button>
-            <label className="rounded-xl bg-azkar-teal px-3 py-2.5 text-center text-[0.6875rem] font-bold text-azkar-card">
+            <label className="rounded-xl bg-azkar-teal px-3 py-2.5 text-center text-[0.8125rem] font-bold text-azkar-card">
               استيراد نسخة
               <input
                 type="file"
@@ -58,7 +58,7 @@ export function PrivacySection({
           </div>
         </Row>
         <Row title="إعادة الإعدادات الافتراضية" last>
-          <button onClick={reset} className="rounded-xl border px-3 py-2 text-[0.6875rem]">
+          <button onClick={reset} className="rounded-xl border px-3 py-2 text-[0.8125rem]">
             إعادة الضبط
           </button>
         </Row>
