@@ -151,9 +151,21 @@ export function QuranReaderView({ view, setView }: Props) {
   const [selectedAyah, setSelectedAyah] = useState<{ surah: number; ayah: number } | null>(null)
   const visibleCurrent = selectedAyah?.surah === view.number ? selectedAyah.ayah : currentSurah === view.number ? current : null
   const shareCardRef = useRef<HTMLDivElement | null>(null)
+  // Hardware back closes the topmost overlay first: share card, centre, tafsir, ayah panel, surah info.
+  const isTopOverlay = useBackHandler(Boolean(shareFor || centerFor || tafsirFor || panel || surahInfoOpen), () => {
+    if (shareFor) setShareFor(null)
+    else if (centerFor) setCenterFor(null)
+    else if (tafsirFor) closeTafsir()
+    else if (panel) setPanel(null)
+    else if (surahInfoOpen) setSurahInfoOpen(false)
+  })
+  // Escape (keyboard) only acts while this reader's overlay is the topmost one, so a dialog
+  // opened over it takes the key first and a hidden reader never reacts.
+  const isTopOverlayRef = useRef(isTopOverlay)
+  isTopOverlayRef.current = isTopOverlay
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && isTopOverlayRef.current()) {
         setPanel(null)
         setShareFor(null)
         setCenterFor(null)
@@ -164,15 +176,6 @@ export function QuranReaderView({ view, setView }: Props) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [closeTafsir])
-
-  // Hardware back closes the topmost overlay first: share card, centre, tafsir, ayah panel, surah info.
-  useBackHandler(Boolean(shareFor || centerFor || tafsirFor || panel || surahInfoOpen), () => {
-    if (shareFor) setShareFor(null)
-    else if (centerFor) setCenterFor(null)
-    else if (tafsirFor) closeTafsir()
-    else if (panel) setPanel(null)
-    else if (surahInfoOpen) setSurahInfoOpen(false)
-  })
 
   useLayoutEffect(() => {
     if (!panel) return
