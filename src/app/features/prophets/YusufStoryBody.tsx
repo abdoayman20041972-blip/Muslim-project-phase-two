@@ -47,7 +47,7 @@ function VerseBlock({ range, ayahs, failed }: { range: [number, number]; ayahs: 
       <figcaption className="ys-verse-label">قال تعالى</figcaption>
       <div className="ys-verse-row">
         {ayahs ? (
-          <p className="ys-verse-text font-cairo">
+          <p className="ys-verse-text font-quran">
             {numbers.map((n) => (
               <span key={n}>
                 {ayahs.get(n) ?? ''}{' '}
