@@ -17,6 +17,11 @@ import {
 import { patchDiagnostics, recordError } from './nativeDiagnostics'
 import { computeTimingsLocally } from '../prayer/prayerTimings'
 import {
+  applyPrayerOffsets,
+  clampOffset,
+  prayerOffsetsKey,
+  readPrayerOffsets,
+  type PrayerOffsets,
   currentMethod,
   currentSchool,
   dateKey,
@@ -250,6 +255,7 @@ export function scheduleSettingsKey(): string {
     readSetting(APP_SETTINGS_KEYS.asrSchool, ''),
     readSetting(APP_SETTINGS_KEYS.timeFormat, '24'),
     readSetting(APP_SETTINGS_KEYS.numberStyle, ''),
+    prayerOffsetsKey(),
   ].join(',')
 }
 
@@ -287,7 +293,10 @@ export function withTimeInBody(entries: PlannedNotification[]): PlannedNotificat
 async function computeAllTimings(coords: { lat: number; lng: number }, days: Date[]): Promise<Array<Timings | null>> {
   const method = currentMethod()
   const school = currentSchool()
-  return Promise.all(days.map((date) => computeTimingsLocally(coords, date, method, school)))
+  return Promise.all(days.map(async (date) => {
+    const t = await computeTimingsLocally(coords, date, method, school)
+    return t ? applyPrayerOffsets(t) : null
+  }))
 }
 
 /**
@@ -299,6 +308,9 @@ async function computeAllTimings(coords: { lat: number; lng: number }, days: Dat
  * until a location is available again.
  */
 const PRAYER_PLAN_CACHE_KEY = 'azkar_prayer_plan_cache_v1'
+// Offsets the cached plan was built with, so a carried plan can be re-shifted
+// when the user changes a prayer offset while the location is unavailable.
+const PRAYER_PLAN_OFFSETS_KEY = 'azkar_prayer_plan_cache_offsets_v1'
 
 function cachePrayerEntries(entries: PlannedNotification[]) {
   // The cache mirrors the last successfully scheduled plan, never an older
@@ -309,8 +321,10 @@ function cachePrayerEntries(entries: PlannedNotification[]) {
   try {
     if (!prayerEntries.length) {
       localStorage.removeItem(PRAYER_PLAN_CACHE_KEY)
+      localStorage.removeItem(PRAYER_PLAN_OFFSETS_KEY)
       return
     }
+    localStorage.setItem(PRAYER_PLAN_OFFSETS_KEY, JSON.stringify(readPrayerOffsets()))
     localStorage.setItem(PRAYER_PLAN_CACHE_KEY, JSON.stringify(prayerEntries.map((entry) => ({ ...entry, at: entry.at.getTime() }))))
   } catch (error) {
     console.debug('[notifications] prayer plan cache write failed', error)
@@ -415,18 +429,34 @@ function reconstructPrayerEntry(item: { id: number; at: number; title: string },
   return { id: item.id, at, title: item.title, body: 'حي على الصلاة، حي على الفلاح', channel: adhanChannelId(sound), target: 'prayer', group: PRAYER_GROUP, ttl: TTL.at }
 }
 
+function zeroOffsets(): PrayerOffsets { return { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 } }
+
+/** A carried prayer alarm moves by the change in its prayer's offset since it was cached, and its shown time follows. */
+export function reshiftCarriedEntry(entry: Omit<PlannedNotification, 'at'> & { at: number }, stored: PrayerOffsets, current: PrayerOffsets): PlannedNotification {
+  const prayer = PRAYERS[prayerSlotOf(entry.id)] as keyof PrayerOffsets | undefined
+  const delta = prayer ? clampOffset(current[prayer]) - clampOffset(stored[prayer]) : 0
+  const oldAt = new Date(entry.at)
+  if (!delta) return { ...entry, at: oldAt }
+  const newAt = new Date(entry.at + delta * 60_000)
+  const oldLabel = timeLabel(oldAt)
+  return { ...entry, at: newAt, body: entry.body.includes(oldLabel) ? entry.body.split(oldLabel).join(timeLabel(newAt)) : entry.body }
+}
+
 function carriedPrayerEntries(nowMs: number, mutedPrayers: readonly string[], atTimeEnabled: boolean, beforeEnabled: boolean): PlannedNotification[] {
   try {
     const raw = localStorage.getItem(PRAYER_PLAN_CACHE_KEY)
     if (!raw) return []
     const muted = new Set(mutedPrayers)
+    const currentOffsets = readPrayerOffsets()
+    let storedOffsets = currentOffsets
+    try { storedOffsets = { ...zeroOffsets(), ...JSON.parse(localStorage.getItem(PRAYER_PLAN_OFFSETS_KEY) ?? '{}') } } catch { storedOffsets = zeroOffsets() }
     const parsed = JSON.parse(raw) as Array<Omit<PlannedNotification, 'at'> & { at: number }>
     return parsed
       .filter((entry) => isValidPrayerRef(entry.id, entry.at) && entry.at > nowMs)
       // Only the kinds the user still has on may come back.
       .filter((entry) => (prayerKindOf(entry.id) === KIND.at ? atTimeEnabled : beforeEnabled))
       .filter((entry) => !muted.has(PRAYERS[prayerSlotOf(entry.id)] ?? ''))
-      .map((entry) => ({ ...entry, at: new Date(entry.at) }))
+      .map((entry) => reshiftCarriedEntry(entry, storedOffsets, currentOffsets))
   } catch (error) {
     console.debug('[notifications] prayer plan cache unreadable', error)
     return []
