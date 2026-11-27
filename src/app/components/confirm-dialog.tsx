@@ -80,7 +80,9 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   }, [request])
 
   if (!request) {
-    return <ConfirmDialogContext.Provider value={{ confirm, alert }}>{children}</ConfirmDialogContext.Provider>
+    // Same child layout as the open state below (children first, dialog slot second), so
+    // opening a dialog never remounts the app tree and loses screen state under it.
+    return <ConfirmDialogContext.Provider value={{ confirm, alert }}>{children}{null}</ConfirmDialogContext.Provider>
   }
 
   const isConfirm = request.type === 'confirm'
