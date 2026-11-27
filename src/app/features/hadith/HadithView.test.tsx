@@ -8,7 +8,7 @@ vi.mock('../azkar/shareActions', () => ({ shareQuoteCard: vi.fn().mockResolvedVa
 const shareQuoteCard = vi.mocked(shareQuoteCardReal)
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, isBackupKey } from '../../settings'
 import { toArabicDigits } from '../../constants'
-import { runTopBackHandler } from '../../backStack'
+import { ScreenActiveContext, backHandlerCount, runTopBackHandler } from '../../backStack'
 
 const sample = { hadiths: [{ hadithnumber: 1, text: 'نص تجريبي أول' }, { hadithnumber: 2, text: 'نص تجريبي ثانٍ' }, { hadithnumber: 3, text: 'نص تجريبي ثالث' }] }
 const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 404, json: async () => body }) as Response
@@ -250,5 +250,25 @@ describe('hardware back', () => {
     expect(screen.queryByTestId('hadith-position')).toBeNull()
     expect(screen.getByTestId('hadith-group-curated')).toBeTruthy()
     expect(runTopBackHandler()).toBe(false)
+  })
+})
+
+describe('hardware back on a hidden hadith screen', () => {
+  it('holds no back handler while hidden with a group open, and gets it back when visible', () => {
+    const view = (active: boolean) => (
+      <ScreenActiveContext.Provider value={active}>
+        <HadithView onBack={vi.fn()} />
+      </ScreenActiveContext.Provider>
+    )
+    const { rerender } = render(view(true))
+    fireEvent.click(screen.getByTestId('hadith-group-curated'))
+    expect(backHandlerCount()).toBe(1)
+    rerender(view(false))
+    expect(backHandlerCount()).toBe(0)
+    act(() => { expect(runTopBackHandler()).toBe(false) })
+    rerender(view(true))
+    expect(backHandlerCount()).toBe(1)
+    act(() => { expect(runTopBackHandler()).toBe(true) })
+    expect(backHandlerCount()).toBe(0)
   })
 })
