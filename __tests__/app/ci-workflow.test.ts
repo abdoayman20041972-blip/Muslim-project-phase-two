@@ -78,6 +78,21 @@ describe('build-apk.yml hardening (static checks; the workflow itself runs only 
     expect(yml).toMatch(/fetch-depth: 2/)
   })
 
+  it('adds the CSP after the web build and before the Android sync, and smoke-tests it', () => {
+    const iBuild = yml.indexOf('- name: Build web app')
+    const iCsp = yml.indexOf('- name: Add Content-Security-Policy')
+    const iSmoke = yml.indexOf('- name: CSP smoke test')
+    const iSync = yml.indexOf('- name: Sync web assets into Android project')
+    expect(iBuild).toBeGreaterThan(-1)
+    expect(iCsp).toBeGreaterThan(iBuild)
+    expect(iSmoke).toBeGreaterThan(iCsp)
+    expect(iSync).toBeGreaterThan(iSmoke)
+    expect(step('Add Content-Security-Policy to the built index.html')).toContain('node scripts/add-csp.mjs')
+    const smoke = step('CSP smoke test (app renders in headless Chrome with no CSP violation)')
+    expect(smoke).toContain('content security policy')
+    expect(smoke).toContain('exit 1')
+  })
+
   it('does not publish a release or push anything', () => {
     expect(yml).not.toMatch(/gh release|softprops|create-release|git push|contents: write/)
   })
