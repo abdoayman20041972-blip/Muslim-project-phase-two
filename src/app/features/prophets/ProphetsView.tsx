@@ -123,7 +123,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
       )}
 
       <blockquote className="ps-verse">
-        <p className="font-cairo">{story.verse.text}</p>
+        <p className="font-quran">{story.verse.text}</p>
         <cite>{story.verse.ref}</cite>
       </blockquote>
 
