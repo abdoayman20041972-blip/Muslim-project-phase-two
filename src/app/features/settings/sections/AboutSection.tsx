@@ -24,13 +24,13 @@ export function AboutSection() {
   return (
 <Section title="حول مسلم">
   <Row title="اسم التطبيق">
-    <b className="font-amiri text-azkar-teal-ink">مسلم</b>
+    <b className="font-cairo text-azkar-teal-ink">مسلم</b>
   </Row>
   <Row title="الإصدار">
-    <span className="text-[0.6875rem]">{version}</span>
+    <span className="text-[0.8125rem]">{version}</span>
   </Row>
   <Row title="صور بطاقة الصلاة" stacked>
-    <ul dir="ltr" className="space-y-1 text-left text-[0.6875rem]" data-testid="photo-credits">
+    <ul dir="ltr" className="space-y-1 text-left text-[0.8125rem]" data-testid="photo-credits">
       {Object.values(PRAYER_PHOTOS).map((photo) => (
         <li key={photo.sourceUrl}>
           <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">{photo.artist}</a>
@@ -43,7 +43,7 @@ export function AboutSection() {
   <Row title="التواصل والملاحظات" last>
     <a
       href="mailto:feedback@muslim.app?subject=ملاحظات تطبيق مسلم"
-      className="rounded-xl border px-3 py-2 text-[0.6875rem] font-bold"
+      className="rounded-xl border px-3 py-2 text-[0.8125rem] font-bold"
     >
       إرسال ملاحظات
     </a>
