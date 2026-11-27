@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { toArabicNumber } from '../../constants'
+import { CopyButton } from '../azkar/CopyButton'
 
 type Props = {
   paragraphs: string[]
   credit: string
+  /** Whole chapter text for the copy button; omitted means no button. */
+  copyText?: string
+  copyReference?: string
   hasNextChapter?: boolean
   hasPrevChapter?: boolean
   onNextChapter?: () => void
@@ -17,7 +21,7 @@ type Props = {
  * The two buttons are one control: on the last page "next" continues into the next chapter, on the first page
  * "previous" goes to the previous chapter, so the reader needs no second row of buttons.
  */
-export function BookReader({ paragraphs, credit, hasNextChapter, hasPrevChapter, onNextChapter, onPrevChapter }: Props) {
+export function BookReader({ paragraphs, credit, copyText, copyReference, hasNextChapter, hasPrevChapter, onNextChapter, onPrevChapter }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -98,6 +102,7 @@ export function BookReader({ paragraphs, credit, hasNextChapter, hasPrevChapter,
         <button type="button" data-sound="none" onClick={() => (nextIsChapter ? onNextChapter?.() : go(1))} disabled={atEnd && !hasNextChapter} className="book-btn book-btn-next">{nextIsChapter ? 'الفصل التالي' : 'التالية'}<ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
       </div>
       <p className="book-credit">{credit}</p>
+      {copyText ? <div className="flex justify-center pb-1"><CopyButton text={copyText} reference={copyReference} label="نسخ الفصل" className="h-7" /></div> : null}
     </div>
   )
 }
