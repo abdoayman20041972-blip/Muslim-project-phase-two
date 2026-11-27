@@ -1,3 +1,4 @@
+import { ScreenActiveContext } from '../backStack'
 import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { hasBottomNav, type Section, type View } from '../constants'
 import { ConfirmDialogProvider } from './confirm-dialog'
@@ -126,7 +127,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   const keep = (name: View['name']) => view.name === name || (name !== 'qibla' && visited.has(name))
   const shell = (name: View['name'], content: ReactNode) => (
     <div className={view.name === name ? 'contents' : 'hidden'} aria-hidden={view.name !== name}>
-      {content}
+      <ScreenActiveContext.Provider value={view.name === name}>{content}</ScreenActiveContext.Provider>
     </div>
   )
   // Bottom padding follows the chrome: screens with the bar clear it, inner
@@ -144,7 +145,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
       {keep('mushaf-list') && shell('mushaf-list', wrapScreen(mushafList, 'mushaf-list', onHome))}
       {mushafReader && (
         <div className={mushafReaderActive ? 'contents' : 'hidden'} aria-hidden={!mushafReaderActive}>
-          {wrapScreen(mushafReader, view.name, onHome)}
+          <ScreenActiveContext.Provider value={mushafReaderActive}>{wrapScreen(mushafReader, view.name, onHome)}</ScreenActiveContext.Provider>
         </div>
       )}
       {keep('prayer-times') && shell('prayer-times', wrapScreen(prayer, 'prayer-times', onHome))}
