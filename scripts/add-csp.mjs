@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 
 export function inlineScriptHashes(html) {
   const hashes = []
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/g
+  const re = /<script\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/script>/g
   let m
   while ((m = re.exec(html))) {
     if (/\bsrc\s*=/.test(m[1])) continue
@@ -45,13 +45,24 @@ export function addCsp(html) {
   const without = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/g, '')
   const head = /<head\b[^>]*>/.exec(without)
   if (!head) throw new Error('<head> not found in index.html')
-  const at = head.index + head[0].length
+  // Keep the charset <meta> first: a WebView without a charset header only honours it within the first 1024 bytes.
+  const charset = /<meta\s+charset=[^>]*>/i.exec(without)
+  const at = charset && charset.index > head.index ? charset.index + charset[0].length : head.index + head[0].length
   return without.slice(0, at) + meta + without.slice(at)
+}
+
+// Byte offset (UTF-8) of the end of the charset <meta>, or -1 when absent.
+export function charsetEndOffset(html) {
+  const m = /<meta\s+charset=[^>]*>/i.exec(html)
+  return m ? Buffer.byteLength(html.slice(0, m.index + m[0].length), 'utf8') : -1
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   const file = process.argv[2] || '.output/public/index.html'
   const out = addCsp(readFileSync(file, 'utf8'))
+  const end = charsetEndOffset(out)
+  if (end < 0 || end > 1024) throw new Error(`charset <meta> must end within the first 1024 bytes (found at ${end})`)
   writeFileSync(file, out)
+  console.log(`charset meta ends at byte ${end}`)
   console.log(`CSP added to ${file}`)
 }
