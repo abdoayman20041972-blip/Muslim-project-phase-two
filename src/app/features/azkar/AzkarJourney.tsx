@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ZikrCategory } from '../../../azkar-data'
 import { toArabicDigits, toArabicNumber } from '../../constants'
 import { TasbihPad } from './TasbihPad'
+import { CopyButton } from './CopyButton'
 import { completedItemCount, countedItems, isCountedZikr, itemTarget } from './azkarProgress'
 import { favoriteKey } from './useFavorites'
 import { parseReference } from './zikrReference'
@@ -36,6 +37,7 @@ export function AzkarJourney({category,progress,counterEnabled,autoAdvanceEnable
  <article className="azkar-journey-card rounded-[var(--r-lg)] border-2 border-azkar-teal/20 bg-azkar-card px-5 py-7 u-shadow-1">
   {counted&&item.repeat?<span className="mb-4 inline-block rounded-full border border-azkar-teal/15 bg-azkar-teal-tint px-2.5 py-1 text-[0.8125rem] font-bold text-azkar-teal-ink">{'الهدف '+toArabicNumber(item.repeat)+' مرة'}</span>:kindLabel?<span className={'mb-4 inline-block rounded-full border px-2.5 py-1 text-[0.6875rem] font-bold '+(item.kind==='fadl'?'border-azkar-gold/30 bg-azkar-gold-tint text-azkar-gold':'border-azkar-hairline bg-azkar-surface-1 text-azkar-ink-faint')}>{kindLabel}</span>:null}
   <p className="u-reading-text whitespace-pre-line text-[1.3125rem] leading-[2.1] text-azkar-ink" style={fontScale?{['--zikr-scale' as string]:fontScale}:undefined}>{toArabicDigits(item.text)}</p>
+  <div className="mt-3"><CopyButton text={toArabicDigits(item.text)} reference={displaySource?toArabicDigits(displaySource):undefined} label="نسخ الذكر"/></div>
   {(displaySource||item.reference)&&<div className="mt-4 flex flex-wrap items-center gap-2">{displaySource&&<p className="text-[0.6875rem] text-azkar-ink-faint">{toArabicDigits(displaySource)}</p>}{item.reference?.grade&&<span className="rounded-full border border-azkar-hairline bg-azkar-surface-1 px-2 py-0.5 text-[0.6875rem] font-bold text-azkar-ink-soft">{item.reference.grade}</span>}{item.reference?.url&&<a href={item.reference.url} target="_blank" rel="noreferrer" className="inline-flex min-h-[2.5rem] items-center px-1 text-[0.8125rem] font-bold text-azkar-teal underline underline-offset-2">المصدر</a>}</div>}
   {counterEnabled&&counted&&<TasbihPad variant="journey" current={current} target={target} onTap={increment}/>}
  </article>
