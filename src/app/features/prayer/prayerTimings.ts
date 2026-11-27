@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { currentMethod, currentSchool, dateKey, REQUIRED_TIMINGS } from './prayerTimes'
+import { applyPrayerOffsets, currentMethod, currentSchool, dateKey, prayerOffsetsKey, REQUIRED_TIMINGS } from './prayerTimes'
 import { normalizeCoords } from './prayerCoords'
 import type { Coords, Timings } from './prayerTimes'
 import type { PrayerMethod, PrayerSchool } from './prayerTimes'
@@ -102,6 +102,10 @@ async function fetchMonth(c:Coords,date:Date,method=currentMethod(),school=curre
   return map
 }
 export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortSignal;offline?:boolean}={}):Promise<Timings|null>{
+  const raw=await getRawTimings(coords,date,options)
+  return raw?applyPrayerOffsets(raw):null
+}
+async function getRawTimings(coords:Coords,date:Date,options:{signal?:AbortSignal;offline?:boolean}={}):Promise<Timings|null>{
   const c=normalizeCoords(coords);if(!c)return null
   const method=currentMethod(),school=currentSchool(),key=cacheKey(date,c,method,school)
   const cached=read(key)
@@ -133,7 +137,7 @@ export async function getTimings(coords:Coords,date:Date,options:{signal?:AbortS
 export function readCachedTimings(coords:Coords,date:Date):Timings|null{
   const c=normalizeCoords(coords);if(!c)return null
   const cached=read(cacheKey(date,c,currentMethod(),currentSchool()))
-  return validTimings(cached)?cached:null
+  return validTimings(cached)?applyPrayerOffsets(cached):null
 }
 export function cleanupPrayerCache(){
   try{
@@ -154,13 +158,15 @@ export function usePrayerTimings(coords:Coords|null){
   const [loading,setLoading]=useState(false)
   const [error,setError]=useState<string|null>(null)
   const [attempt,setAttempt]=useState(0)
+  const [offKey,setOffKey]=useState(prayerOffsetsKey)
+  useEffect(()=>{const f=()=>setOffKey(prayerOffsetsKey());window.addEventListener('azkar-settings-changed',f);return()=>window.removeEventListener('azkar-settings-changed',f)},[])
   useEffect(()=>{cleanupPrayerCache();if(!coords){setTimings(null);return}
     let cancelled=false
     const controller=new AbortController()
     setLoading(true);setError(null)
     getTimings(coords,new Date(),{signal:controller.signal}).then(t=>{if(!cancelled)setTimings(t);if(!t&&!cancelled)setError('تعذر الحصول على مواقيت الصلاة. تحقق من الاتصال أو حدّث الموقع.')}).catch(()=>{if(!cancelled){setError('تعذر الحصول على مواقيت الصلاة. تحقق من الاتصال أو حدّث الموقع.');setTimings(null)}}).finally(()=>{if(!cancelled)setLoading(false)})
     return()=>{cancelled=true;controller.abort()}
-  },[coords?.lat,coords?.lng,dayKey,currentMethod(),currentSchool(),attempt])
+  },[coords?.lat,coords?.lng,dayKey,currentMethod(),currentSchool(),offKey,attempt])
   const retry=useCallback(()=>setAttempt(n=>n+1),[])
   return {timings,loading,error,dayKey,retry}
 }
