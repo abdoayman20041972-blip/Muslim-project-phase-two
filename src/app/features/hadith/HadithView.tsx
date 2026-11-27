@@ -14,6 +14,7 @@ import { highlightParts, matches } from './hadithSearch'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { toArabicDigits, toArabicNumber } from '../../constants'
 import { BackButton } from '../../components/app-chrome'
+import { useBackHandler } from '../../backStack'
 
 type GroupKey = 'curated' | 'nawawi' | 'qudsi' | 'dehlawi'
 
@@ -72,6 +73,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
   useEffect(() => {
     onDetailChange?.(openGroup !== null)
   }, [openGroup, onDetailChange])
+  useBackHandler(openGroup !== null, () => setOpenGroup(null))
   const [index, setIndex] = useState(0)
   const [query, setQuery] = useState('')
   const [editions, setEditions] = useState<Record<string, EditionState>>({})
@@ -164,7 +166,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
     <header className="hadith-header">
       <BackButton onClick={back} />
       <div className="min-w-0 flex-1">
-        <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{title}</h1>
+        <h1 className="font-cairo text-2xl font-bold text-azkar-teal-ink">{title}</h1>
         <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">{subtitle}</p>
       </div>
       <span className="hadith-mark" aria-hidden="true"><Sparkles className="h-4 w-4" /></span>
@@ -200,7 +202,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
             <BookOpen className="hadith-empty-icon" aria-hidden="true" />
             <p className="text-xs text-azkar-ink-soft">{edition.error}</p>
             <p className="mt-1 text-[0.6875rem] text-azkar-ink-faint">تبويب «مختارات» مضمّن في التطبيق ويعمل دون إنترنت.</p>
-            <button type="button" className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[0.6875rem] font-bold text-azkar-teal-ink" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
+            <button type="button" className="u-pressable mt-3 rounded-full border border-azkar-teal/20 px-4 py-1.5 text-[0.8125rem] font-bold text-azkar-teal-ink" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
           </div>
         )}
         {item && (
@@ -215,31 +217,31 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
                 </span>
                 {item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}
               </div>
-              <p className="hadith-text font-amiri" data-size={fontSize}>{item.text}</p>
+              <p className="hadith-text font-cairo" data-size={fontSize}>{item.text}</p>
               {item.grade && (
-                <p className="mt-2 text-[0.6875rem] text-azkar-ink-soft" data-testid="hadith-grade">
+                <p className="mt-2 text-[0.8125rem] text-azkar-ink-soft" data-testid="hadith-grade">
                   الدرجة: {item.grade.label} · {item.grade.by}{' '}
                   <a href={item.grade.url} target="_blank" rel="noreferrer" className="underline">المصدر</a>
                 </p>
               )}
               {item.group === 'curated' && (
                 item.sourceUrl ? (
-                  <a href={item.sourceUrl} target="_blank" rel="noreferrer" data-testid="hadith-source-link" className="u-pressable mt-2 inline-flex min-h-11 items-center gap-1 text-[0.6875rem] font-bold text-azkar-teal-ink">
+                  <a href={item.sourceUrl} target="_blank" rel="noreferrer" data-testid="hadith-source-link" className="u-pressable mt-2 inline-flex min-h-11 items-center gap-1 text-[0.8125rem] font-bold text-azkar-teal-ink">
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> عرض المصدر على sunnah.com
                   </a>
                 ) : (
                   <p className="mt-2 text-[0.6875rem] text-azkar-ink-faint" data-testid="hadith-source-pending">رابط المصدر غير معروض: المرجع قيد المراجعة.</p>
                 )
               )}
-              {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[0.6875rem] leading-relaxed text-azkar-ink-soft"><span className="block font-bold">ملاحظة توضيحية</span>{item.note}</p>}
+              {showNote && item.note && <p className="mt-2 border-t border-azkar-hairline pt-2 text-[0.8125rem] leading-relaxed text-azkar-ink-soft"><span className="block font-bold">ملاحظة توضيحية</span>{item.note}</p>}
               <div className="mt-3 flex gap-2 border-t border-azkar-hairline pt-3">
-                <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[0.6875rem] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
+                <button type="button" onClick={share} className="u-pressable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full border border-azkar-teal/20 text-[0.8125rem] font-bold text-azkar-teal-ink"><Share2 className="h-3.5 w-3.5" aria-hidden="true" /> مشاركة</button>
               </div>
               <p role="status" className="mt-1 min-h-4 text-center text-[0.6875rem] text-azkar-ink-faint">{status}</p>
             </article>
             <nav className="hadith-reader-nav" aria-label="التنقل بين الأحاديث">
               <button type="button" onClick={() => { setIndex(index - 1); setStatus('') }} disabled={index <= 0} aria-label="الحديث السابق" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
-              <span className="text-[0.6875rem] font-bold text-azkar-ink-soft" data-testid="hadith-position">حديث {toArabicNumber(index + 1)} من {toArabicNumber(items.length)}</span>
+              <span className="text-[0.8125rem] font-bold text-azkar-ink-soft" data-testid="hadith-position">حديث {toArabicNumber(index + 1)} من {toArabicNumber(items.length)}</span>
               <button type="button" onClick={() => { setIndex(index + 1); setStatus('') }} disabled={index >= items.length - 1} aria-label="الحديث التالي" className="u-pressable inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-azkar-hairline disabled:opacity-40"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
             </nav>
             <div className="hadith-progress" aria-hidden="true"><span style={{ width: `${((index + 1) / items.length) * 100}%` }} /></div>
@@ -263,7 +265,7 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
               <span className="hadith-daily-tag"><Sparkles className="h-3 w-3" aria-hidden="true" /> حديث اليوم</span>
               {daily.source && <span className="hadith-daily-src">{toArabicDigits(daily.source)}</span>}
             </div>
-            <p className="hadith-daily-text font-amiri">{daily.text}</p>
+            <p className="hadith-daily-text font-cairo">{daily.text}</p>
             <span className="hadith-daily-cta">تصفّح «مختارات» <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" /></span>
           </button>
         )
@@ -274,14 +276,14 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
           {results.map(({ group, hits }) => (
             <div key={group.key} className="grid gap-2">
               <div className="flex items-center justify-between px-1">
-                <span className="font-amiri text-base font-bold text-azkar-teal-ink">{group.name}</span>
+                <span className="font-cairo text-base font-bold text-azkar-teal-ink">{group.name}</span>
                 <span className="text-[0.6875rem] text-azkar-ink-faint">{toArabicNumber(hits.length)} نتيجة</span>
               </div>
               {hits.slice(0, 20).map((item) => (
                 <button key={item.key} type="button" onClick={() => open(group.key, itemsOf(group.key).findIndex((entry) => entry.key === item.key))} className="hadith-card u-pressable text-right" data-testid="hadith-result">
                   <div className="hadith-card-top"><span>{item.group === 'curated' ? item.label : `حديث ${toArabicDigits(item.number)}`}</span>{item.source && <span className="hadith-source">{toArabicDigits(item.source)}</span>}</div>
-                  <p className="hadith-text font-amiri line-clamp-3" data-size={fontSize}><HighlightedText text={item.text} query={query} /></p>
-                  {item.note && matches(item.note, query) && !matches(item.text, query) && <p className="mt-2 text-[0.6875rem] text-azkar-ink-soft">ملاحظة: <HighlightedText text={item.note} query={query} /></p>}
+                  <p className="hadith-text font-cairo line-clamp-3" data-size={fontSize}><HighlightedText text={item.text} query={query} /></p>
+                  {item.note && matches(item.note, query) && !matches(item.text, query) && <p className="mt-2 text-[0.8125rem] text-azkar-ink-soft">ملاحظة: <HighlightedText text={item.note} query={query} /></p>}
                 </button>
               ))}
               {hits.length > 20 && <p className="px-1 text-[0.6875rem] text-azkar-ink-faint">يظهر أول {toArabicNumber(20)} نتيجة. دقّق البحث لتضييق النتائج.</p>}
@@ -303,14 +305,14 @@ export function HadithView({ onBack, onDetailChange }: { onBack: () => void; onD
               <div key={group.key} className={`hadith-card hadith-group-card hadith-accent-${GROUP_ACCENTS[group.key]} hadith-anim`} style={{ animationDelay: `${(position + 1) * 45}ms` }}>
                 <button type="button" onClick={() => open(group.key)} disabled={edition?.state === 'loading'} className="u-pressable block w-full text-right" data-testid={`hadith-group-${group.key}`}>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-amiri text-lg font-bold text-azkar-teal-ink">{group.name}</span>
+                    <span className="font-cairo text-lg font-bold text-azkar-teal-ink">{group.name}</span>
                     <span className="hadith-count-pill" data-testid={`hadith-count-${group.key}`}>{countText(group.key)}</span>
                   </div>
-                  <p className="mt-1 text-[0.6875rem] leading-relaxed text-azkar-ink-soft">{group.blurb}</p>
+                  <p className="mt-1 text-[0.8125rem] leading-relaxed text-azkar-ink-soft">{group.blurb}</p>
                   <ChevronLeft className="hadith-group-chevron" aria-hidden="true" />
                 </button>
                 {edition?.state === 'error' && (
-                  <div className="mt-2 text-[0.6875rem] text-azkar-ink-soft">
+                  <div className="mt-2 text-[0.8125rem] text-azkar-ink-soft">
                     {edition.error}{' '}
                     <button type="button" className="u-pressable font-bold text-azkar-teal-ink underline" onClick={() => setAttempt((n) => n + 1)}>إعادة المحاولة</button>
                   </div>

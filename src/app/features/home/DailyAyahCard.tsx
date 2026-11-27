@@ -74,7 +74,7 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
   async function onShare() {
     const { text } = await payload()
     try {
-      const shared = await shareCardImage({ text, reference, heading: 'آية اليوم', footer: 'مسلم', filename: 'ayah-of-the-day.png' })
+      const shared = await shareCardImage({ text, reference, heading: 'آية اليوم', verse: true, footer: 'مسلم', filename: 'ayah-of-the-day.png' })
       if (!shared) showShareFailure()
     } catch {
       flash('تعذرت المشاركة')
@@ -92,12 +92,12 @@ export function DailyAyahCard({ ayah, onOpenSurah }: { ayah: DailyAyah; onOpenSu
       <span className="home-ayah-lines" aria-hidden="true" />
       <div className="relative z-10">
       <div className="mb-2 mt-2 text-[0.6875rem] font-bold text-[#e9c875]">آية اليوم</div>
-      <div className="home-ayah-text font-amiri font-bold text-white">{ayah.text}</div>
+      <div className="home-ayah-text font-quran font-bold text-white">{ayah.text}</div>
 
       {panel === 'full' && (
         <div data-testid="daily-ayah-full" className="home-ayah-panel mt-2.5 rounded-xl px-3 py-2.5">
           {fullText ? (
-            <div className="font-amiri text-[1.35rem] font-bold leading-[2] text-white">{fullText}</div>
+            <div className="font-quran text-[1.35rem] font-bold leading-[2] text-white">{fullText}</div>
           ) : fullFailed ? (
             <div role="alert" className="text-[0.75rem] text-white/75">تعذر تحميل نص الآية الكامل.</div>
           ) : (

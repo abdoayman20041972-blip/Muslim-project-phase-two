@@ -105,7 +105,7 @@ export function PrayerSourceCard() {
           ))}
         </div>
       )}
-      {message && <p role="alert" className="mt-2 text-[0.6875rem] text-azkar-ink-soft">{message}</p>}
+      {message && <p role="alert" className="mt-2 text-[0.8125rem] text-azkar-ink-soft">{message}</p>}
       {stored && (
         <div className="mt-2 text-[0.6875rem] text-azkar-ink-faint" dir="ltr">
           {stored.lat.toFixed(2)}, {stored.lng.toFixed(2)}

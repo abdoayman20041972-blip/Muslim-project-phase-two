@@ -99,7 +99,7 @@ export function QuranListView(p: P) {
       <div className="quran-list-header flex items-center gap-3 mb-4">
         <BackButton onClick={() => p.setView({ name: 'home' })} />
         <div className="flex-1">
-          <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">المصحف الشريف</div>
+          <div className="font-cairo font-bold text-2xl text-azkar-teal-ink">المصحف الشريف</div>
           <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5">كتاب الله بين يديك</div>
         </div>
         <span className="quran-header-badge" aria-hidden="true">
@@ -116,7 +116,7 @@ export function QuranListView(p: P) {
           </span>
           <span className="flex-1 text-right min-w-0">
             <span className="block text-[0.6875rem] opacity-75">متابعة القراءة</span>
-            <span className="block font-amiri font-bold text-xl mt-0.5 truncate">سورة {last.shortName}</span>
+            <span className="block font-cairo font-bold text-xl mt-0.5 truncate">سورة {last.shortName}</span>
             <span className="block text-[0.6875rem] opacity-70 mt-0.5">
               {last.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · {toArabicNumber(last.numberOfAyahs)} آية
               {positionText ? ` · توقفت عند ${positionText}` : ''}
@@ -143,8 +143,8 @@ export function QuranListView(p: P) {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-azkar-teal-tint text-azkar-teal-ink">
             <SearchIcon />
           </div>
-          <div className="mt-3 font-amiri text-lg font-bold text-azkar-teal-ink">لا توجد سورة مطابقة</div>
-          <p className="mt-1 text-[0.6875rem] leading-5 text-azkar-ink-soft">جرّب اسم السورة أو رقمها بطريقة أخرى.</p>
+          <div className="mt-3 font-cairo text-lg font-bold text-azkar-teal-ink">لا توجد سورة مطابقة</div>
+          <p className="mt-1 text-[0.8125rem] leading-5 text-azkar-ink-soft">جرّب اسم السورة أو رقمها بطريقة أخرى.</p>
         </div>
       ) : (
         <div className="quran-index">
@@ -159,8 +159,8 @@ export function QuranListView(p: P) {
                 <span className="quran-star-number">{toArabicNumber(s.number)}</span>
               </span>
               <span className="flex-1 min-w-0 text-right">
-                <span className="block font-amiri font-bold text-[1.125rem] leading-tight">{s.shortName}</span>
-                <span className="block text-[0.6875rem] text-azkar-ink-soft mt-0.5">
+                <span className="block font-cairo font-bold text-[1.125rem] leading-tight">{s.shortName}</span>
+                <span className="block text-[0.8125rem] text-azkar-ink-soft mt-0.5">
                   {s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · {toArabicNumber(s.numberOfAyahs)} آية
                 </span>
               </span>

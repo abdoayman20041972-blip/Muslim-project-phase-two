@@ -157,7 +157,7 @@ export function Splash({ exiting = false, onImageSettled }: { exiting?: boolean;
           </div>
         </div>
         <div className="muslim-splash-copy text-center">
-          <div className="font-amiri muslim-splash-title">مسلم</div>
+          <div className="font-cairo muslim-splash-title">مسلم</div>
           <div className="muslim-splash-wordmark">Muslim</div>
           <div className="muslim-splash-divider"><span /></div>
         </div>

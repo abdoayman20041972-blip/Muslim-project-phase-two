@@ -1,8 +1,9 @@
 export type DailyAyah = { text: string; surah: string; number: number }
 
-// L2 fix: expanded from 7 to 42 ayahs (a full six-week rotation) so the daily
+// L2 fix: expanded from 7 to 41 ayahs (a bit under six weeks of rotation) so the daily
 // ayah on the home screen and in the daily notification stops repeating weekly.
-// All verses are famous short excerpts, bundled offline.
+// Every entry is a real excerpt of the bundled mushaf text for its surah and ayah
+// (enforced by __tests__/app/daily-ayahs-real.test.ts), bundled offline.
 export const DAILY_AYAHS: readonly DailyAyah[] = [
   { text: 'إِنَّ مَعَ الْعُسْرِ يُسْرًا', surah: 'الشرح', number: 6 },
   { text: 'فَاذْكُرُونِي أَذْكُرْكُمْ', surah: 'البقرة', number: 152 },
@@ -11,7 +12,7 @@ export const DAILY_AYAHS: readonly DailyAyah[] = [
   { text: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', surah: 'البقرة', number: 153 },
   { text: 'وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', surah: 'الطلاق', number: 3 },
   { text: 'وَاذْكُر رَّبَّكَ إِذَا نَسِيتَ', surah: 'الكهف', number: 24 },
-  { text: 'إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', surah: 'يوسف', number: 90 },
+  { text: 'إِنَّهُ مَن يَتَّقِ وَيَصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', surah: 'يوسف', number: 90 },
   { text: 'وَاعْتَصِمُوا بِحَبْلِ اللَّهِ جَمِيعًا وَلَا تَفَرَّقُوا', surah: 'آل عمران', number: 103 },
   { text: 'وَاصْبِرْ وَمَا صَبْرُكَ إِلَّا بِاللَّهِ', surah: 'النحل', number: 127 },
   { text: 'إِنَّ الصَّلَاةَ تَنْهَى عَنِ الْفَحْشَاءِ وَالْمُنكَرِ', surah: 'العنكبوت', number: 45 },
@@ -24,9 +25,9 @@ export const DAILY_AYAHS: readonly DailyAyah[] = [
   { text: 'وَلَا تَسْتَوِي الْحَسَنَةُ وَلَا السَّيِّئَةُ', surah: 'فصلت', number: 34 },
   { text: 'ادْفَعْ بِالَّتِي هِيَ أَحْسَنُ', surah: 'فصلت', number: 34 },
   { text: 'وَالْكَاظِمِينَ الْغَيْظَ وَالْعَافِينَ عَنِ النَّاسِ', surah: 'آل عمران', number: 134 },
-  { text: 'وَاللَّهُ يُحِبُّ الْمُتَّقِينَ', surah: 'آل عمران', number: 76 },
-  { text: 'وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ', surah: 'البقرة', number: 195 },
-  { text: 'أَلَا إِنَّ اللَّهَ مَعَ الْمُتَّقِينَ', surah: 'النحل', number: 128 },
+  { text: 'فَإِنَّ اللَّهَ يُحِبُّ الْمُتَّقِينَ', surah: 'آل عمران', number: 76 },
+  { text: 'إِنَّ اللَّهَ يُحِبُّ الْمُحْسِنِينَ', surah: 'البقرة', number: 195 },
+  { text: 'إِنَّ اللَّهَ مَعَ الَّذِينَ اتَّقَوْا وَالَّذِينَ هُم مُّحْسِنُونَ', surah: 'النحل', number: 128 },
   { text: 'وَسَارِعُوا إِلَىٰ مَغْفِرَةٍ مِّن رَّبِّكُمْ', surah: 'آل عمران', number: 133 },
   { text: 'وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ', surah: 'البقرة', number: 45 },
   { text: 'إِنَّمَا يُوَفَّى الصَّابِرُونَ أَجْرَهُم بِغَيْرِ حِسَابٍ', surah: 'الزمر', number: 10 },

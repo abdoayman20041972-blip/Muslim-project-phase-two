@@ -109,13 +109,13 @@ function GharibTab({ surah, ayah }: { surah: SurahMeta; ayah: Ayah }) {
       {status === 'pending' && <ReviewOnlyBanner />}
       {entries.map((entry, index) => (
         <section key={`${entry.book}-${index}`} aria-label={entry.book}>
-          <div className="mb-2 text-[0.6875rem] font-bold text-azkar-ink-soft">
+          <div className="mb-2 text-[0.8125rem] font-bold text-azkar-ink-soft">
             {entry.book} · {entry.author}
           </div>
           <dl className="space-y-2.5">
             {entry.words.map((word, wordIndex) => (
               <div key={wordIndex} className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3.5 py-2.5">
-                <dt className="font-amiri text-[1.0625rem] font-bold text-azkar-teal-ink">{word.text}</dt>
+                <dt className="font-quran text-[1.0625rem] font-bold text-azkar-teal-ink">{word.text}</dt>
                 <dd className="mt-0.5 text-[0.9375rem] leading-7 text-azkar-ink">{word.meaning}</dd>
               </div>
             ))}
@@ -174,8 +174,8 @@ function AsbabTab({ surah, ayah }: { surah: SurahMeta; ayah: Ayah }) {
       {status === 'pending' && <ReviewOnlyBanner />}
       {entries.map((entry, i) => (
         <div key={i} className={i > 0 ? 'mt-5 border-t border-azkar-line pt-4' : ''}>
-          <div className="font-amiri text-[1.0625rem] leading-[2] text-azkar-ink whitespace-pre-line">{entry.text}</div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6875rem] text-azkar-ink-soft">
+          <div className="font-cairo text-[1.0625rem] leading-[2] text-azkar-ink whitespace-pre-line">{entry.text}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.8125rem] text-azkar-ink-soft">
             {entry.relation === 'متعلقة' && <span className="rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">رواية متعلقة بنزول الآية</span>}
             <span className="rounded-full border border-emerald-300/60 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">{entry.grade}</span>
             <span>{entry.reference}</span>
@@ -217,10 +217,10 @@ export function AyahCenterCard({ surah, ayah, ayahs, initialTab = 'tafsir', reci
         <div className="shrink-0 border-b border-azkar-gold-soft px-5 pb-3 pt-5">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-amiri text-lg font-bold">
+              <div className="font-cairo text-lg font-bold">
                 الآية {toArabicNumber(ayah.numberInSurah)} · {surah.shortName}
               </div>
-              <div className="mt-1 text-[0.6875rem] text-azkar-ink-soft">مركز القرآن</div>
+              <div className="mt-1 text-[0.8125rem] text-azkar-ink-soft">مركز القرآن</div>
             </div>
             <button
               onClick={onClose}
@@ -267,8 +267,8 @@ export function AyahCenterCard({ surah, ayah, ayahs, initialTab = 'tafsir', reci
               </div>
             ) : (
               <div>
-                <div className="font-amiri text-[1.125rem] leading-[2.05] text-azkar-ink whitespace-pre-line">{tafsir.text}</div>
-                <div className="mt-3 text-[0.6875rem] text-azkar-ink-soft">{tafsir.label}</div>
+                <div className="font-cairo text-[1.125rem] leading-[2.05] text-azkar-ink whitespace-pre-line">{tafsir.text}</div>
+                <div className="mt-3 text-[0.8125rem] text-azkar-ink-soft">{tafsir.label}</div>
               </div>
             )
           )}

@@ -70,7 +70,7 @@ export function HaramLiveView({ onBack }: { onBack: () => void }) {
   return (
     <div className="haram-live w-full min-w-0" data-testid="haram-live">
       <div className="flex items-center justify-between">
-        <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">البث المباشر</h1>
+        <h1 className="font-cairo text-[1.75rem] font-bold text-azkar-teal-ink">البث المباشر</h1>
         <BackButton onClick={onBack} overlay />
       </div>
       <div className="haram-live-stage mt-4">

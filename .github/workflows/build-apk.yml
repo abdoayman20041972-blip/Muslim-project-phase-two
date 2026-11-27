@@ -3,6 +3,10 @@ name: Build Android APK
 on:
   workflow_dispatch:
 
+# The job only reads the repository and uploads artifacts (which needs no token scope).
+permissions:
+  contents: read
+
 # Starting a second build on the same branch cancels the one still running.
 concurrency:
   group: build-apk-${{ github.ref }}
@@ -13,23 +17,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 2
 
       - name: Set up Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
 
       - name: Set up JDK 21 (required by Capacitor 7)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: 21
 
       # Gradle downloads (AGP, Kotlin, Capacitor libraries) are reused between builds.
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.gradle/caches
@@ -54,7 +60,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Upload the resolved package-lock.json
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: package-lock
           path: package-lock.json
@@ -94,6 +100,13 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit $CODE
 
+      # Lint is advisory for now (continue-on-error): 0 errors today, warnings are listed in the log.
+      # scripts/lint.sh installs ESLint in its own folder because the project's TypeScript 7 is newer than
+      # typescript-eslint supports; the project's node_modules and package-lock.json are not touched.
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: bash scripts/lint.sh
+
       - name: Build web app (optimized production build, prerendered for Capacitor)
         run: PRERENDER=1 npm run build
 
@@ -103,6 +116,28 @@ jobs:
             echo "::error::Web build did not produce .output/public/index.html"
             exit 1
           }
+
+      # Content-Security-Policy: the inline scripts of the prerendered page change per build, so their
+      # hashes are computed from the final HTML. The smoke test proves the app still starts under it.
+      - name: Add Content-Security-Policy to the built index.html
+        run: node scripts/add-csp.mjs
+
+      - name: CSP smoke test (app renders in headless Chrome with no CSP violation)
+        run: |
+          cd .output/public
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          SRV=$!
+          sleep 2
+          google-chrome --headless=new --no-sandbox --disable-gpu --enable-logging=stderr --v=0 \
+            --virtual-time-budget=8000 --dump-dom http://localhost:8765/ > /tmp/csp-dom.html 2> /tmp/csp-chrome.log || true
+          kill "$SRV" || true
+          if grep -qi "content security policy" /tmp/csp-chrome.log; then
+            grep -i "content security policy" /tmp/csp-chrome.log | head -5
+            echo "::error::The Content-Security-Policy blocked something while the app started"; exit 1
+          fi
+          SIZE=$(wc -c < /tmp/csp-dom.html)
+          echo "rendered DOM size: $SIZE bytes"
+          [ "$SIZE" -gt 20000 ] || { echo "::error::App did not render under the Content-Security-Policy (DOM only $SIZE bytes)"; exit 1; }
 
       - name: Create Android project (generated during build, not committed)
         run: npx cap add android
@@ -122,6 +157,26 @@ jobs:
           sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" "$GRADLE"
           grep -q "versionName \"$VERSION_NAME\"" "$GRADLE" || { echo "::error::versionName bump failed"; exit 1; }
           grep -q "versionCode $VERSION_CODE\$" "$GRADLE" || { echo "::error::versionCode bump failed"; exit 1; }
+
+      # versionCode guard: it must be an integer and must never go DOWN compared with the
+      # previous commit of this workflow (equal is fine for rebuilds and feature branches;
+      # a manual bump upward is always accepted).
+      - name: Check versionCode is an integer and did not decrease
+        run: |
+          # Accepts VERSION_CODE: "22", '22' or 22 (optionally followed by a comment).
+          parse() { grep -E '^\s*VERSION_CODE:' | head -n 1 | sed -E 's/^[^:]*:[[:space:]]*//; s/[[:space:]]*#.*$//' | tr -d "\"' \t\r"; }
+          NOW=$(parse < .github/workflows/build-apk.yml)
+          case "$NOW" in ''|*[!0-9]*) echo "::error::VERSION_CODE in the current workflow is not a plain integer (got '$NOW')"; exit 1;; esac
+          if ! git rev-parse --verify --quiet HEAD~1 >/dev/null; then
+            echo "No previous commit to compare (versionCode $NOW)."; exit 0
+          fi
+          PREV=$(git show HEAD~1:.github/workflows/build-apk.yml | parse)
+          case "$PREV" in ''|*[!0-9]*) echo "::error::Could not read VERSION_CODE from the previous commit's workflow (got '$PREV'); refusing to skip the comparison"; exit 1;; esac
+          if [ "$NOW" -lt "$PREV" ]; then
+            echo "::error::versionCode went down ($PREV -> $NOW); Android refuses an APK with a lower versionCode as an update"
+            exit 1
+          fi
+          echo "versionCode $NOW (previous commit: $PREV)"
 
       - name: Bundle adhan sound into raw resources
         run: |
@@ -148,20 +203,26 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/muslim-release.keystore
-            {
-              echo "storeFile=muslim-release.keystore"
-              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
-              echo "keyAlias=$ANDROID_KEY_ALIAS"
-              echo "keyPassword=$ANDROID_KEY_PASSWORD"
-            } > android/keystore.properties
-            echo "variant=Release" >> "$GITHUB_OUTPUT"
-            echo "Signing with the release keystore."
-          else
-            echo "variant=Debug" >> "$GITHUB_OUTPUT"
-            echo "Release secrets not set; building a debug APK (fine for personal installs)."
+          # A missing secret must stop the build: silently producing a debug APK would be signed
+          # with a different certificate and could not update the installed app.
+          MISSING=""
+          [ -n "$ANDROID_KEYSTORE_BASE64" ] || MISSING="$MISSING ANDROID_KEYSTORE_BASE64"
+          [ -n "$ANDROID_KEYSTORE_PASSWORD" ] || MISSING="$MISSING ANDROID_KEYSTORE_PASSWORD"
+          [ -n "$ANDROID_KEY_ALIAS" ] || MISSING="$MISSING ANDROID_KEY_ALIAS"
+          [ -n "$ANDROID_KEY_PASSWORD" ] || MISSING="$MISSING ANDROID_KEY_PASSWORD"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing signing secret(s):$MISSING. Refusing to build an unsigned or debug-signed APK."
+            exit 1
           fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/muslim-release.keystore
+          {
+            echo "storeFile=muslim-release.keystore"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/keystore.properties
+          echo "variant=Release" >> "$GITHUB_OUTPUT"
+          echo "Signing with the release keystore."
 
       - name: Build APK
         run: cd android && ./gradlew "assemble${{ steps.signing.outputs.variant }}" --no-daemon
@@ -182,8 +243,28 @@ jobs:
             echo "$PERMS" | grep -q "android.permission.$P" || { echo "::error::APK is missing android.permission.$P"; exit 1; }
           done
 
+      # The final merged manifest must not allow Android/Google backup of app data.
+      # aapt prints allowBackup as 0x0 (false) or 0xffffffff (true); a missing attribute
+      # means Android's default (true), which is also a failure. Android 12+ device-to-device
+      # transfer is governed by android:dataExtractionRules (and fullBackupContent before 12),
+      # so both attributes must be present too. This proves the manifest declares them; it does
+      # not prove a transfer cannot happen on a given phone.
+      - name: Verify APK disallows backup
+        env:
+          VARIANT: ${{ steps.signing.outputs.variant }}
+        run: |
+          V=$(echo "$VARIANT" | tr '[:upper:]' '[:lower:]')
+          APK="android/app/build/outputs/apk/$V/app-$V.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          TREE=$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)
+          LINE=$(echo "$TREE" | grep -m1 'android:allowBackup' || true)
+          echo "manifest: ${LINE:-allowBackup attribute missing}"
+          echo "$LINE" | grep -q '=(type 0x12)0x0' || { echo "::error::Final manifest does not set android:allowBackup=false"; exit 1; }
+          echo "$TREE" | grep -q 'android:dataExtractionRules' || { echo "::error::Final manifest has no android:dataExtractionRules"; exit 1; }
+          echo "$TREE" | grep -q 'android:fullBackupContent' || { echo "::error::Final manifest has no android:fullBackupContent"; exit 1; }
+
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: muslim-app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}-apk
           path: android/app/build/outputs/apk/${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}/app-${{ steps.signing.outputs.variant == 'Release' && 'release' || 'debug' }}.apk

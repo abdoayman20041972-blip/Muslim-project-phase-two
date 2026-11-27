@@ -124,7 +124,7 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
                 التكرار {toArabicNumber(Math.min(drill.done + (drill.complete ? 0 : 1), drill.repeats))} من {toArabicNumber(drill.repeats)}
               </span>
             </div>
-            <div className="mt-1 text-[0.6875rem] text-azkar-ink-soft">
+            <div className="mt-1 text-[0.8125rem] text-azkar-ink-soft">
               {drill.gap ? 'فاصل صمت…' : drill.status === 'loading' ? 'جارٍ التحميل…' : playing ? 'جارٍ التشغيل' : 'متوقف مؤقتًا'}
             </div>
           </div>
@@ -132,7 +132,7 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
         {hideText && currentAyah && (
           <div className="rounded-[1.1rem] border border-azkar-gold-soft px-4 py-3">
             {peek ? (
-              <div className="font-amiri text-[1.125rem] leading-[2.05] text-azkar-ink">{currentAyah.text}</div>
+              <div className="font-quran text-[1.125rem] leading-[2.05] text-azkar-ink">{currentAyah.text}</div>
             ) : (
               <div className="py-2 text-center text-sm text-azkar-ink-soft">النص مخفي للاختبار الذاتي</div>
             )}
@@ -173,7 +173,7 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
             {finished ? 'إغلاق التكرار' : 'إنهاء التكرار'}
           </button>
         </div>
-        <p className="text-center text-[0.6875rem] text-azkar-ink-soft">
+        <p className="text-center text-[0.8125rem] text-azkar-ink-soft">
           يمكنك إغلاق هذه البطاقة ومتابعة التكرار من المصحف؛ التحكم من المشغل المصغّر.
         </p>
       </div>
@@ -185,18 +185,18 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
       <p className="text-[0.75rem] leading-6 text-azkar-ink-soft">
         كرّر آية أو مقطعًا بصوت قارئك للحفظ، مع إمكان إخفاء النص لاختبار نفسك.
       </p>
-      <p className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.6875rem] leading-5 text-azkar-ink-soft">
+      <p className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-[0.8125rem] leading-5 text-azkar-ink-soft">
         أول تشغيل لكل آية يحتاج اتصالًا بالإنترنت؛ وما سبق تشغيله على هذا الجهاز يعمل دون اتصال متى حفظه المتصفح محليًا.
       </p>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
-          <span className="mb-1 block text-[0.6875rem] font-bold text-azkar-ink-soft">من الآية</span>
+          <span className="mb-1 block text-[0.8125rem] font-bold text-azkar-ink-soft">من الآية</span>
           <span className="flex h-10 items-center rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3 text-sm text-azkar-ink">
             {toArabicNumber(startAyah.numberInSurah)}
           </span>
         </label>
         <label className="block">
-          <span className="mb-1 block text-[0.6875rem] font-bold text-azkar-ink-soft">إلى الآية</span>
+          <span className="mb-1 block text-[0.8125rem] font-bold text-azkar-ink-soft">إلى الآية</span>
           <select
             aria-label="إلى الآية"
             className={selectClass}
@@ -209,7 +209,7 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-[0.6875rem] font-bold text-azkar-ink-soft">تكرار كل آية</span>
+          <span className="mb-1 block text-[0.8125rem] font-bold text-azkar-ink-soft">تكرار كل آية</span>
           <select
             aria-label="تكرار كل آية"
             className={selectClass}
@@ -222,7 +222,7 @@ export function MemorizePanel({ surah, ayahs, startAyah, reciter, hideText, onHi
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-[0.6875rem] font-bold text-azkar-ink-soft">فاصل الصمت</span>
+          <span className="mb-1 block text-[0.8125rem] font-bold text-azkar-ink-soft">فاصل الصمت</span>
           <select
             aria-label="فاصل الصمت"
             className={selectClass}

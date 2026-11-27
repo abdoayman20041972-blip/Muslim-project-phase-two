@@ -34,7 +34,7 @@ export function ReciterPicker({ value, onChange, label, className = '' }: Props)
           <div role="dialog" aria-modal="true" aria-labelledby={titleId} dir="rtl" onClick={(event) => event.stopPropagation()}
             className="max-h-[78vh] w-full max-w-md overflow-y-auto rounded-t-[1.6rem] border border-azkar-gold-soft bg-azkar-card px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-azkar-hairline" aria-hidden="true" />
-            <h2 id={titleId} className="mb-2 font-amiri text-lg font-bold text-azkar-teal-ink">اختيار القارئ</h2>
+            <h2 id={titleId} className="mb-2 font-cairo text-lg font-bold text-azkar-teal-ink">اختيار القارئ</h2>
             <ul className="space-y-1.5">
               {QURAN_AUDIO_RECITERS.map((id) => {
                 const selected = id === value

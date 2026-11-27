@@ -66,7 +66,7 @@ export function HomeTile({
         {icon}
       </span>
       <span className="relative z-10 mt-9 block">
-        <span className="block font-amiri text-[1.125rem] font-bold leading-none text-white">{title}</span>
+        <span className="block font-cairo text-[1.125rem] font-bold leading-none text-white">{title}</span>
         <span className="mt-1.5 block text-[0.6875rem] font-semibold text-white">{subtitle}</span>
       </span>
       <span className="home-tile-arrow absolute bottom-2.5 left-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/10 text-white backdrop-blur-sm">
@@ -261,7 +261,7 @@ export function HomeView({
         <header ref={headerRef} className="home-rise-header flex items-center justify-between pb-5 pt-[max(.8rem,env(safe-area-inset-top))]">
           <div className="text-right" data-reveal>
             <div className="text-[0.8125rem] font-semibold text-azkar-ink-soft">{greeting}</div>
-            <div className="home-weekday font-amiri text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{weekdayName}</div>
+            <div className="home-weekday font-cairo text-[1.5rem] font-bold leading-tight text-azkar-teal-ink">{weekdayName}</div>
             <div className="home-date-line flex flex-wrap items-baseline gap-x-2 font-semibold text-azkar-gold-deep">
               <span className="text-[0.8125rem] text-azkar-teal-ink">{gregorianDate}</span>
               {hijriDate && <span className="text-[0.75rem]">{hijriDate}</span>}
@@ -293,7 +293,7 @@ export function HomeView({
           </div>
           <div className="pointer-events-none relative z-10 flex items-end justify-between pb-3 pt-2">
             <div className="home-prayer-name-block text-center">
-              <div className="font-amiri text-[1.9rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
+              <div className="font-cairo text-[1.9rem] font-bold leading-none text-white">{next ? PRAYER_LABELS[next.key] : '—'}</div>
               <div className="mt-1 text-[1.05rem] font-bold tabular-nums leading-none text-white/90">{next && timings?.[next.key] ? formatPrayerTime(timings[next.key]) : '—:—'}</div>
             </div>
             <div className="home-prayer-remaining-block text-center">
@@ -358,8 +358,8 @@ function ProgressCard({ onClick, title, sub, ring, icon, delay = 0 }: { onClick:
       ) : (
         <span className="home-progress-icon flex items-center justify-center">{icon}</span>
       )}
-      <span className="mt-2 block font-amiri text-[1rem] font-bold leading-tight text-azkar-teal-ink">{title}</span>
-      <span className="mt-0.5 block text-[0.6875rem] font-semibold text-azkar-ink-soft">{sub}</span>
+      <span className="mt-2 block font-cairo text-[1rem] font-bold leading-tight text-azkar-teal-ink">{title}</span>
+      <span className="mt-0.5 block text-[0.8125rem] font-semibold text-azkar-ink-soft">{sub}</span>
     </button>
   )
 }

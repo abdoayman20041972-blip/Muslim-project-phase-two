@@ -202,7 +202,7 @@ export function TasbihView({
         <header className="tasbih-minimal-header">
           <BackButton onClick={() => setView({ name: 'home' })} />
           <div className="tasbih-minimal-title">
-            <div className="font-amiri">السبحة</div>
+            <div className="font-cairo">السبحة</div>
           </div>
 
         </header>

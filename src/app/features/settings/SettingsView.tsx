@@ -18,6 +18,7 @@ import { useConfirmDialog } from '../../components/confirm-dialog'
 import { removeFromMirror, replaceMirror } from '../storage/preferencesMirror'
 import { useQuranPreferences } from '../quran/useQuranPreferences'
 import { validateBackupEntries } from '../../backupValidation'
+import { applyBackupAtomically, saveBackupFile } from '../../backupIO'
 import { dropPrayerPlanCarryover } from '../notifications/nativeNotifications'
 import { readPrayerCoords } from '../prayer/prayerTimes'
 import { APP_SETTINGS_KEYS, SETTINGS_RESET_KEYS, emitSettingsChanged, readSetting, writeSetting, isBackupKey } from '../../settings'
@@ -191,27 +192,20 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         const v = localStorage.getItem(k)
         if (v !== null) data[k] = v
       })
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            app: 'مسلم',
-            format: 'muslim-local-backup',
-            version: 2,
-            exportedAt: new Date().toISOString(),
-            data,
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: 'application/json' },
+    const json = JSON.stringify(
+      {
+        app: 'مسلم',
+        format: 'muslim-local-backup',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data,
+      },
+      null,
+      2,
     )
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'muslim-backup-' + new Date().toISOString().slice(0, 10) + '.json'
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    void saveBackupFile(json, 'muslim-backup-' + new Date().toISOString().slice(0, 10) + '.json').then((ok) => {
+      if (!ok) void alert({ message: 'تعذّر حفظ النسخة الاحتياطية. حاول مرة أخرى.' })
+    })
   }
   const importData = async (file: File) => {
     try {
@@ -222,12 +216,13 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
       if (!entries.length) throw 0
       const skipNote = rejected.length ? ` سيتم تجاهل ${rejected.length} عنصر تالف في الملف.` : ''
       if (!(await confirm({ message: 'استبدال البيانات الحالية بالنسخة الاحتياطية؟' + skipNote }))) return
-      Object.keys(localStorage)
-        .filter(isBackupKey)
-        .forEach((k) => localStorage.removeItem(k))
-      entries.forEach(([k, v]) => localStorage.setItem(k, v))
-      if (!(await replaceMirror(entries))) {
-        await alert({ message: 'تم استيراد النسخة، لكن تعذّر تحديث التخزين الأصلي للتطبيق. لم تتم إعادة التحميل حتى لا تعود بيانات قديمة. حاول الاستيراد مرة أخرى.' })
+      const applied = await applyBackupAtomically(entries, isBackupKey, replaceMirror)
+      if (!applied.ok) {
+        await alert({
+          message: applied.restored
+            ? 'تعذّر استيراد النسخة، وأُعيدت بياناتك السابقة كما كانت. لم يتغير شيء. حاول مرة أخرى.'
+            : 'تعذّر استيراد النسخة، وتعذّرت إعادة بياناتك السابقة بالكامل. تحقق من إعداداتك قبل المتابعة، ثم حاول الاستيراد مرة أخرى.',
+        })
         return
       }
       // A backup without a usable location must not leave prayer alarms from the old one.
@@ -286,14 +281,14 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         <div className="mb-5 flex items-center gap-3">
           <BackButton onClick={onBack} />
           <div>
-            <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
+            <div className="font-cairo text-2xl font-bold text-azkar-teal-ink">الإعدادات</div>
             <div className="text-[0.6875rem] text-azkar-ink-faint">كل التفضيلات في مكان واحد</div>
           </div>
         </div>
 
         {CATEGORY_GROUPS.map(([groupTitle, items]) => (
           <section key={groupTitle} className="mb-5" aria-label={groupTitle}>
-            <h2 className="mb-2 px-1 font-amiri text-sm font-bold text-azkar-teal-ink">{groupTitle}</h2>
+            <h2 className="mb-2 px-1 font-cairo text-sm font-bold text-azkar-teal-ink">{groupTitle}</h2>
             <div className="overflow-hidden rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card shadow-sm">
               {items.map(([id, t, d, Icon], i) => (
                 <button
@@ -305,8 +300,8 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
                     <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <b className="block font-amiri text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
-                    <span className="block text-[0.6875rem] leading-4 text-azkar-ink-soft">{d}</span>
+                    <b className="block font-cairo text-[0.9375rem] leading-5 text-azkar-teal-ink">{t}</b>
+                    <span className="block text-[0.8125rem] leading-4 text-azkar-ink-soft">{d}</span>
                   </span>
                   <span aria-hidden="true" className="text-lg text-azkar-ink-faint">‹</span>
                 </button>
@@ -322,7 +317,7 @@ export function SettingsView({ appearance, onAppearance, onBack, entry }: Props)
         <button onClick={back} className="h-10 w-10 rounded-full border bg-azkar-card">
           ‹
         </button>
-        <div className="font-amiri text-2xl font-bold text-azkar-teal-ink">
+        <div className="font-cairo text-2xl font-bold text-azkar-teal-ink">
           {
             (
               {

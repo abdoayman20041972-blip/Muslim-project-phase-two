@@ -20,7 +20,7 @@ export function Row({
       <div className={`min-w-0 text-right ${stacked ? 'w-full' : 'flex-1'}`}>
         <div className="text-[0.8125rem] font-bold text-azkar-ink">{title}</div>
         {description && (
-          <div className="mt-1 text-[0.6875rem] leading-5 text-azkar-ink-soft">{description}</div>
+          <div className="mt-1 text-[0.8125rem] leading-5 text-azkar-ink-soft">{description}</div>
         )}
       </div>
       {children}
@@ -30,7 +30,7 @@ export function Row({
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-5">
-      <h2 className="mb-2 px-2 font-amiri text-sm font-bold text-azkar-teal-ink">{title}</h2>
+      <h2 className="mb-2 px-2 font-cairo text-sm font-bold text-azkar-teal-ink">{title}</h2>
       <div className="overflow-hidden rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card shadow-sm">
         {children}
       </div>
@@ -53,7 +53,7 @@ export function Choice({
           key={k}
           onClick={() => onChange(k)}
           aria-pressed={current === k}
-          className={`min-h-11 min-w-0 rounded-xl border px-2 py-2 text-center text-[0.6875rem] font-bold leading-5 ${current === k ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
+          className={`min-h-11 min-w-0 rounded-xl border px-2 py-2 text-center text-[0.8125rem] font-bold leading-5 ${current === k ? 'border-azkar-teal bg-azkar-teal text-azkar-card' : 'border-azkar-gold-soft bg-azkar-bg-alt text-azkar-ink-soft'}`}
         >
           {v}
         </button>

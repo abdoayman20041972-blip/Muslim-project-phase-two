@@ -38,6 +38,7 @@ public class AlarmScheduler {
         if (alarmManager == null) return false;
         Intent intent = new Intent(context, AlarmFireReceiver.class);
         intent.putExtra("id", entry.id);
+        cancelLegacy(context, alarmManager, entry.id);
         PendingIntent pending = pendingBroadcast(context, entry.id, intent);
         if (pending == null) return false;
         PendingIntent show = showIntent(context, entry);
@@ -76,6 +77,7 @@ public class AlarmScheduler {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
         Intent intent = new Intent(context, AlarmFireReceiver.class);
+        cancelLegacy(context, alarmManager, id);
         PendingIntent pending = pendingBroadcast(context, id, intent);
         if (pending != null) alarmManager.cancel(pending);
     }
@@ -96,12 +98,38 @@ public class AlarmScheduler {
         return armed;
     }
 
+    /**
+     * The fire intent is explicit and the system never fills anything into it (the receiver only
+     * reads the "id" extra we put there), so the PendingIntent is IMMUTABLE.
+     */
     private static PendingIntent pendingBroadcast(Context context, int id, Intent intent) {
         int flags = PendingIntent.FLAG_CANCEL_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            flags |= PendingIntent.FLAG_MUTABLE;
+        if (Build.VERSION.SDK_INT >= 23) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
         }
         return PendingIntent.getBroadcast(context, id, intent, flags);
+    }
+
+    /**
+     * Alarms armed by earlier builds used a MUTABLE PendingIntent (a different identity for the
+     * system). Cancel any such leftover for this id so an upgrade can never leave two alarms for
+     * one prayer. FLAG_NO_CREATE returns null when none exists.
+     */
+    private static void cancelLegacy(Context context, AlarmManager alarmManager, int id) {
+        try {
+            Intent intent = new Intent(context, AlarmFireReceiver.class);
+            int flags = PendingIntent.FLAG_NO_CREATE;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                flags |= PendingIntent.FLAG_MUTABLE;
+            }
+            PendingIntent legacy = PendingIntent.getBroadcast(context, id, intent, flags);
+            if (legacy != null) {
+                alarmManager.cancel(legacy);
+                legacy.cancel();
+            }
+        } catch (RuntimeException ignored) {
+            // Best effort: the immutable alarm below is still armed.
+        }
     }
 
     /** Opens the app when the user taps the status-bar alarm icon. Data URIs are

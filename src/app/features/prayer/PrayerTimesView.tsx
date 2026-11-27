@@ -67,8 +67,8 @@ function PrayerTimeline({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <span className="font-amiri font-bold text-base text-azkar-teal-ink">مواقيت اليوم</span>
-        <span className="text-[0.6875rem] text-azkar-ink-soft">
+        <span className="font-cairo font-bold text-base text-azkar-teal-ink">مواقيت اليوم</span>
+        <span className="text-[0.8125rem] text-azkar-ink-soft">
           {formatLocalizedDate(now, { weekday: 'long', day: 'numeric', month: 'long' }, 'ar-EG')}
         </span>
       </div>
@@ -80,8 +80,8 @@ function PrayerTimeline({
               key={key}
               className={`prayer-time-chip rounded-[1rem] px-1.5 py-2.5 text-center border ${next ? 'bg-azkar-teal text-azkar-card border-azkar-teal' : 'bg-azkar-bg-alt border-azkar-gold-soft/70 text-azkar-ink'}`}
             >
-              <div className="text-[0.6875rem] font-bold mb-1">{LABELS[key]}</div>
-              <div className="text-[0.6875rem] font-semibold">
+              <div className="text-[0.8125rem] font-bold mb-1">{LABELS[key]}</div>
+              <div className="text-[0.8125rem] font-semibold">
                 {timings[key] ? formatPrayerTime(timings[key]) : '—:—'}
               </div>
             </div>
@@ -109,7 +109,7 @@ function NextPrayerCard({
       <div className="relative flex items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="text-[0.6875rem] opacity-65 mb-1">الصلاة القادمة</div>
-          <div aria-live="polite" className="font-amiri text-2xl font-bold truncate">
+          <div aria-live="polite" className="font-cairo text-2xl font-bold truncate">
             {next?.key === 'Fajr'
               ? 'الفجر'
               : next?.key === 'Dhuhr'
@@ -126,7 +126,7 @@ function NextPrayerCard({
           <div className="mt-1 text-[0.6875rem] opacity-70">متبقي {formatCountdown(remainingMs)}</div>
         </div>
         <div className="shrink-0 text-left" dir="rtl">
-          <div className="font-amiri text-[0.6875rem] opacity-60">الوقت</div>
+          <div className="font-cairo text-[0.6875rem] opacity-60">الوقت</div>
           <div className="mt-0.5 text-xl font-bold tabular-nums">
             {next ? formatPrayerTime(next.time.toTimeString().slice(0, 5)) : '—:—'}
           </div>
@@ -196,7 +196,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
       <div className="flex items-center gap-3 mb-5">
         <BackButton onClick={onBack} />
         <div className="flex-1">
-          <div className="font-amiri font-bold text-2xl text-azkar-teal-ink">مواقيت الصلاة</div>
+          <div className="font-cairo font-bold text-2xl text-azkar-teal-ink">مواقيت الصلاة</div>
           <div className="text-[0.6875rem] text-azkar-ink-faint mt-0.5">صلاتك في وقتها</div>
         </div>
         {onOpenQibla ? (
@@ -220,7 +220,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           <div className="relative mx-auto mb-4 w-14 h-14 rounded-2xl border border-azkar-gold-soft bg-azkar-bg-alt text-azkar-teal flex items-center justify-center">
             <PinIcon />
           </div>
-          <p className="font-amiri font-bold text-lg mb-2">نحتاج موقعك لحساب المواقيت</p>
+          <p className="font-cairo font-bold text-lg mb-2">نحتاج موقعك لحساب المواقيت</p>
           <p className="text-xs text-azkar-ink-soft leading-6 mb-4">
             يمكنك السماح بالموقع، أو اختيار مدينة، أو إدخال الإحداثيات يدويًا. تُحفظ الإحداثيات بدقة
             تقريبية لتقليل بيانات الموقع المخزنة.
@@ -234,13 +234,13 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           </button>
           {locationError && <p role="alert" className="mt-3 text-xs text-azkar-ink-soft">{locationError}</p>}
           <div className="mt-5">
-            <div className="text-[0.6875rem] font-bold text-azkar-ink-soft mb-2">اختر مدينة</div>
+            <div className="text-[0.8125rem] font-bold text-azkar-ink-soft mb-2">اختر مدينة</div>
             <div className="flex flex-wrap justify-center gap-2">
               {CITIES.map(([name, lat, lng]) => (
                 <button
                   key={name}
                   onClick={() => chooseCity(lat, lng)}
-                  className="rounded-full border border-azkar-gold-soft px-3 py-2 text-[0.6875rem]"
+                  className="rounded-full border border-azkar-gold-soft px-3 py-2 text-[0.8125rem]"
                 >
                   {name}
                 </button>
@@ -253,6 +253,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
               onChange={(e) => setManualLat(e.target.value)}
               inputMode="decimal"
               placeholder="خط العرض"
+              aria-label="خط العرض"
               className="rounded-xl border border-azkar-hairline bg-azkar-bg-alt px-3 py-2 text-xs"
             />
             <input
@@ -260,6 +261,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
               onChange={(e) => setManualLng(e.target.value)}
               inputMode="decimal"
               placeholder="خط الطول"
+              aria-label="خط الطول"
               className="rounded-xl border border-azkar-hairline bg-azkar-bg-alt px-3 py-2 text-xs"
             />
           </div>
@@ -295,7 +297,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           </div>
           <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card p-4 mb-4 shadow-sm">
             <div className="text-[0.6875rem] text-azkar-ink-faint">التاريخ الهجري</div>
-            <div className="mt-1 font-amiri text-lg font-bold text-azkar-teal-ink">
+            <div className="mt-1 font-cairo text-lg font-bold text-azkar-teal-ink">
               {formatLocalizedDate(
                 new Date(),
                 { day: 'numeric', month: 'long', year: 'numeric' },
@@ -308,7 +310,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
           </div>
           <div className="rounded-[var(--r-lg)] border border-azkar-gold-soft bg-azkar-card overflow-hidden mb-4 shadow-sm">
             <div className="px-5 py-3.5 border-b border-azkar-gold-soft/50 flex items-center justify-between gap-3">
-              <span className="text-[0.6875rem] font-bold text-azkar-ink">تفاصيل اليوم</span>
+              <span className="text-[0.8125rem] font-bold text-azkar-ink">تفاصيل اليوم</span>
               <span className="text-[0.6875rem] text-azkar-ink-faint">
                 {formatLocalizedDate(
                   new Date(),
@@ -322,7 +324,7 @@ export function PrayerTimesView({ onBack, onOpenQibla }: { onBack: () => void; o
                 key={key}
                 className="flex items-center justify-between px-5 py-4 min-h-14 border-b last:border-b-0 border-azkar-gold-soft/40"
               >
-                <span className="font-amiri text-[1.0625rem]">{LABELS[key]}</span>
+                <span className="font-cairo text-[1.0625rem]">{LABELS[key]}</span>
                 <span className="text-sm text-azkar-ink-soft">
                   {timings[key] ? formatPrayerTime(timings[key]) : '—:—'}
                 </span>

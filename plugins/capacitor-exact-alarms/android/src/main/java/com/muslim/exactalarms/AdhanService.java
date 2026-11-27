@@ -1,5 +1,6 @@
 package com.muslim.exactalarms;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,15 +8,22 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 /**
  * Plays the adhan once, from start to its natural end, as a foreground service.
@@ -26,17 +34,34 @@ import androidx.core.app.NotificationCompat;
  * early. The audio uses the notification usage, so it follows the phone silent and vibrate
  * modes (user choice 17284237: respect silent). The notification itself is silent (its own low-importance channel);
  * the sound comes from the MediaPlayer, so there is no double sound.
+ *
+ * Audio focus: the adhan asks for a TRANSIENT focus (not "may duck"), so other audio such as a
+ * Quran recitation or music pauses for the call to prayer and resumes when it ends, instead of
+ * playing underneath it. Focus is abandoned as soon as playback stops. A phone call or another
+ * app taking focus ends the adhan (it is not resumed late).
+ *
+ * If Android refuses startForeground, a normal heads-up notification is posted on the prayer's
+ * own channel (or a fallback channel) so the prayer time is never silently dropped.
  */
 public class AdhanService extends Service {
 
     static final String ACTION_STOP = "com.muslim.exactalarms.ADHAN_STOP";
     static final String CHANNEL_ID = "adhan-playback-v1";
+    static final String FALLBACK_CHANNEL_ID = "adhan-fallback-v1";
     private static final String WAKE_TAG = "muslim:adhan";
+    private static final String TAG = "AdhanService";
     /** Fallback watchdog when the recording length is unknown; normally length + 30s is used. */
     private static final long MAX_PLAY_MS = 6L * 60_000;
 
     private MediaPlayer player;
     private PowerManager.WakeLock wakeLock;
+    private AudioManager audioManager;
+    private AudioFocusRequest focusRequest;
+    private final AudioManager.OnAudioFocusChangeListener focusListener = change -> {
+        if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            finishPlayback();
+        }
+    };
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable watchdog = this::finishPlayback;
 
@@ -47,6 +72,7 @@ public class AdhanService extends Service {
         intent.putExtra("title", entry.title);
         intent.putExtra("body", entry.body);
         intent.putExtra("target", entry.target);
+        intent.putExtra("channel", entry.channelId);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent);
         } else {
@@ -79,6 +105,10 @@ public class AdhanService extends Service {
                 startForeground(id == 0 ? 7001 : id, notification);
             }
         } catch (RuntimeException refused) {
+            // The system refused foreground status: show an ordinary notification instead of
+            // stopping silently, then end the service.
+            String channel = intent == null ? null : intent.getStringExtra("channel");
+            postFallbackNotification(id, title == null ? "" : title, body == null ? "" : body, channel);
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -125,6 +155,7 @@ public class AdhanService extends Service {
                 return true;
             });
             created.prepare();
+            requestFocus();
             created.start();
             player = created;
             return true;
@@ -147,7 +178,43 @@ public class AdhanService extends Service {
         stopSelf();
     }
 
+    private void requestFocus() {
+        try {
+            if (audioManager == null) audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager == null) return;
+            abandonFocus();
+            AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+            // The result is not required: when focus is refused the adhan still plays, because
+            // a missed call to prayer is worse than overlapping audio.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(attributes)
+                    .setOnAudioFocusChangeListener(focusListener, handler)
+                    .build();
+                audioManager.requestAudioFocus(focusRequest);
+            } else {
+                audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_NOTIFICATION, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            }
+        } catch (RuntimeException ignored) { }
+    }
+
+    private void abandonFocus() {
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (focusRequest != null) audioManager.abandonAudioFocusRequest(focusRequest);
+                focusRequest = null;
+            } else {
+                audioManager.abandonAudioFocus(focusListener);
+            }
+        } catch (RuntimeException ignored) { }
+    }
+
     private void releasePlayer() {
+        abandonFocus();
         if (player == null) return;
         try {
             if (player.isPlaying()) player.stop();
@@ -163,6 +230,57 @@ public class AdhanService extends Service {
             if (wakeLock == null) { wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_TAG); wakeLock.setReferenceCounted(false); }
             wakeLock.acquire(MAX_PLAY_MS);
         } catch (RuntimeException ignored) { }
+    }
+
+    private void postFallbackNotification(int id, String title, String body, String channelId) {
+        try {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager == null) return;
+            // Same explicit check as AlarmFireReceiver: a denied POST_NOTIFICATIONS (Android 13+) drops
+            // the notification silently, so log it instead of pretending it was shown.
+            if (Build.VERSION.SDK_INT >= 33
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Adhan fallback notification not shown: POST_NOTIFICATIONS is not granted");
+                return;
+            }
+            Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            String channel = channelId;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (channel == null || channel.isEmpty() || manager.getNotificationChannel(channel) == null) {
+                    channel = FALLBACK_CHANNEL_ID;
+                    if (manager.getNotificationChannel(channel) == null) {
+                        NotificationChannel fallback = new NotificationChannel(channel, "تنبيه الأذان", NotificationManager.IMPORTANCE_HIGH);
+                        fallback.setSound(sound, new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build());
+                        manager.createNotificationChannel(fallback);
+                    }
+                }
+            } else if (channel == null) {
+                channel = FALLBACK_CHANNEL_ID;
+            }
+            Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
+            if (launch == null) launch = new Intent();
+            int piFlags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
+            Resources resources = getResources();
+            int icon = resources.getIdentifier("muslim_stat_icon", "drawable", getPackageName());
+            if (icon == 0) icon = resources.getIdentifier("ic_launcher", "mipmap", getPackageName());
+            if (icon == 0) icon = android.R.drawable.ic_lock_silent_mode_off;
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channel)
+                .setSmallIcon(icon)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setSound(sound)
+                .setContentIntent(PendingIntent.getActivity(this, id, launch, piFlags));
+            manager.notify(id == 0 ? 7001 : id, builder.build());
+        } catch (RuntimeException ignored) {
+            // Nothing more can be done; the receiver already logged the fire.
+        }
     }
 
     private Notification buildNotification(int id, String title, String body, String target) {

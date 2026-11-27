@@ -30,7 +30,7 @@ const META_SOURCES = 'مصادر النوع والترتيب: مصحف المد�
 function Chip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3 py-2 text-center">
-      <div className="text-[0.6875rem] text-azkar-ink-soft">{label}</div>
+      <div className="text-[0.8125rem] text-azkar-ink-soft">{label}</div>
       <div className="mt-0.5 text-sm font-bold text-azkar-teal-ink">{value}</div>
     </div>
   )
@@ -70,7 +70,7 @@ export function SurahInfoCard({ surah, onClose }: { surah: SurahMeta; onClose: (
       >
         <div className="shrink-0 border-b border-azkar-gold-soft px-5 pb-3 pt-5">
           <div className="flex items-center justify-between">
-            <div className="font-amiri text-lg font-bold">عن سورة {surah.shortName}</div>
+            <div className="font-cairo text-lg font-bold">عن سورة {surah.shortName}</div>
             <button
               onClick={onClose}
               aria-label="إغلاق معلومات السورة"
@@ -122,7 +122,7 @@ export function SurahInfoCard({ surah, onClose }: { surah: SurahMeta; onClose: (
                   <p className="text-[0.9375rem] leading-8 text-azkar-ink whitespace-pre-line">{info.grace}</p>
                 </section>
               )}
-              <div className="text-center text-[0.6875rem] leading-5 text-azkar-ink-soft">
+              <div className="text-center text-[0.8125rem] leading-5 text-azkar-ink-soft">
                 {META_SOURCES}<br />
                 المصدر: الموسوعة القرآنية (quranpedia.net){version ? ` · إصدار البيانات ${version}` : ''}
               </div>

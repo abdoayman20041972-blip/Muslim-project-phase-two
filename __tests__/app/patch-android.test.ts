@@ -134,3 +134,57 @@ const existsSyncFn = (path: string) => {
     return false
   }
 }
+
+describe('patch-android.mjs allowBackup', () => {
+  const appTag = (root: string) => /<application\b[^>]*>/.exec(readFileSync(join(root, 'app', 'src', 'main', 'AndroidManifest.xml'), 'utf8'))![0]
+
+  it('adds allowBackup=false when the attribute is missing', () => {
+    const { root } = fixture()
+    run(root)
+    expect(appTag(root)).toContain('android:allowBackup="false"')
+  })
+
+  it('turns the Capacitor template value true into false and is idempotent', () => {
+    const { root, main } = fixture()
+    const path = join(main, 'AndroidManifest.xml')
+    writeFileSync(path, readFileSync(path, 'utf8').replace('<application android:label="x">', '<application android:allowBackup="true" android:label="x">'))
+    run(root)
+    const once = readFileSync(path, 'utf8')
+    expect(appTag(root)).toContain('android:allowBackup="false"')
+    expect(appTag(root)).not.toContain('allowBackup="true"')
+    expect(once.match(/allowBackup/g)).toHaveLength(1)
+    run(root)
+    expect(readFileSync(path, 'utf8')).toBe(once)
+  })
+
+  it('declares data-extraction rules and fullBackupContent that exclude everything, idempotently', () => {
+    const { root, main } = fixture()
+    const path = join(main, 'AndroidManifest.xml')
+    run(root)
+    const once = readFileSync(path, 'utf8')
+    expect(appTag(root)).toContain('android:dataExtractionRules="@xml/backup_rules"')
+    expect(appTag(root)).toContain('android:fullBackupContent="@xml/backup_full_rules"')
+    expect(once.match(/dataExtractionRules/g)).toHaveLength(1)
+    const rules = readFileSync(join(main, 'res', 'xml', 'backup_rules.xml'), 'utf8')
+    const cloud = /<cloud-backup>([\s\S]*?)<\/cloud-backup>/.exec(rules)![1]
+    const transfer = /<device-transfer>([\s\S]*?)<\/device-transfer>/.exec(rules)![1]
+    for (const section of [cloud, transfer]) {
+      for (const d of ['root', 'file', 'database', 'sharedpref', 'external']) expect(section).toContain(`<exclude domain="${d}" path="." />`)
+      expect(section).not.toContain('<include')
+    }
+    const full = readFileSync(join(main, 'res', 'xml', 'backup_full_rules.xml'), 'utf8')
+    expect(full).toContain('<exclude domain="sharedpref" path="." />')
+    run(root)
+    expect(readFileSync(path, 'utf8')).toBe(once)
+  })
+
+  it('replaces pre-existing different backup attributes', () => {
+    const { root, main } = fixture()
+    const path = join(main, 'AndroidManifest.xml')
+    writeFileSync(path, readFileSync(path, 'utf8').replace('<application android:label="x">', '<application android:dataExtractionRules="@xml/other" android:fullBackupContent="true" android:label="x">'))
+    run(root)
+    expect(appTag(root)).toContain('android:dataExtractionRules="@xml/backup_rules"')
+    expect(appTag(root)).toContain('android:fullBackupContent="@xml/backup_full_rules"')
+    expect(appTag(root)).not.toContain('@xml/other')
+  })
+})

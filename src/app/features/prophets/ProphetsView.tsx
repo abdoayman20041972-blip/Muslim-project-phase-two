@@ -47,14 +47,14 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
       <header className="hadith-header">
         <BackButton onClick={onBack} />
         <div className="min-w-0 flex-1">
-          <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
+          <h1 className="font-cairo text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
           <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
         </div>
         <span className="hadith-mark" aria-hidden="true"><ScrollText className="h-4 w-4" /></span>
       </header>
 
       <div className="mb-1 flex items-center justify-between px-1">
-        <span className="font-amiri text-base font-bold text-azkar-teal-ink">{PROPHET_STORIES.length} نبيًّا من قصص القرآن</span>
+        <span className="font-cairo text-base font-bold text-azkar-teal-ink">{PROPHET_STORIES.length} نبيًّا من قصص القرآن</span>
         <span className="text-[0.6875rem] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
       </div>
 
@@ -65,10 +65,10 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
               <span className="ps-card-num" aria-hidden="true">{i + 1}</span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                  <span className="ps-card-name font-amiri">{story.name}</span>
+                  <span className="ps-card-name font-cairo">{story.name}</span>
                   <span className="ps-card-epithet">{story.epithet}</span>
                 </span>
-                <span className="mt-1 block text-[0.6875rem] leading-relaxed text-azkar-ink-soft">{story.summary}</span>
+                <span className="mt-1 block text-[0.8125rem] leading-relaxed text-azkar-ink-soft">{story.summary}</span>
               </span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-azkar-gold-deep" aria-hidden="true" />
             </button>
@@ -98,7 +98,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
       <header className="hadith-header">
         <BackButton onClick={onBack} label="عودة إلى القائمة" />
         <div className="min-w-0 flex-1">
-          <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">{story.name}</h1>
+          <h1 className="font-cairo text-2xl font-bold text-azkar-teal-ink">{story.name}</h1>
           <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">{story.epithet} · {story.era}</p>
         </div>
         <span className="ps-count" aria-hidden="true">{index + 1}/{PROPHET_STORIES.length}</span>
@@ -114,7 +114,7 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
             <li key={i} className="hadith-card">
               <div className="mb-2 flex items-center gap-2">
                 <span className="ps-scene-num" aria-hidden="true">{i + 1}</span>
-                <h2 className="font-amiri text-base font-bold text-azkar-teal-ink">{scene.heading}</h2>
+                <h2 className="font-cairo text-base font-bold text-azkar-teal-ink">{scene.heading}</h2>
               </div>
               <p className={`leading-loose text-azkar-ink ${fontClass}`}>{scene.text}</p>
             </li>
@@ -123,12 +123,12 @@ function StoryReader({ story, index, onBack, onNext }: { story: ProphetStory; in
       )}
 
       <blockquote className="ps-verse">
-        <p className="font-amiri">{story.verse.text}</p>
+        <p className="font-quran">{story.verse.text}</p>
         <cite>{story.verse.ref}</cite>
       </blockquote>
 
       <section className="hadith-card">
-        <h2 className="mb-2 flex items-center gap-2 font-amiri text-base font-bold text-azkar-teal-ink">
+        <h2 className="mb-2 flex items-center gap-2 font-cairo text-base font-bold text-azkar-teal-ink">
           <BookOpen className="h-4 w-4 text-azkar-gold-deep" aria-hidden="true" /> العِبَر
         </h2>
         <ul className="ps-lessons">

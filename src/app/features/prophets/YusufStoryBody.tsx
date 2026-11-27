@@ -47,7 +47,7 @@ function VerseBlock({ range, ayahs, failed }: { range: [number, number]; ayahs: 
       <figcaption className="ys-verse-label">قال تعالى</figcaption>
       <div className="ys-verse-row">
         {ayahs ? (
-          <p className="ys-verse-text font-amiri">
+          <p className="ys-verse-text font-quran">
             {numbers.map((n) => (
               <span key={n}>
                 {ayahs.get(n) ?? ''}{' '}
@@ -98,7 +98,7 @@ export function YusufStoryBody({ fontClass }: { fontClass: string }) {
           <li key={scene.h} className="ys-scene">
             <div className="ys-scene-head">
               <span className="ys-scene-no" aria-hidden="true">{toArabicDigits(i + 1)}</span>
-              <h2 className="font-amiri">{scene.h}</h2>
+              <h2 className="font-cairo">{scene.h}</h2>
             </div>
             {scene.p.map((para, k) => (
               <Para key={k} para={para} fontClass={fontClass} />

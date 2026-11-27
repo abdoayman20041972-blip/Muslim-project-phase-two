@@ -1,3 +1,4 @@
+import { ScreenActiveContext } from '../backStack'
 import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { hasBottomNav, type Section, type View } from '../constants'
 import { ConfirmDialogProvider } from './confirm-dialog'
@@ -57,7 +58,7 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
       return (
         <section dir="rtl" role="alert" className="flex w-full flex-col items-center justify-center gap-4 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-azkar-gold-tint text-2xl" aria-hidden="true">!</div>
-          <h1 className="font-amiri text-2xl font-bold text-azkar-teal-ink">حدث خطأ في هذه الشاشة</h1>
+          <h1 className="font-cairo text-2xl font-bold text-azkar-teal-ink">حدث خطأ في هذه الشاشة</h1>
           <p className="max-w-md text-sm leading-6 text-azkar-ink-soft">{this.props.showHome === false ? 'يمكنك استخدام شريط التنقل بالأسفل.' : 'يمكنك إعادة المحاولة أو العودة إلى الرئيسية.'}</p>
           <div className="flex w-full max-w-xs gap-3">
             <button type="button" onClick={this.retry} className="u-pressable flex-1 rounded-xl bg-azkar-teal px-4 py-2.5 text-sm font-bold text-azkar-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azkar-gold">إعادة المحاولة</button>
@@ -126,7 +127,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
   const keep = (name: View['name']) => view.name === name || (name !== 'qibla' && visited.has(name))
   const shell = (name: View['name'], content: ReactNode) => (
     <div className={view.name === name ? 'contents' : 'hidden'} aria-hidden={view.name !== name}>
-      {content}
+      <ScreenActiveContext.Provider value={view.name === name}>{content}</ScreenActiveContext.Provider>
     </div>
   )
   // Bottom padding follows the chrome: screens with the bar clear it, inner
@@ -144,7 +145,7 @@ export function AppContent({ view, home, settings, azkarList, favorites, categor
       {keep('mushaf-list') && shell('mushaf-list', wrapScreen(mushafList, 'mushaf-list', onHome))}
       {mushafReader && (
         <div className={mushafReaderActive ? 'contents' : 'hidden'} aria-hidden={!mushafReaderActive}>
-          {wrapScreen(mushafReader, view.name, onHome)}
+          <ScreenActiveContext.Provider value={mushafReaderActive}>{wrapScreen(mushafReader, view.name, onHome)}</ScreenActiveContext.Provider>
         </div>
       )}
       {keep('prayer-times') && shell('prayer-times', wrapScreen(prayer, 'prayer-times', onHome))}
