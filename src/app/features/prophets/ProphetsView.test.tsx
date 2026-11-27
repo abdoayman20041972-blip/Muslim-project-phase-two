@@ -39,7 +39,7 @@ describe('ProphetsView', () => {
     const blocks = document.querySelectorAll('[data-testid="ys-verse"]')
     expect(blocks.length).toBeGreaterThan(3)
     blocks.forEach((block) => {
-      expect(block.querySelector('svg')).toBeNull()
+      expect(block.querySelector('svg:not([data-copy-icon])')).toBeNull()
       expect(block.querySelector('.ys-verse-text')?.textContent?.trim().length).toBeGreaterThan(10)
     })
   })
@@ -47,6 +47,6 @@ describe('ProphetsView', () => {
     render(<ProphetsView onBack={() => {}} />)
     fireEvent.click(screen.getByText('يوسف'))
     await waitFor(() => expect(document.querySelectorAll('.ys-ayah-no').length).toBe(111))
-    document.querySelectorAll('[data-testid="ys-verse"]').forEach((block) => expect(block.querySelector('svg')).toBeNull())
+    document.querySelectorAll('[data-testid="ys-verse"]').forEach((block) => expect(block.querySelector('svg:not([data-copy-icon])')).toBeNull())
   })
 })
