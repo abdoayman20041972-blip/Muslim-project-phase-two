@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { loadSurah } from '../quran/loadSurah'
+import { CopyButton } from '../azkar/CopyButton'
 import { YUSUF_INTRO_HADITH, YUSUF_INTRO_VERSES, YUSUF_SCENES, type YusufPara } from './yusufStory'
 import './prophets.css'
 
@@ -60,6 +61,7 @@ function VerseBlock({ range, ayahs, failed }: { range: [number, number]; ayahs: 
         )}
       </div>
       <cite className="ys-verse-ref">{ayahReference(range[0], range[1])}</cite>
+      {ayahs ? <CopyButton text={numbers.map((n) => `${ayahs.get(n) ?? ''} ${toArabicDigits(n)}`.trim()).join(' ')} reference={ayahReference(range[0], range[1])} label="نسخ الآية" /> : null}
     </figure>
   )
 }
@@ -70,6 +72,7 @@ function HadithBlock({ text, source }: { text: string; source: string }) {
       <figcaption className="ys-hadith-label">حديث شريف</figcaption>
       <blockquote className="ys-hadith-text">{text}</blockquote>
       <cite className="ys-verse-ref">{source}</cite>
+      <CopyButton text={text} reference={source} />
     </figure>
   )
 }
@@ -81,6 +84,7 @@ function Para({ para, fontClass }: { para: YusufPara; fontClass: string }) {
       <aside className="ys-tafsir">
         <div className="ys-tafsir-who">{who}</div>
         <p className={`ys-tafsir-text ${fontClass}`}>{para.t}</p>
+        <CopyButton text={para.t} reference={who} />
       </aside>
     )
   }
@@ -103,6 +107,7 @@ export function YusufStoryBody({ fontClass }: { fontClass: string }) {
             {scene.p.map((para, k) => (
               <Para key={k} para={para} fontClass={fontClass} />
             ))}
+            <CopyButton text={[scene.h, ...scene.p.filter((p) => p.k !== 't').map((p) => p.t)].join('\n\n')} label="نسخ المشهد" />
             {scene.v.map((range) => (
               <VerseBlock key={range.join('-')} range={range} ayahs={ayahs} failed={failed} />
             ))}
