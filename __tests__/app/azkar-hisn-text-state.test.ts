@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HISN_CATEGORIES } from '../../src/azkar-hisn'
+import { azkarCategories } from '../../src/azkar-data'
 
 // Records the real state of the Hisn texts so the "cleaned" claim in azkar-hisn.ts stays honest.
 const texts = HISN_CATEGORIES.flatMap((c) => c.items.map((i) => ({ id: i.id, text: i.text })))
@@ -13,8 +14,10 @@ describe('azkar-hisn.ts text state', () => {
     }
   })
 
-  it('still carries the dataset "*" verse separator in exactly two items (11 separators) (known leftover, not rewritten)', () => {
-    expect(texts.filter((t) => t.text.includes('*'))).toHaveLength(2)
-    expect(texts.map((t) => t.text).join('').split('*').length - 1).toBe(11)
+  it('has no "*" separator left in any shipped azkar text (whole catalog, all string fields)', () => {
+    expect(texts.filter((t) => t.text.includes('*'))).toHaveLength(0)
+    const stars: string[] = []
+    for (const c of azkarCategories) for (const i of c.items) if (JSON.stringify(i).includes('*')) stars.push(i.id ?? i.text.slice(0, 20))
+    expect(stars).toEqual([])
   })
 })
