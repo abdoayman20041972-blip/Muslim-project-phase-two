@@ -134,3 +134,26 @@ const existsSyncFn = (path: string) => {
     return false
   }
 }
+
+describe('patch-android.mjs allowBackup', () => {
+  const appTag = (root: string) => /<application\b[^>]*>/.exec(readFileSync(join(root, 'app', 'src', 'main', 'AndroidManifest.xml'), 'utf8'))![0]
+
+  it('adds allowBackup=false when the attribute is missing', () => {
+    const { root } = fixture()
+    run(root)
+    expect(appTag(root)).toContain('android:allowBackup="false"')
+  })
+
+  it('turns the Capacitor template value true into false and is idempotent', () => {
+    const { root, main } = fixture()
+    const path = join(main, 'AndroidManifest.xml')
+    writeFileSync(path, readFileSync(path, 'utf8').replace('<application android:label="x">', '<application android:allowBackup="true" android:label="x">'))
+    run(root)
+    const once = readFileSync(path, 'utf8')
+    expect(appTag(root)).toContain('android:allowBackup="false"')
+    expect(appTag(root)).not.toContain('allowBackup="true"')
+    expect(once.match(/allowBackup/g)).toHaveLength(1)
+    run(root)
+    expect(readFileSync(path, 'utf8')).toBe(once)
+  })
+})
