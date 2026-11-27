@@ -2123,3 +2123,5 @@ html.tab .tasbih-session-meta{width:min(100%,30rem)!important}
 .azkar-category-card-orb{filter:none!important}
 .azkar-primary-glow{filter:none!important;background:radial-gradient(circle,hsl(var(--azkar-gold)/.16),transparent 68%)!important}
 .home-tile-icon,.home-tile-arrow{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* No scrollbar chrome anywhere: the native thumb flashed on the left edge (RTL) at launch. */
+*{scrollbar-width:none}*::-webkit-scrollbar{width:0;height:0;display:none}
