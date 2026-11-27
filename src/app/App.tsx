@@ -11,6 +11,8 @@ import { AppContent, BottomNav } from "./components/app-shell";
 import { HomeView } from "./features/home/HomeView";
 import { MoreView } from "./features/home/MoreView";
 import { consumeMoreBack } from "./features/home/moreNav";
+import { runTopBackHandler } from "./backStack";
+import { recordNavigation } from "./viewHistory";
 import { AzkarListView } from "./features/azkar/AzkarListView";
 import { CategoryView } from "./features/azkar/CategoryView";
 import { FavoritesView } from "./features/azkar/FavoritesView";
@@ -101,8 +103,7 @@ export function App() {
   const lastViewRef = useRef<View>(view);
   useEffect(() => {
     if (lastViewRef.current === view) return;
-    viewHistoryRef.current.push(lastViewRef.current);
-    if (viewHistoryRef.current.length > 50) viewHistoryRef.current.shift();
+    viewHistoryRef.current = recordNavigation(viewHistoryRef.current, lastViewRef.current, view);
     lastViewRef.current = view;
   }, [view]);
   // Text copy is removed app-wide: block the copy command outside text fields.
@@ -119,13 +120,18 @@ export function App() {
   // (More) and drops that history entry, like the hardware back button.
   const backOr = useCallback((fallback: View) => {
     const previous = viewHistoryRef.current[viewHistoryRef.current.length - 1];
-    if (previous && previous.name === "more") {
-      viewHistoryRef.current.pop();
+    if (previous) {
+      viewHistoryRef.current = viewHistoryRef.current.slice(0, -1);
       lastViewRef.current = previous;
       setView(previous);
     } else {
       setView(fallback);
     }
+  }, []);
+  // Swap the current screen without adding a history entry (e.g. next/previous surah).
+  const replaceView = useCallback((next: View) => {
+    lastViewRef.current = next;
+    setView(next);
   }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -137,9 +143,11 @@ export function App() {
         if (cancelled) return;
         const subscription = await NativeApp.addListener("backButton", () => {
           // A sub-screen inside More (radio) closes first, back to the More list.
+          if (runTopBackHandler()) return;
           if (lastViewRef.current.name === "more" && consumeMoreBack()) return;
-          const previous = viewHistoryRef.current.pop();
+          const previous = viewHistoryRef.current[viewHistoryRef.current.length - 1];
           if (previous) {
+            viewHistoryRef.current = viewHistoryRef.current.slice(0, -1);
             lastViewRef.current = previous;
             setView(previous);
           } else {
@@ -476,7 +484,7 @@ export function App() {
   };
   // Quick Tools entries return straight to Home; bottom-nav and dashboard
   // entries keep their normal back destinations.
-  const backTo = navOrigin === "quick-tools" ? () => setView({ name: "home" }) : null;
+  const backTo = navOrigin === "quick-tools" ? () => backOr({ name: "home" }) : null;
   const quickOrigin = navOrigin === "quick-tools";
   const lastSurahMeta = lastSurah
     ? surahList.find((s) => s.number === lastSurah)
@@ -545,12 +553,12 @@ export function App() {
         <AzkarListView
           categories={categories}
           favoritesCount={favoritesCount}
-          onBack={() => setView({ name: "home" })}
+          onBack={() => backOr({ name: "home" })}
           setView={setView}
         />
       </div>
     ),
-    [categories, favoritesCount],
+    [categories, favoritesCount, backOr],
   );
   const favoritesScreen = useMemo(
     () => (
@@ -576,13 +584,13 @@ export function App() {
             highlightItem={view.name === "category" ? view.item : undefined}
             onBack={
               quickOrigin
-                ? () => setView({ name: "home" })
-                : () => setView({ name: "azkar-list" })
+                ? () => backOr({ name: "home" })
+                : () => backOr({ name: "azkar-list" })
             }
           />
         </div>
       ) : null,
-    [selectedCategory, favorites, toggleFavorite, quickOrigin, view],
+    [selectedCategory, favorites, toggleFavorite, quickOrigin, view, backOr],
   );
   const mushafListScreen = useMemo(
     () => (
@@ -604,26 +612,32 @@ export function App() {
             quickOrigin
               ? (v) => {
                   if (v.name === "mushaf-list" || v.name === "home") {
-                    setView({ name: "home" });
+                    backOr({ name: "home" });
                     setNavOrigin("default");
+                  } else if (v.name === "mushaf-surah") {
+                    replaceView(v);
                   } else {
                     setView(v);
                   }
                 }
-              : setView
+              : (v) => {
+                  if (v.name === "mushaf-list" || v.name === "home") backOr(v);
+                  else if (v.name === "mushaf-surah") replaceView(v);
+                  else setView(v);
+                }
           }
         />
       ) : null,
-    [readerView, quickOrigin],
+    [readerView, quickOrigin, backOr, replaceView],
   );
   const prayerScreen = useMemo(
     () => (
       <PrayerTimesView
-        onBack={() => setView({ name: "home" })}
+        onBack={() => backOr({ name: "home" })}
         onOpenQibla={() => setView({ name: "qibla" })}
       />
     ),
-    [],
+    [backOr],
   );
   const qiblaScreen = useMemo(
     () => (
@@ -640,8 +654,8 @@ export function App() {
   const prophetsScreen = useMemo(() => <ProphetsView onBack={() => backOr({ name: "home" })} />, [backOr]);
   const [hadithDetailOpen, setHadithDetailOpen] = useState(false);
   const hadithScreen = useMemo(
-    () => <HadithView key={hadithNonce} onBack={() => setView({ name: "home" })} onDetailChange={setHadithDetailOpen} />,
-    [hadithNonce],
+    () => <HadithView key={hadithNonce} onBack={() => backOr({ name: "home" })} onDetailChange={setHadithDetailOpen} />,
+    [hadithNonce, backOr],
   );
   const tasbihScreen = useMemo(
     () => (
