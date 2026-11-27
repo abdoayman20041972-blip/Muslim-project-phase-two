@@ -89,6 +89,7 @@ describe('settings reset and import with the native mirror', () => {
 
   it('import does not reload or look successful when native write fails', async () => {
     preferences.set.mockRejectedValue(new Error('native failure'))
+    localStorage.setItem(KEY, '09:00')
     const ui = await setup()
     const input = ui.container.querySelector('input[type="file"]') as HTMLInputElement
     const file = new File(
@@ -99,8 +100,10 @@ describe('settings reset and import with the native mirror', () => {
     Object.defineProperty(file, 'text', { value: async () => JSON.stringify({ format: 'muslim-local-backup', data: { [KEY]: '11:00' } }) })
     fireEvent.change(input, { target: { files: [file] } })
     fireEvent.click(await ui.findByText('تأكيد'))
-    await ui.findByText(/لم تتم إعادة التحميل/)
+    await ui.findByText(/تعذّر استيراد النسخة/)
     expect(reload).not.toHaveBeenCalled()
+    // Rolled back: the old local value is back, not the imported one.
+    expect(localStorage.getItem(KEY)).toBe('09:00')
   })
 
   it('import reloads after native storage matches the imported data', async () => {
