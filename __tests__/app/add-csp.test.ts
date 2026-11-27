@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error plain .mjs script without types
-import { addCsp, buildPolicy, inlineScriptHashes } from '../../scripts/add-csp.mjs'
+import { addCsp, buildPolicy, charsetEndOffset, inlineScriptHashes } from '../../scripts/add-csp.mjs'
 
 const A = 'window.__a=1'
 const B = '{"x":2}'
@@ -15,14 +15,24 @@ describe('scripts/add-csp.mjs', () => {
     expect(inlineScriptHashes(html)).toEqual([sha(A), sha(B)])
   })
 
-  it('puts the meta first in <head> with those hashes and a strict script-src', () => {
+  it('puts the meta right after the charset meta with those hashes and a strict script-src', () => {
     const out = addCsp(html)
-    expect(out).toMatch(/<head><meta http-equiv="Content-Security-Policy"/)
+    expect(out).toMatch(/<head><meta charSet="utf-8"\/><meta http-equiv="Content-Security-Policy"/)
+    expect(charsetEndOffset(out)).toBeLessThan(1024)
     const script = directive(policyOf(out), 'script-src')
     expect(script).toContain(sha(A))
     expect(script).toContain(sha(B))
     expect(script).not.toContain("'unsafe-inline'")
     expect(script).not.toContain("'unsafe-eval'")
+  })
+
+  it('falls back to right after <head> when there is no charset meta', () => {
+    expect(addCsp('<html><head><title>x</title></head></html>')).toMatch(/<head><meta http-equiv="Content-Security-Policy"/)
+  })
+
+  it('does not break on a quoted > inside a script attribute', () => {
+    const h = `<html><head><meta charset="utf-8"><script data-x="a>b">${A}</script></head></html>`
+    expect(inlineScriptHashes(h)).toEqual([sha(A)])
   })
 
   it('is idempotent', () => {
