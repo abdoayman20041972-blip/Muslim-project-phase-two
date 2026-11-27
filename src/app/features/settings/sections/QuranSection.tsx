@@ -236,7 +236,7 @@ export function QuranSection({
               <div key={id} className="rounded-2xl border border-azkar-gold-soft bg-azkar-card p-3">
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="font-amiri text-lg font-bold text-azkar-teal-ink">{QURAN_AUDIO_RECITER_LABELS[id]}</div>
+                    <div className="font-cairo text-lg font-bold text-azkar-teal-ink">{QURAN_AUDIO_RECITER_LABELS[id]}</div>
                     <div className="mt-0.5 text-xs text-azkar-ink-soft">
                       {toArabicNumber(114)} سورة · {bytes > 0 ? `المساحة الفعلية ${formatBytes(bytes)}` : `الحجم التقديري ${RECITER_SIZE_ESTIMATES[id]}`}
                     </div>
