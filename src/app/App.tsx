@@ -106,7 +106,7 @@ export function App() {
     viewHistoryRef.current = recordNavigation(viewHistoryRef.current, lastViewRef.current, view);
     lastViewRef.current = view;
   }, [view]);
-  // Text copy is removed app-wide: block the copy command outside text fields.
+  // Manual selection and the copy command stay blocked outside text fields; text is copied only through the explicit copy buttons.
   useEffect(() => {
     const block = (event: ClipboardEvent) => {
       const target = event.target as HTMLElement | null;
