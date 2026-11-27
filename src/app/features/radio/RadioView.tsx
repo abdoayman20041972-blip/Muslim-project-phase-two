@@ -69,7 +69,7 @@ export function RadioView({ onBack }: { onBack: () => void }) {
     <section dir="rtl" className="w-full min-w-0" data-testid="radio-view">
       <div className="flex items-center gap-3">
         <BackButton onClick={onBack} />
-        <h1 className="font-amiri text-[1.75rem] font-bold text-azkar-teal-ink">إذاعة القرآن الكريم</h1>
+        <h1 className="font-cairo text-[1.75rem] font-bold text-azkar-teal-ink">إذاعة القرآن الكريم</h1>
       </div>
 
       <div className="radio-hero mt-5" data-testid="radio-hero">
@@ -80,7 +80,7 @@ export function RadioView({ onBack }: { onBack: () => void }) {
         <div className="relative flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <span className={`radio-live ${live ? 'is-live' : ''}`}><i aria-hidden="true" />{live ? 'مباشر' : 'بث مباشر'}</span>
-            <p className="mt-2 truncate font-amiri text-[1.5rem] font-bold leading-tight text-white" data-testid="radio-now">{station ? station.name : 'لا توجد محطة قيد التشغيل'}</p>
+            <p className="mt-2 truncate font-cairo text-[1.5rem] font-bold leading-tight text-white" data-testid="radio-now">{station ? station.name : 'لا توجد محطة قيد التشغيل'}</p>
             <p className="mt-1 text-[0.8125rem] font-semibold text-white/80" role="status">{statusLabel(status)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -150,7 +150,7 @@ export function RadioView({ onBack }: { onBack: () => void }) {
         </>
       )}
       {state === 'ready' && featured.length === 0 && learn.length === 0 && rest.length === 0 && <p className="mt-6 text-center text-[0.875rem] font-semibold text-azkar-ink-soft">لا توجد محطات مطابقة.</p>}
-      <p className="mt-6 text-center text-[0.6875rem] font-semibold text-azkar-ink-soft">مصدر البث: MP3Quran</p>
+      <p className="mt-6 text-center text-[0.8125rem] font-semibold text-azkar-ink-soft">مصدر البث: MP3Quran</p>
     </section>
   )
 }
