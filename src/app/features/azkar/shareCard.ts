@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core'
 // Renders a quote (ayah, dhikr, hadith) as a green card image and shares it as a file.
 // Returns false when the platform cannot share image files, so the caller can fall back to text.
 
-export type ShareCardInput = { text: string; reference?: string; heading?: string; footer?: string; filename?: string }
+export type ShareCardInput = { text: string; reference?: string; heading?: string; footer?: string; filename?: string; verse?: boolean }
 
 const W = 1080
 const MIN_H = 900
@@ -27,8 +27,11 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
 
 export async function renderShareCard(input: ShareCardInput): Promise<Blob | null> {
   if (typeof document === 'undefined') return null
+  // Cairo everywhere; Amiri only for Quran verse text (input.verse).
+  const family = input.verse ? 'Amiri' : 'Cairo'
+  const fallback = input.verse ? 'serif' : 'sans-serif'
   try {
-    await document.fonts?.load('700 60px Amiri')
+    await document.fonts?.load(`700 60px ${family}`)
   } catch {
     // The serif fallback is fine.
   }
@@ -36,7 +39,7 @@ export async function renderShareCard(input: ShareCardInput): Promise<Blob | nul
   const probe = canvas.getContext('2d')
   if (!probe) return null
   const bodySize = input.text.length > 260 ? 46 : input.text.length > 120 ? 54 : 64
-  const bodyFont = `700 ${bodySize}px Amiri, "Noto Naskh Arabic", serif`
+  const bodyFont = `700 ${bodySize}px ${family}, "Noto Naskh Arabic", ${fallback}`
   probe.font = bodyFont
   probe.direction = 'rtl'
   const lines = wrap(probe, input.text, W - 220)
@@ -70,7 +73,7 @@ export async function renderShareCard(input: ShareCardInput): Promise<Blob | nul
   let y = 130
   if (input.heading) {
     ctx.fillStyle = '#e9c875'
-    ctx.font = '700 40px Amiri, serif'
+    ctx.font = `700 40px ${family}, ${fallback}`
     ctx.fillText(input.heading, W / 2, y)
   }
   y = 230 + lineHeight / 2
@@ -82,12 +85,12 @@ export async function renderShareCard(input: ShareCardInput): Promise<Blob | nul
   }
   if (input.reference) {
     ctx.fillStyle = 'rgba(255,255,255,0.8)'
-    ctx.font = '600 38px Amiri, serif'
+    ctx.font = `600 38px ${family}, ${fallback}`
     ctx.fillText(input.reference, W / 2, y + 30)
   }
   if (input.footer) {
     ctx.fillStyle = '#e9c875'
-    ctx.font = '700 36px Amiri, serif'
+    ctx.font = `700 36px ${family}, ${fallback}`
     ctx.fillText(input.footer, W / 2, H - 90)
   }
   return await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
