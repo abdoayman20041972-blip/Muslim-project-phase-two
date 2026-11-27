@@ -14,6 +14,8 @@
 //         system dialog never appears. With them declared, Geolocation
 //         .requestPermissions() shows the genuine OS dialog (approximate-only
 //         grant is accepted: it is accurate enough for prayer times).
+//   - AndroidManifest.xml: android:allowBackup is forced to "false" (no Google backup of
+//     saved coordinates and settings)
 //   - colors.xml: splash background colour
 //   - styles.xml: BOTH themes carry the mosque layer-list —
 //       * AppTheme.NoActionBar: Capacitor's BridgeActivity switches to it BEFORE
@@ -86,6 +88,21 @@ function patchManifest() {
   const lines = missing.map((name) => `    <uses-permission android:name="${name}" />\n`).join('')
   xml = xml.slice(0, marker) + lines + '\n    ' + xml.slice(marker)
   write(MANIFEST, xml, `manifest (+${missing.length} permissions)`)
+}
+
+// Saved coordinates, settings and notes must not enter Android/Google cloud backup or
+// device-to-device transfer. The Capacitor template ships allowBackup="true"; force it off.
+// (The app's own backup file in Settings still works.)
+function patchAllowBackup() {
+  let xml = read(MANIFEST)
+  const app = /<application\b[^>]*>/.exec(xml)
+  if (!app) throw new Error('<application> element not found in AndroidManifest.xml')
+  const tag = app[0]
+  if (/android:allowBackup="false"/.test(tag)) return
+  const next = /android:allowBackup="[^"]*"/.test(tag)
+    ? tag.replace(/android:allowBackup="[^"]*"/, 'android:allowBackup="false"')
+    : tag.replace('<application', '<application android:allowBackup="false"')
+  write(MANIFEST, xml.replace(tag, next), 'manifest (allowBackup=false)')
 }
 
 function patchColors() {
@@ -227,6 +244,7 @@ function patchNotificationIcons() {
 }
 
 patchManifest()
+patchAllowBackup()
 patchColors()
 patchStyles()
 patchSplashWindowDrawable()
