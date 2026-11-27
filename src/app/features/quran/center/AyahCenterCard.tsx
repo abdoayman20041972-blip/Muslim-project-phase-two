@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { toArabicNumber, type Ayah } from '../../../constants'
 import type { SurahMeta } from '../../../../quran-meta'
 import { loadAsbab, loadGharib, loadReviewStatuses, scopeAllowed, QC_REVIEW_ONLY, type AsbabMap, type GharibMap, type ScopeStatus } from './quranCenterData'
+import { CopyButton } from '../../azkar/CopyButton'
 import { MemorizePanel } from './MemorizePanel'
 import type { QuranAudioReciter } from '../quranAudioPlayback'
 
@@ -112,6 +113,7 @@ function GharibTab({ surah, ayah }: { surah: SurahMeta; ayah: Ayah }) {
           <div className="mb-2 text-[0.8125rem] font-bold text-azkar-ink-soft">
             {entry.book} · {entry.author}
           </div>
+          <div className="mb-2"><CopyButton text={entry.words.map((w) => `${w.text}: ${w.meaning}`).join('\n')} reference={`${entry.book} · ${entry.author}`} /></div>
           <dl className="space-y-2.5">
             {entry.words.map((word, wordIndex) => (
               <div key={wordIndex} className="rounded-[0.9rem] border border-azkar-gold-soft bg-azkar-bg-alt px-3.5 py-2.5">
@@ -179,6 +181,7 @@ function AsbabTab({ surah, ayah }: { surah: SurahMeta; ayah: Ayah }) {
             {entry.relation === 'متعلقة' && <span className="rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">رواية متعلقة بنزول الآية</span>}
             <span className="rounded-full border border-emerald-300/60 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">{entry.grade}</span>
             <span>{entry.reference}</span>
+            <CopyButton text={entry.text} reference={entry.reference} />
           </div>
         </div>
       ))}
@@ -268,7 +271,10 @@ export function AyahCenterCard({ surah, ayah, ayahs, initialTab = 'tafsir', reci
             ) : (
               <div>
                 <div className="font-cairo text-[1.125rem] leading-[2.05] text-azkar-ink whitespace-pre-line">{tafsir.text}</div>
-                <div className="mt-3 text-[0.8125rem] text-azkar-ink-soft">{tafsir.label}</div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.8125rem] text-azkar-ink-soft">
+                  <span>{tafsir.label}</span>
+                  <CopyButton text={tafsir.text ?? ''} reference={tafsir.label} />
+                </div>
               </div>
             )
           )}
