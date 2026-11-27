@@ -110,6 +110,28 @@ jobs:
             exit 1
           }
 
+      # Content-Security-Policy: the inline scripts of the prerendered page change per build, so their
+      # hashes are computed from the final HTML. The smoke test proves the app still starts under it.
+      - name: Add Content-Security-Policy to the built index.html
+        run: node scripts/add-csp.mjs
+
+      - name: CSP smoke test (app renders in headless Chrome with no CSP violation)
+        run: |
+          cd .output/public
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          SRV=$!
+          sleep 2
+          google-chrome --headless=new --no-sandbox --disable-gpu --enable-logging=stderr --v=0 \
+            --virtual-time-budget=8000 --dump-dom http://localhost:8765/ > /tmp/csp-dom.html 2> /tmp/csp-chrome.log || true
+          kill "$SRV" || true
+          if grep -qi "content security policy" /tmp/csp-chrome.log; then
+            grep -i "content security policy" /tmp/csp-chrome.log | head -5
+            echo "::error::The Content-Security-Policy blocked something while the app started"; exit 1
+          fi
+          SIZE=$(wc -c < /tmp/csp-dom.html)
+          echo "rendered DOM size: $SIZE bytes"
+          [ "$SIZE" -gt 20000 ] || { echo "::error::App did not render under the Content-Security-Policy (DOM only $SIZE bytes)"; exit 1; }
+
       - name: Create Android project (generated during build, not committed)
         run: npx cap add android
 
