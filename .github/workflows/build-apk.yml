@@ -134,11 +134,15 @@ jobs:
       # a manual bump upward is always accepted).
       - name: Check versionCode is an integer and did not decrease
         run: |
-          NOW=$(grep -E '^\s*VERSION_CODE:' .github/workflows/build-apk.yml | head -n 1 | sed -E 's/.*VERSION_CODE:[[:space:]]*"?([^"[:space:]]*)"?.*/\1/')
-          case "$NOW" in ''|*[!0-9]*) echo "::error::VERSION_CODE is not a plain integer"; exit 1;; esac
-          PREV=$(git show HEAD~1:.github/workflows/build-apk.yml 2>/dev/null | grep -E '^\s*VERSION_CODE:' | head -n 1 | sed -E 's/.*VERSION_CODE:[[:space:]]*"?([^"[:space:]]*)"?.*/\1/' || true)
-          case "$PREV" in *[!0-9]*) PREV="";; esac
-          if [ -z "$PREV" ]; then echo "No previous commit value to compare (versionCode $NOW)."; exit 0; fi
+          # Accepts VERSION_CODE: "22", '22' or 22 (optionally followed by a comment).
+          parse() { grep -E '^\s*VERSION_CODE:' | head -n 1 | sed -E 's/^[^:]*:[[:space:]]*//; s/[[:space:]]*#.*$//' | tr -d "\"' \t\r"; }
+          NOW=$(parse < .github/workflows/build-apk.yml)
+          case "$NOW" in ''|*[!0-9]*) echo "::error::VERSION_CODE in the current workflow is not a plain integer (got '$NOW')"; exit 1;; esac
+          if ! git rev-parse --verify --quiet HEAD~1 >/dev/null; then
+            echo "No previous commit to compare (versionCode $NOW)."; exit 0
+          fi
+          PREV=$(git show HEAD~1:.github/workflows/build-apk.yml | parse)
+          case "$PREV" in ''|*[!0-9]*) echo "::error::Could not read VERSION_CODE from the previous commit's workflow (got '$PREV'); refusing to skip the comparison"; exit 1;; esac
           if [ "$NOW" -lt "$PREV" ]; then
             echo "::error::versionCode went down ($PREV -> $NOW); Android refuses an APK with a lower versionCode as an update"
             exit 1
@@ -212,14 +216,23 @@ jobs:
 
       # The final merged manifest must not allow Android/Google backup of app data.
       # aapt prints allowBackup as 0x0 (false) or 0xffffffff (true); a missing attribute
-      # means Android's default (true), which is also a failure.
+      # means Android's default (true), which is also a failure. Android 12+ device-to-device
+      # transfer is governed by android:dataExtractionRules (and fullBackupContent before 12),
+      # so both attributes must be present too. This proves the manifest declares them; it does
+      # not prove a transfer cannot happen on a given phone.
       - name: Verify APK disallows backup
+        env:
+          VARIANT: ${{ steps.signing.outputs.variant }}
         run: |
-          APK="android/app/build/outputs/apk/release/app-release.apk"
+          V=$(echo "$VARIANT" | tr '[:upper:]' '[:lower:]')
+          APK="android/app/build/outputs/apk/$V/app-$V.apk"
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
-          LINE=$("$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -m1 'android:allowBackup' || true)
+          TREE=$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)
+          LINE=$(echo "$TREE" | grep -m1 'android:allowBackup' || true)
           echo "manifest: ${LINE:-allowBackup attribute missing}"
           echo "$LINE" | grep -q '=(type 0x12)0x0' || { echo "::error::Final manifest does not set android:allowBackup=false"; exit 1; }
+          echo "$TREE" | grep -q 'android:dataExtractionRules' || { echo "::error::Final manifest has no android:dataExtractionRules"; exit 1; }
+          echo "$TREE" | grep -q 'android:fullBackupContent' || { echo "::error::Final manifest has no android:fullBackupContent"; exit 1; }
 
       - name: Upload APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
