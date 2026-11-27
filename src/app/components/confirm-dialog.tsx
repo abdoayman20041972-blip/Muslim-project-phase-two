@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useBackHandler } from '../backStack'
 
 export type ConfirmOptions = {
   title?: string
@@ -71,6 +72,8 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [request, close])
 
+  useBackHandler(request !== null, () => close(false))
+
   useEffect(() => {
     if (!request) return
     document.querySelector<HTMLButtonElement>('[data-confirm-dialog-autofocus]')?.focus()
@@ -102,7 +105,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
           onMouseDown={(event) => event.stopPropagation()}
         >
           {(confirmOptions?.title ?? alertOptions?.title) && (
-            <h2 id="confirm-dialog-title" className="font-amiri text-xl font-bold text-azkar-teal-ink">
+            <h2 id="confirm-dialog-title" className="font-cairo text-xl font-bold text-azkar-teal-ink">
               {confirmOptions?.title ?? alertOptions?.title}
             </h2>
           )}
