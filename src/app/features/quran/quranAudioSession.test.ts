@@ -110,17 +110,19 @@ describe('QuranAudioSession', () => {
     instances[0].dispatchEvent(new Event('ended'))
     expect(session.state.status).toBe('paused'); expect(instances[0].play).toHaveBeenCalledTimes(1)
   })
-  it('continues from a chosen ayah through the rest of the surah, then stops', async () => {
+  it('plays a chosen single ayah only and stops, without continuing to the next ayah', async () => {
     const session = new QuranAudioSession()
     await session.start({ ...connected, kind: 'single-ayah', surah: 1, ayah: { number: 5, numberInSurah: 5, text: '' } })
     instances[0].dispatchEvent(new Event('ended'))
     await Promise.resolve()
-    expect(instances).toHaveLength(2)
-    expect(instances[1].src).toContain('/6.mp3'); expect(session.state.request?.ayah?.numberInSurah).toBe(6)
-    instances[1].dispatchEvent(new Event('ended')); await Promise.resolve()
-    expect(instances[2].src).toContain('/7.mp3')
-    instances[2].dispatchEvent(new Event('ended')); await Promise.resolve()
-    expect(instances).toHaveLength(3); expect(session.state.status).toBe('paused')
+    expect(instances).toHaveLength(1)
+    expect(session.state.status).toBe('paused'); expect(session.state.request?.ayah?.numberInSurah).toBe(5)
+  })
+  it('still repeats a single ayah when the repeat-ayah setting is on, and nothing else', async () => {
+    const session = new QuranAudioSession(); session.repeat = 'ayah'
+    await session.start({ ...connected, kind: 'single-ayah', surah: 1, ayah: { number: 5, numberInSurah: 5, text: '' } })
+    instances[0].dispatchEvent(new Event('ended')); await Promise.resolve()
+    expect(instances).toHaveLength(1); expect(instances[0].play).toHaveBeenCalledTimes(2)
   })
   it('exposes a recoverable error with a fresh retry', async () => {
     const session = new QuranAudioSession(); await session.start(single)
