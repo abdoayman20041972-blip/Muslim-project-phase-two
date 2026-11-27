@@ -225,10 +225,7 @@ export class QuranAudioSession {
         audio.currentTime = 0
         this.resumeAt = 0
         this.play(audio, epoch)
-      } else if (request.kind === 'single-ayah' && request.ayah && request.ayah.numberInSurah < (surahList.find((item) => item.number === request.surah)?.numberOfAyahs ?? 0)) {
-        // Listening from an ayah continues through the rest of the surah, ayah by ayah.
-        const ayah = { number: request.ayah.number + 1, numberInSurah: request.ayah.numberInSurah + 1, text: '' }
-        void this.start({ ...request, ayah })
+      // A single ayah plays that ayah only and then stops (it never rolls on into the rest of the surah).
       } else {
         audio.currentTime = 0
         this.update({ status: 'paused', seconds: 0 })
