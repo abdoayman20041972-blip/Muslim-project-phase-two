@@ -15,7 +15,9 @@
 //         .requestPermissions() shows the genuine OS dialog (approximate-only
 //         grant is accepted: it is accurate enough for prayer times).
 //   - AndroidManifest.xml: android:allowBackup is forced to "false" (no Google backup of
-//     saved coordinates and settings)
+//     saved coordinates and settings). Android 12+ device-to-device transfer is controlled by
+//     android:dataExtractionRules instead, so that attribute (and android:fullBackupContent for
+//     Android 11 and older) is set too, pointing at res/xml rules that exclude everything.
 //   - colors.xml: splash background colour
 //   - styles.xml: BOTH themes carry the mosque layer-list —
 //       * AppTheme.NoActionBar: Capacitor's BridgeActivity switches to it BEFORE
@@ -103,6 +105,38 @@ function patchAllowBackup() {
     ? tag.replace(/android:allowBackup="[^"]*"/, 'android:allowBackup="false"')
     : tag.replace('<application', '<application android:allowBackup="false"')
   write(MANIFEST, xml.replace(tag, next), 'manifest (allowBackup=false)')
+}
+
+const BACKUP_DOMAINS = ['root', 'file', 'database', 'sharedpref', 'external']
+const excludes = (indent) => BACKUP_DOMAINS.map((d) => `${indent}<exclude domain="${d}" path="." />\n`).join('')
+const DATA_EXTRACTION_RULES =
+  '<?xml version="1.0" encoding="utf-8"?>\n<data-extraction-rules>\n    <cloud-backup>\n' +
+  excludes('        ') +
+  '    </cloud-backup>\n    <device-transfer>\n' +
+  excludes('        ') +
+  '    </device-transfer>\n</data-extraction-rules>\n'
+const FULL_BACKUP_RULES =
+  '<?xml version="1.0" encoding="utf-8"?>\n<full-backup-content>\n' + excludes('    ') + '</full-backup-content>\n'
+
+// allowBackup=false alone does not stop Android 12+ device-to-device transfer; declare rules that
+// exclude every domain for cloud backup and device transfer, and the older fullBackupContent file.
+function patchBackupRules() {
+  const xmlDir = join(MAIN, 'res', 'xml')
+  mkdirSync(xmlDir, { recursive: true })
+  for (const [name, text] of [['backup_rules.xml', DATA_EXTRACTION_RULES], ['backup_full_rules.xml', FULL_BACKUP_RULES]]) {
+    const path = join(xmlDir, name)
+    if (!existsSync(path) || read(path) !== text) write(path, text, `res/xml/${name}`)
+  }
+  const xml = read(MANIFEST)
+  const app = /<application\b[^>]*>/.exec(xml)
+  if (!app) throw new Error('<application> element not found in AndroidManifest.xml')
+  let tag = app[0]
+  for (const [attr, value] of [['android:dataExtractionRules', '@xml/backup_rules'], ['android:fullBackupContent', '@xml/backup_full_rules']]) {
+    const re = new RegExp(`${attr}="[^"]*"`)
+    if (tag.includes(`${attr}="${value}"`)) continue
+    tag = re.test(tag) ? tag.replace(re, `${attr}="${value}"`) : tag.replace('<application', `<application ${attr}="${value}"`)
+  }
+  if (tag !== app[0]) write(MANIFEST, xml.replace(app[0], tag), 'manifest (backup rules)')
 }
 
 function patchColors() {
@@ -245,6 +279,7 @@ function patchNotificationIcons() {
 
 patchManifest()
 patchAllowBackup()
+patchBackupRules()
 patchColors()
 patchStyles()
 patchSplashWindowDrawable()
