@@ -100,6 +100,13 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit $CODE
 
+      # Lint is advisory for now (continue-on-error): 0 errors today, warnings are listed in the log.
+      # scripts/lint.sh installs ESLint in its own folder because the project's TypeScript 7 is newer than
+      # typescript-eslint supports; the project's node_modules and package-lock.json are not touched.
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: bash scripts/lint.sh
+
       - name: Build web app (optimized production build, prerendered for Capacitor)
         run: PRERENDER=1 npm run build
 
