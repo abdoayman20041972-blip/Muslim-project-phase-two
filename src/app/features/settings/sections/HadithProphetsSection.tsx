@@ -53,7 +53,7 @@ function ReadingToggles({
         {preview && (
           <p
             data-testid="font-preview"
-            className={`font-amiri mt-3 rounded-xl border border-azkar-hairline px-3 py-2 leading-loose text-azkar-ink ${font === 'sm' ? 'text-[0.8125rem]' : font === 'lg' ? 'text-[1.1875rem]' : 'text-[1rem]'}`}
+            className={`font-cairo mt-3 rounded-xl border border-azkar-hairline px-3 py-2 leading-loose text-azkar-ink ${font === 'sm' ? 'text-[0.8125rem]' : font === 'lg' ? 'text-[1.1875rem]' : 'text-[1rem]'}`}
           >
             {preview}
           </p>
