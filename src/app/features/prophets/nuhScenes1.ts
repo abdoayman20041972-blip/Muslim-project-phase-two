@@ -123,11 +123,6 @@ export const NUH_STORY_PART_1: StoryScene[] = [
    [
     71,
     5,
-    9
-   ],
-   [
-    71,
-    10,
     20
    ]
   ]
