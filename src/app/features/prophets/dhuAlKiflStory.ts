@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const DHU_AL_KIFL_STORY: StoryContent = {
  id: 'dhu-al-kifl',
- intro: {"v": [[21, 85, 86], [38, 48, 48]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "ذو الكفل في سورة الأنبياء",
@@ -17,7 +17,13 @@ export const DHU_AL_KIFL_STORY: StoryContent = {
     "t": "وأما ذو الكفل فالظاهر من السياق أنه ما قرن مع الأنبياء إلا وهو نبي. وقال آخرون: إنما كان رجلا صالحا، وكان ملكا عادلا وحكما مقسطا، وتوقف ابن جرير في ذلك، فالله أعلم"
    }
   ],
-  "v": []
+  "v": [
+   [
+    21,
+    85,
+    86
+   ]
+  ]
  },
  {
   "h": "ما سمي به وما قيل فيه",
@@ -61,7 +67,7 @@ export const DHU_AL_KIFL_STORY: StoryContent = {
    [
     38,
     45,
-    47
+    48
    ]
   ]
  }
