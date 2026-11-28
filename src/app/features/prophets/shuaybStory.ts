@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const SHUAYB_STORY: StoryContent = {
  id: 'shuayb',
- intro: {"v": [[7, 90, 93], [11, 86, 86], [11, 88, 90], [11, 92, 93]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "دعوته إلى التوحيد والعدل",
@@ -82,13 +82,8 @@ export const SHUAYB_STORY: StoryContent = {
   "v": [
    [
     11,
-    87,
-    87
-   ],
-   [
-    11,
-    91,
-    91
+    86,
+    93
    ]
   ]
  },
@@ -114,7 +109,7 @@ export const SHUAYB_STORY: StoryContent = {
    [
     7,
     88,
-    89
+    93
    ]
   ]
  },
