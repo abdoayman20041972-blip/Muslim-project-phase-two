@@ -17,3 +17,11 @@ const NAMES = ['شمال', 'شمال شرق', 'شرق', 'جنوب شرق', 'جن
 export function directionName(bearingDeg: number): string {
   return NAMES[Math.round(normalize360(bearingDeg) / 45) % 8]
 }
+
+/** Heading changes below this many degrees are not worth re-rendering the dial for. */
+export const HEADING_RENDER_STEP_DEG = 0.25
+
+/** True when the dial should re-render: nothing shown yet, or the change is large enough to see. */
+export function shouldRenderHeading(lastShown: number | null, next: number): boolean {
+  return lastShown === null || Math.abs(next - lastShown) >= HEADING_RENDER_STEP_DEG
+}
