@@ -55,7 +55,6 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
 
       <div className="mb-1 flex items-center justify-between px-1">
         <span className="font-cairo text-base font-bold text-azkar-teal-ink">{PROPHET_STORIES.length} نبيًّا من قصص القرآن</span>
-        <span className="text-[0.6875rem] text-azkar-ink-faint">{PROPHET_STORIES.length} قصة</span>
       </div>
 
       <ul className="grid gap-3">
