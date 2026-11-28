@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { CompassDiagnostics, emptyDiag, type CompassDiagSnapshot } from './CompassDiagnostics'
 import { magneticDeclination } from './declination'
+import { directionName, distanceToKaabaKm } from './qiblaInfo'
+import { useKeepAwakeWhileOpen } from './useKeepAwakeWhileOpen'
 import {
   createHeadingFilter,
   currentScreenAngle,
@@ -79,6 +81,7 @@ const JITTER_ON_DEG = 6
 const JITTER_OFF_DEG = 3
 
 export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } }) {
+  useKeepAwakeWhileOpen()
   const [heading, setHeading] = useState<number | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [lowAccuracy, setLowAccuracy] = useState(false)
@@ -130,10 +133,15 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     let absoluteEventSeen = false
     let nullStreak = 0
 
+    let lastShown: number | null = null
     const flush = () => {
       raf = 0
       if (pending === null) return
-      setHeading(pending)
+      // Skip re-rendering the whole dial for changes the eye cannot see (< 0.25 degrees).
+      if (lastShown === null || Math.abs(pending - lastShown) >= 0.25) {
+        lastShown = pending
+        setHeading(pending)
+      }
       pending = null
     }
 
@@ -167,6 +175,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
           // to true north, so never present it as a confident qibla reading.
           filter.reset()
           pending = null
+          lastShown = null
           setHeading(null)
           setStatus('active')
           setDeclinationUnknown(true)
@@ -189,6 +198,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         if (nullStreak >= 3) {
           filter.reset()
           pending = null
+          lastShown = null
           setHeading(null)
           setInvalidPose(true)
         }
@@ -429,7 +439,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       </div>
 
       <p className="q2-bearing">
-        زاوية القبلة <bdi className="q2-num">{Math.round(bearing)}°</bdi> من الشمال
+        القبلة باتجاه {directionName(bearing)} · زاوية القبلة <bdi className="q2-num">{Math.round(bearing)}°</bdi> من الشمال
         {heading !== null ? (
           <>
             {' · اتجاهك '}
@@ -438,6 +448,10 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         ) : (
           ''
         )}
+      </p>
+
+      <p className="q2-bearing" data-testid="q2-distance">
+        المسافة إلى مكة المكرمة نحو <bdi className="q2-num">{Math.round(distanceToKaabaKm(coords.lat, coords.lng)).toLocaleString('ar-EG')}</bdi> كم
       </p>
 
       <p className="q2-status" aria-live="polite">{message}</p>
