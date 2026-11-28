@@ -67,7 +67,7 @@ export const AYYUB_STORY_PART_1: StoryScene[] = [
    ],
    [
     38,
-    41,
+    42,
     42
    ]
   ]
@@ -107,13 +107,8 @@ export const AYYUB_STORY_PART_1: StoryScene[] = [
   ],
   "v": [
    [
-    21,
-    84,
-    84
-   ],
-   [
     38,
-    42,
+    43,
     43
    ]
   ]
