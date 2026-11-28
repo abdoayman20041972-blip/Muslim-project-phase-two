@@ -1,8 +1,15 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { QiblaCompass } from './QiblaCompass'
 
-afterEach(cleanup)
+beforeEach(() => {
+  // jsdom has no DeviceOrientationEvent; the compass only starts listening when it exists.
+  Object.defineProperty(window, 'DeviceOrientationEvent', { value: class {}, configurable: true })
+})
+afterEach(() => {
+  cleanup()
+  Reflect.deleteProperty(window, 'DeviceOrientationEvent')
+})
 
 const coords = { lat: 30.0444, lng: 31.2357 }
 
