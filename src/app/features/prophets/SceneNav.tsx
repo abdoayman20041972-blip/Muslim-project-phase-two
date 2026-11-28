@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useId, useRef, useState } from 'react'
+import { ScreenActiveContext } from '../../backStack'
 import { readPosition, resumeScene, savePosition, sceneId } from './readerPosition'
 
-const HEAD_OFFSET = 140
+// Distance from the top of the window that counts as "the scene being read". It grows with the
+// UI scale (root font size) so a taller header at the large scale does not hide the scene.
+const headOffset = () => {
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  return Math.max(140, Math.round(rem * 9))
+}
 
 function sceneElements(root: HTMLElement | null) {
   return root ? Array.from(root.querySelectorAll<HTMLElement>('[data-scene]')) : []
@@ -11,6 +17,8 @@ function jumpTo(root: HTMLElement | null, heading: string) {
   const el = sceneElements(root).find((n) => n.dataset.scene === sceneId(heading))
   if (!el) return false
   el.scrollIntoView?.({ block: 'start' })
+  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1')
+  el.focus?.({ preventScroll: true })
   return true
 }
 
@@ -23,18 +31,25 @@ export function SceneNav({ storyId, headings, rootRef }: { storyId: string; head
   const [indexOpen, setIndexOpen] = useState(false)
   const [resume, setResume] = useState<string | null>(() => resumeScene(storyId, headings))
   const timer = useRef(0)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const listId = useId()
+  // Kept-alive screens stay mounted but hidden (display:none), where every rect is zero: they must
+  // neither listen to scroll nor save a position.
+  const screenActive = useContext(ScreenActiveContext)
 
   useEffect(() => {
     setResume(resumeScene(storyId, headings))
   }, [storyId, headings])
 
   useEffect(() => {
+    if (!screenActive) return
     const onScroll = () => {
       window.clearTimeout(timer.current)
       timer.current = window.setTimeout(() => {
+        const offset = headOffset()
         let current: string | null = null
         for (const el of sceneElements(rootRef.current)) {
-          if (el.getBoundingClientRect().top <= HEAD_OFFSET) current = el.dataset.scene ?? null
+          if (el.getBoundingClientRect().top <= offset) current = el.dataset.scene ?? null
           else break
         }
         if (current) savePosition(storyId, current)
@@ -45,7 +60,7 @@ export function SceneNav({ storyId, headings, rootRef }: { storyId: string; head
       window.clearTimeout(timer.current)
       window.removeEventListener('scroll', onScroll)
     }
-  }, [storyId, rootRef])
+  }, [storyId, rootRef, screenActive])
 
   if (headings.length < 2) return null
   return (
@@ -64,11 +79,11 @@ export function SceneNav({ storyId, headings, rootRef }: { storyId: string; head
       ) : null}
       {headings.length >= 5 ? (
         <>
-          <button type="button" className="ys-nav-toggle u-pressable" aria-expanded={indexOpen} onClick={() => setIndexOpen((v) => !v)}>
+          <button ref={toggleRef} type="button" className="ys-nav-toggle u-pressable" aria-expanded={indexOpen} aria-controls={listId} onClick={() => setIndexOpen((v) => !v)}>
             {indexOpen ? 'إخفاء فهرس المشاهد' : `فهرس المشاهد (${headings.length})`}
           </button>
           {indexOpen ? (
-            <ol className="ys-nav-list">
+            <ol id={listId} className="ys-nav-list">
               {headings.map((h) => (
                 <li key={h}>
                   <button
@@ -77,6 +92,7 @@ export function SceneNav({ storyId, headings, rootRef }: { storyId: string; head
                     onClick={() => {
                       jumpTo(rootRef.current, h)
                       setIndexOpen(false)
+                      toggleRef.current?.focus({ preventScroll: true })
                     }}
                   >
                     {h}
