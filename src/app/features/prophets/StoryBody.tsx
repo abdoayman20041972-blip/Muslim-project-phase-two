@@ -93,7 +93,7 @@ function HadithBlock({ text, source }: { text: string; source: string }) {
 
 function Para({ para, fontClass }: { para: StoryPara; fontClass: string }) {
   if (para.k === 't') {
-    const who = para.w === 'ابن كثير' ? 'من تفسير ابن كثير' : `جاء في تفسير ابن كثير، عن ${para.w}`
+    const who = para.w === 'ابن كثير' ? (para.v ? 'من تفسير ابن كثير' : 'ملخص المعنى') : `جاء في تفسير ابن كثير، عن ${para.w}`
     return (
       <aside className="ys-tafsir">
         <div className="ys-tafsir-who">{who}</div>
