@@ -14,14 +14,10 @@ describe('detailed prophet stories', () => {
     describe(id, () => {
       it('has every verse range inside its surah, in order within a scene', () => {
         const all = [...(content.intro?.v ?? []), ...content.scenes.flatMap((s) => s.v)]
-        if (SCARCE_SOURCE.has(id)) {
-          // The Quran says very little about these prophets. They are kept short on purpose
-          // instead of repeating the same passage: the rule is unique ayahs, not ranges.
-          const unique = new Set(all.flatMap(([s, a, b]) => Array.from({ length: b - a + 1 }, (_, i) => `${s}:${a + i}`)))
-          expect(unique.size).toBeGreaterThanOrEqual(4)
-        } else {
-          expect(all.length).toBeGreaterThan(5)
-        }
+        // Each ayah is shown once per story, so the size of a story is its number of unique ayahs.
+        const unique = new Set(all.flatMap(([s, a, b]) => Array.from({ length: b - a + 1 }, (_, i) => `${s}:${a + i}`)))
+        // The Quran says very little about the scarce-source prophets, so they are kept short on purpose.
+        expect(unique.size).toBeGreaterThanOrEqual(SCARCE_SOURCE.has(id) ? 4 : 6)
         for (const [s, a, b] of all) {
           expect(q[String(s)]).toBeTruthy()
           expect(a).toBeGreaterThanOrEqual(1)
