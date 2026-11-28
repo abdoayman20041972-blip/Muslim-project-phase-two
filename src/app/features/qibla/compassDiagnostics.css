@@ -1,0 +1,8 @@
+.q2-diag{display:flex;flex-direction:column;align-items:center;gap:.4rem;width:92%;max-width:26rem;}
+.q2-diag-toggle{height:2.2rem;padding:0 1rem;border-radius:999px;border:1px solid rgba(201,154,64,.6);background:transparent;color:#f6e7b8;font-size:.75rem;}
+.q2-diag-list{margin:0;max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:.4rem .6rem;border-radius:.7rem;background:rgba(5,25,21,.7);color:#f6e7b8;font-size:.72rem;line-height:1.5;}
+.q2-diag-row{display:flex;justify-content:space-between;gap:.6rem;border-bottom:1px solid rgba(246,231,184,.12);padding:.12rem 0;}
+.q2-diag-row dt{margin:0;}
+.q2-diag-row dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.q2-location{margin:0;font-size:.78rem;color:#f6e7b8;text-align:center;}
+.q2-location-change{background:transparent;border:0;border-bottom:1px solid #c99a40;color:#f6e7b8;font-size:.78rem;padding:0 .1rem;}

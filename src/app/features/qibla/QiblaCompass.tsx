@@ -2,7 +2,10 @@ import { Capacitor } from '@capacitor/core'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
+import { CompassDiagnostics, emptyDiag, type CompassDiagSnapshot } from './CompassDiagnostics'
 import { magneticDeclination } from './declination'
+import { directionName, distanceToKaabaKm, shouldRenderHeading } from './qiblaInfo'
+import { useKeepAwakeWhileOpen } from './useKeepAwakeWhileOpen'
 import {
   createHeadingFilter,
   currentScreenAngle,
@@ -78,6 +81,7 @@ const JITTER_ON_DEG = 6
 const JITTER_OFF_DEG = 3
 
 export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } }) {
+  useKeepAwakeWhileOpen()
   const [heading, setHeading] = useState<number | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [lowAccuracy, setLowAccuracy] = useState(false)
@@ -91,6 +95,9 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
   const jitterRef = useRef<{ t: number; h: number }[]>([])
   const calibrationTimerRef = useRef(0)
   const alignedRef = useRef(false)
+  // Read-only diagnostics for the on-device test panel; never feeds back into the heading.
+  const diagRef = useRef<CompassDiagSnapshot>(emptyDiag())
+  const getDiag = useCallback(() => diagRef.current, [])
 
   const bearing = qiblaBearing(coords.lat, coords.lng)
   // Magnetic declination at the user's location (true = magnetic + declination).
@@ -126,10 +133,15 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     let absoluteEventSeen = false
     let nullStreak = 0
 
+    let lastShown: number | null = null
     const flush = () => {
       raf = 0
       if (pending === null) return
-      setHeading(pending)
+      // Skip re-rendering the whole dial for changes the eye cannot see (< 0.25 degrees).
+      if (shouldRenderHeading(lastShown, pending)) {
+        lastShown = pending
+        setHeading(pending)
+      }
       pending = null
     }
 
@@ -142,6 +154,18 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
     const handle = (event: Event, fromAbsoluteEvent: boolean) => {
       const e = event as OrientationEvent
       sawAnyEvent = true
+      const dg = diagRef.current
+      if (fromAbsoluteEvent) dg.absoluteEvents += 1
+      else dg.relativeEvents += 1
+      dg.lastType = fromAbsoluteEvent ? 'deviceorientationabsolute' : 'deviceorientation'
+      dg.alpha = typeof e.alpha === 'number' ? e.alpha : null
+      dg.beta = typeof e.beta === 'number' ? e.beta : null
+      dg.gamma = typeof e.gamma === 'number' ? e.gamma : null
+      dg.eventAbsoluteFlag = typeof e.absolute === 'boolean' ? e.absolute : null
+      dg.webkitHeading = typeof e.webkitCompassHeading === 'number' ? e.webkitCompassHeading : null
+      dg.webkitAccuracy = typeof e.webkitCompassAccuracy === 'number' ? e.webkitCompassAccuracy : null
+      dg.eulerHeading =
+        dg.alpha !== null && dg.beta !== null && dg.gamma !== null ? headingFromEuler(dg.alpha, dg.beta, dg.gamma, currentScreenAngle()) : null
 
       // 1) iOS: webkitCompassHeading is a ready-made magnetic heading of the device top.
       if (typeof e.webkitCompassHeading === 'number' && Number.isFinite(e.webkitCompassHeading) && e.webkitCompassHeading >= 0) {
@@ -151,6 +175,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
           // to true north, so never present it as a confident qibla reading.
           filter.reset()
           pending = null
+          lastShown = null
           setHeading(null)
           setStatus('active')
           setDeclinationUnknown(true)
@@ -173,6 +198,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         if (nullStreak >= 3) {
           filter.reset()
           pending = null
+          lastShown = null
           setHeading(null)
           setInvalidPose(true)
         }
@@ -413,7 +439,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       </div>
 
       <p className="q2-bearing">
-        زاوية القبلة <bdi className="q2-num">{Math.round(bearing)}°</bdi> من الشمال
+        القبلة باتجاه {directionName(bearing)} · زاوية القبلة <bdi className="q2-num">{Math.round(bearing)}°</bdi> من الشمال
         {heading !== null ? (
           <>
             {' · اتجاهك '}
@@ -424,6 +450,10 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         )}
       </p>
 
+      <p className="q2-bearing" data-testid="q2-distance">
+        المسافة إلى مكة المكرمة نحو <bdi className="q2-num">{Math.round(distanceToKaabaKm(coords.lat, coords.lng))}</bdi> كم
+      </p>
+
       <p className="q2-status" aria-live="polite">{message}</p>
       <span className="q2-sr-only" role="status">{alignedAnnounce}</span>
 
@@ -431,6 +461,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
         <RotateCcw className="h-4 w-4" aria-hidden="true" />
         <span>{status === 'needs-permission' ? 'تفعيل' : status === 'denied' || status === 'unavailable' || status === 'no-absolute' || status === 'insecure' ? 'إعادة المحاولة' : 'معايرة'}</span>
       </button>
+      <CompassDiagnostics getSnapshot={getDiag} coords={coords} declination={declination} />
     </div>
   )
 }

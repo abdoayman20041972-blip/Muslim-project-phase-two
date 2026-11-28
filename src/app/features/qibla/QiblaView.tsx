@@ -22,7 +22,14 @@ export function QiblaView({ onBack, onOpenLocation }: { onBack: () => void; onOp
       </header>
 
       {coords ? (
-        <QiblaCompass coords={coords} />
+        <>
+          <QiblaCompass coords={coords} />
+          <p className="q2-location" data-testid="q2-location">
+            الموقع المستخدم: <bdi className="q2-num">{coords.lat.toFixed(2)}°, {coords.lng.toFixed(2)}°</bdi>
+            {' '}
+            <button type="button" onClick={onOpenLocation} className="q2-location-change u-pressable">تغيير</button>
+          </p>
+        </>
       ) : (
         <div className="q2-empty">
           <MapPin className="h-6 w-6" />
