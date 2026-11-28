@@ -20,3 +20,8 @@
 .ys-hadith-text{margin:0;line-height:2;color:hsl(var(--azkar-ink))}
 .dark .ys-scene{background:linear-gradient(145deg,hsl(var(--azkar-card)),hsl(var(--azkar-surface-2)))}
 @media(max-width:380px){.ys-scene{padding:.9rem}.ys-verse-text{font-size:1.08rem}}
+.ys-nav{display:flex;flex-direction:column;gap:.5rem;margin:.2rem 0 .75rem}
+.ys-nav-resume,.ys-nav-toggle{align-self:flex-start;padding:.45rem .9rem;border-radius:999px;border:1px solid hsl(var(--azkar-gold)/.5);background:hsl(var(--azkar-gold)/.12);color:hsl(var(--azkar-teal-ink));font-size:.82rem;font-weight:700}
+.ys-nav-list{list-style:none;margin:0;padding:.4rem;display:grid;gap:.15rem;max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid hsl(var(--azkar-teal)/.09);border-radius:var(--app-radius);background:var(--app-panel)}
+.ys-nav-list button{width:100%;text-align:start;padding:.5rem .6rem;border:0;border-radius:.5rem;background:transparent;color:hsl(var(--azkar-teal-ink));font-size:.88rem}
+.ys-nav-list button.is-saved{background:hsl(var(--azkar-gold)/.14);font-weight:700}
