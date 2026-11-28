@@ -1,6 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StoryBody } from './StoryBody'
+import { YusufStoryBody } from './YusufStoryBody'
 import { PROPHET_STORIES } from './prophetsData'
 import { DETAILED_STORIES } from './storyContent'
 import { YUSUF_SCENES } from './yusufStory'
@@ -46,6 +47,22 @@ describe('removed duplicates and the Harun card verse', () => {
   it('uses 19:53 (about Harun, already in his story) as his card verse', () => {
     const h = PROPHET_STORIES.find((s) => s.id === 'harun')!
     expect(h.verse.ref).toBe('مريم: ٥٣')
-    expect(DETAILED_STORIES.harun.intro!.v).toContainEqual([19, 53, 53])
+    const h19 = [...(DETAILED_STORIES.harun.intro?.v ?? []), ...DETAILED_STORIES.harun.scenes.flatMap((s) => s.v)]
+    expect(h19.some(([s, a, b]) => s === 19 && a <= 53 && b >= 53)).toBe(true)
+  })
+})
+
+describe('Yusuf body tafsir labels', () => {
+  it('shows "ملخص المعنى" (with the narrator when named) and never names Ibn Kathir as the source', async () => {
+    render(<YusufStoryBody fontClass="" />)
+    await waitFor(() => expect(document.querySelectorAll('.ys-tafsir').length).toBeGreaterThan(5))
+    const who = Array.from(document.querySelectorAll('.ys-tafsir-who')).map((n) => n.textContent ?? '')
+    expect(who.length).toBeGreaterThan(5)
+    for (const w of who) {
+      expect(w.startsWith('ملخص المعنى')).toBe(true)
+      expect(w).not.toContain('ابن كثير')
+    }
+    expect(who).toContain('ملخص المعنى')
+    expect(who.some((w) => w.startsWith('ملخص المعنى، عن '))).toBe(true)
   })
 })
