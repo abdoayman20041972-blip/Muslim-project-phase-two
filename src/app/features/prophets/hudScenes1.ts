@@ -132,7 +132,7 @@ export const HUD_STORY_PART_1: StoryScene[] = [
    ],
    [
     46,
-    21,
+    22,
     23
    ]
   ]
