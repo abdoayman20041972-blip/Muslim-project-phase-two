@@ -27,7 +27,7 @@ export const SALIH_STORY_PART_1: StoryScene[] = [
   "v": [
    [
     7,
-    73,
+    74,
     74
    ],
    [
