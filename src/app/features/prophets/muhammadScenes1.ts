@@ -50,6 +50,11 @@ export const MUHAMMAD_STORY_PART_1: StoryScene[] = [
     9,
     128,
     129
+   ],
+   [
+    33,
+    40,
+    40
    ]
   ]
  },
