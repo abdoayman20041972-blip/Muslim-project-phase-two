@@ -114,11 +114,6 @@ export const DAWUD_STORY_PART_1: StoryScene[] = [
   ],
   "v": [
    [
-    38,
-    17,
-    20
-   ],
-   [
     34,
     10,
     10
