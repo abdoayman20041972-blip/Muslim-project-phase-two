@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { surahList } from '../../../quran-meta'
 import { loadSurah } from '../quran/loadSurah'
 import { CopyButton } from '../azkar/CopyButton'
 import { ayahDisplayText } from './YusufStoryBody'
 import type { StoryContent, StoryPara, StoryVerse } from './storyTypes'
+import { SceneNav } from './SceneNav'
+import { sceneId } from './readerPosition'
 import './prophets.css'
 
 const toArabicDigits = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)])
@@ -109,13 +111,16 @@ function Para({ para, fontClass }: { para: StoryPara; fontClass: string }) {
 
 export function StoryBody({ content, fontClass }: { content: StoryContent; fontClass: string }) {
   const { ayahs, failed } = useStoryAyahs(storySurahs(content))
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const headings = useMemo(() => content.scenes.map((s) => s.h), [content])
   return (
-    <div className="ys-body" data-story={content.id}>
+    <div className="ys-body" data-story={content.id} ref={rootRef}>
       {content.intro?.v.map((v) => <VerseBlock key={v.join('-')} verse={v} ayahs={ayahs} failed={failed} />)}
       {content.intro?.hd ? <HadithBlock text={content.intro.hd.t} source={content.intro.hd.s} /> : null}
+      <SceneNav storyId={content.id} headings={headings} rootRef={rootRef} />
       <ol className="ys-scenes">
         {content.scenes.map((scene, i) => (
-          <li key={scene.h} className="ys-scene">
+          <li key={scene.h} className="ys-scene" data-scene={sceneId(scene.h)}>
             <div className="ys-scene-head">
               <span className="ys-scene-no" aria-hidden="true">{toArabicDigits(i + 1)}</span>
               <h2 className="font-cairo">{scene.h}</h2>

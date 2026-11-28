@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { loadSurah } from '../quran/loadSurah'
 import { CopyButton } from '../azkar/CopyButton'
 import { YUSUF_INTRO_HADITH, YUSUF_INTRO_VERSES, YUSUF_SCENES, type YusufPara } from './yusufStory'
+import { SceneNav } from './SceneNav'
+import { sceneId } from './readerPosition'
 import './prophets.css'
 
 const SURAH_NUMBER = 12
@@ -93,15 +95,19 @@ function Para({ para, fontClass }: { para: YusufPara; fontClass: string }) {
   return <p className={`ys-prose ${fontClass}`}>{para.t}</p>
 }
 
+const YUSUF_HEADINGS = YUSUF_SCENES.map((s) => s.h)
+
 export function YusufStoryBody({ fontClass }: { fontClass: string }) {
   const { ayahs, failed } = useYusufAyahs()
+  const rootRef = useRef<HTMLDivElement | null>(null)
   return (
-    <div className="ys-body">
+    <div className="ys-body" ref={rootRef}>
       <VerseBlock range={YUSUF_INTRO_VERSES} ayahs={ayahs} failed={failed} />
       <HadithBlock text={YUSUF_INTRO_HADITH.t} source={YUSUF_INTRO_HADITH.s} />
+      <SceneNav storyId="yusuf" headings={YUSUF_HEADINGS} rootRef={rootRef} />
       <ol className="ys-scenes">
         {YUSUF_SCENES.map((scene, i) => (
-          <li key={scene.h} className="ys-scene">
+          <li key={scene.h} className="ys-scene" data-scene={sceneId(scene.h)}>
             <div className="ys-scene-head">
               <span className="ys-scene-no" aria-hidden="true">{toArabicDigits(i + 1)}</span>
               <h2 className="font-cairo">{scene.h}</h2>
