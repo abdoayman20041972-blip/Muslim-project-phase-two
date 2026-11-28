@@ -29,6 +29,11 @@ export const YUNUS_STORY_PART_1: StoryScene[] = [
     37,
     139,
     139
+   ],
+   [
+    21,
+    87,
+    87
    ]
   ]
  },
@@ -96,6 +101,11 @@ export const YUNUS_STORY_PART_1: StoryScene[] = [
    }
   ],
   "v": [
+   [
+    21,
+    88,
+    88
+   ],
    [
     37,
     142,
