@@ -23,6 +23,12 @@ describe('tafsir card label', () => {
     render(<StoryBody content={story(true)} fontClass="" />)
     expect(screen.getByText('من تفسير ابن كثير')).toBeTruthy()
   })
+  it('keeps the narrator but drops the Ibn Kathir name on unverified named-narrator cards', () => {
+    const c: StoryContent = { id: 'x', scenes: [{ h: 'مشهد', p: [{ k: 't', w: 'مجاهد', t: 'نص' }], v: [] }] }
+    render(<StoryBody content={c} fontClass="" />)
+    expect(screen.getByText('ملخص المعنى، عن مجاهد')).toBeTruthy()
+    expect(document.body.textContent).not.toContain('ابن كثير')
+  })
   it('has no card marked verified yet (no reference was checked against a source copy)', () => {
     const all = [...Object.values(DETAILED_STORIES).flatMap((c) => c.scenes), ...YUSUF_SCENES].flatMap((s) => s.p)
     expect(all.filter((p) => p.k === 't' && p.v).length).toBe(0)
