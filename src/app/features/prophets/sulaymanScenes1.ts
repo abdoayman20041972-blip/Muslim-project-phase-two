@@ -39,11 +39,6 @@ export const SULAYMAN_STORY_PART_1: StoryScene[] = [
     27,
     15,
     16
-   ],
-   [
-    38,
-    30,
-    30
    ]
   ]
  },
