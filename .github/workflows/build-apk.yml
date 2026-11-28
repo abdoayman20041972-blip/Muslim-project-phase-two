@@ -147,8 +147,8 @@ jobs:
 
       - name: Set version name and version code
         env:
-          VERSION_NAME: "1.4.21"
-          VERSION_CODE: "24"
+          VERSION_NAME: "2.0.0"
+          VERSION_CODE: "25"
         run: |
           # versionCode must strictly increase with every release APK, otherwise
           # Android refuses the new file as an update. Bump both values together.

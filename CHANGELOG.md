@@ -2,6 +2,15 @@
 
 Versions 1.4.11 to 1.4.19 are not reconstructed here; their commits are in git history on `main-2`.
 
+## 2.0.0 (versionCode 25)
+Prophets' stories, compass diagnostics and reader position. Branches: `audit-2-0-prophets`, `audit-2-0-compass`, `audit-2-0-reader`, plus docs.
+- Stories: each ayah appears once per story (956 shown became 789; the ayah set of all 24 stories is unchanged, checked by test). An ayah stays under the first scene that shows it. Editorial order of the prophets in `PROPHET_ORDER`. Footer: sources line and the count shown once.
+- Tafsir cards: 3 duplicate cards deleted (2 in Yusuf, 1 in Salih). Harun's card verse changed to 19:53 with its question. Cards are labelled "ملخص المعنى" (or "ملخص المعنى، عن X" when a narrator is named). Ibn Kathir is named only on a card flagged `v:true`; no card has it yet.
+- Compass: diagnostics panel (read-only panel), distance and direction name to the Kaaba, location line with a change link, heading hidden when unreliable, keep-awake while the compass is open.
+- Reader: position saved by stable scene id (heading text) and a scene index in the story reader. The key `azkar_prophet_position` is in the backup keys (its shape is validated on import) and is not cleared by settings reset. Saving is skipped while the screen is hidden.
+- Not included: the native sensor plugin and any Android heading or declination change (they wait for a phone test). Lazy-loading waits for measurement.
+- Tests: 159 files / 1279 tests pass locally across 12 shards; `tsc --noEmit` clean.
+
 ## 1.4.21 (versionCode 24)
 - Removed the dataset "*" verse separators from four Hisn al-Muslim items (awakening: Al Imran 3:190-200; travel: Az-Zukhruf 43:13-14; sleep: Ayat al-Rasul 2:285-286; after prayer: Ikhlas, Falaq, Nas). Each separator became one space; no Arabic word changed. Tests compare the word sequence with the previous text and each verse part with the bundled Uthmani text.
 - `main-2` became the GitHub default branch.
