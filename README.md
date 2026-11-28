@@ -2,14 +2,14 @@
 
 Arabic (RTL) Islamic app for Android, built as a React web app wrapped with Capacitor. Personal-use app: Quran reader and recitation, azkar and tasbih, hadith, prophets' stories, prayer times, qibla, a reading library, radio and Haram live streams.
 
-Current release: **1.4.21 (versionCode 24)**. Default branch: **main-2** (set 28 Nov 2026; the old `main` branch is the v1.2.7 line and is kept only as history).
+Current release: **2.0.0 (versionCode 25)**. Default branch: **main-2** (set 28 Nov 2026; the old `main` branch is the v1.2.7 line and is kept only as history).
 
 ## Stack
 React 19, TanStack Router/Start, Vite, Tailwind 4, Capacitor 7 (Android), Vitest (jsdom). Two local Capacitor plugins in `plugins/` (background audio, exact alarms). Native glue is patched in during CI by `scripts/patch-android.mjs`.
 
 ## Commands
 - `npm ci` then `npm run typecheck` (tsc strict), `npm test` (vitest), `npm run build` (runs the Quran page and Quran center validators first).
-- Tests: 151 files / 1219 tests pass in CI run 44 (release build of 1.4.21).
+- Tests: 159 files / 1274 tests pass locally on the merged 2.0.0 candidate (12 vitest shards, tsc clean). CI count for the 2.0.0 build is added after the build.
 - Lint: `bash scripts/lint.sh` (ESLint in its own folder; non-blocking in CI).
 
 ## Build and release
