@@ -4,3 +4,5 @@
 .q2-diag-row{display:flex;justify-content:space-between;gap:.6rem;border-bottom:1px solid rgba(246,231,184,.12);padding:.12rem 0;}
 .q2-diag-row dt{margin:0;}
 .q2-diag-row dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.q2-location{margin:0;font-size:.78rem;color:#f6e7b8;text-align:center;}
+.q2-location-change{background:transparent;border:0;border-bottom:1px solid #c99a40;color:#f6e7b8;font-size:.78rem;padding:0 .1rem;}
