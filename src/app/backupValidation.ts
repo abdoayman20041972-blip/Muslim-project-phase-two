@@ -67,6 +67,11 @@ export function isValidBackupValue(key: string, value: unknown): value is string
     const p = parseJson(value)
     return p.ok && Array.isArray(p.value)
   }
+  if (key === 'azkar_prophet_position') {
+    // { storyId: sceneHeading }: every value a non-empty string of sane size
+    const p = parseJson(value)
+    return p.ok && isRecord(p.value) && Object.values(p.value).every((x) => typeof x === 'string' && x.length > 0 && x.length < 300)
+  }
   if (OBJECT_KEYS.has(key)) {
     const p = parseJson(value)
     return p.ok && isRecord(p.value)
