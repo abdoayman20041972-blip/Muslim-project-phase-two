@@ -48,7 +48,7 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
         <BackButton onClick={onBack} />
         <div className="min-w-0 flex-1">
           <h1 className="font-cairo text-2xl font-bold text-azkar-teal-ink">قصص الأنبياء</h1>
-          <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">عِبرٌ من سيرة أولي العزم، بالقرآن والسيرة</p>
+          <p className="mt-0.5 text-[0.6875rem] text-azkar-ink-faint">عِبرٌ من قصص الأنبياء، من القرآن والسنة وأقوال المفسرين</p>
         </div>
         <span className="hadith-mark" aria-hidden="true"><ScrollText className="h-4 w-4" /></span>
       </header>
