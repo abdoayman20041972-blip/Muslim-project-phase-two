@@ -15,6 +15,8 @@ export const APP_SETTINGS_KEYS = {
   hadithShowNote:'azkar_hadith_show_note',
   hadithFont:'hadith_font', prophetFont:'prophet_font',
   prophetShowQuestion:'azkar_prophet_show_question',
+  // Reading position of the prophet stories: JSON { storyId: scene heading }. User progress: backed up, not reset.
+  prophetPosition:'azkar_prophet_position',
   adhanSound:'adhan_sound',
   mutedPrayers:'azkar_muted_prayers', kahfReminder:'azkar_friday_kahf_reminder', kahfReminderTime:'azkar_friday_kahf_time',
   quranMemorizeHide:'azkar_quran_memorize_hide',
@@ -56,7 +58,7 @@ export const BACKUP_KEYS = new Set<string>([
   APP_SETTINGS_KEYS.tafsirSource,APP_SETTINGS_KEYS.prayerSource,APP_SETTINGS_KEYS.khatmahPage,APP_SETTINGS_KEYS.khatmahTarget,APP_SETTINGS_KEYS.prayerCalcMethod,
   APP_SETTINGS_KEYS.asrSchool,APP_SETTINGS_KEYS.prayerReminderLead,APP_SETTINGS_KEYS.prayerOffsets,APP_SETTINGS_KEYS.coords,APP_SETTINGS_KEYS.prayerLocationUpdatedAt,APP_SETTINGS_KEYS.fontSize,
   APP_SETTINGS_KEYS.reciter,APP_SETTINGS_KEYS.readingLayout,APP_SETTINGS_KEYS.hijriCalendar,APP_SETTINGS_KEYS.tasbihButtonColor,APP_SETTINGS_KEYS.dataSaver,APP_SETTINGS_KEYS.hideMiniPlayer,APP_SETTINGS_KEYS.customTasbih,
-  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.azkarFontSize,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.hadithFont,APP_SETTINGS_KEYS.prophetFont,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.mutedPrayers,APP_SETTINGS_KEYS.adhanSound,APP_SETTINGS_KEYS.kahfReminder,APP_SETTINGS_KEYS.kahfReminderTime,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
+  APP_SETTINGS_KEYS.azkarCounterEnabled,APP_SETTINGS_KEYS.journeyAutoAdvance,APP_SETTINGS_KEYS.azkarFontSize,APP_SETTINGS_KEYS.hadithShowNote,APP_SETTINGS_KEYS.hadithFont,APP_SETTINGS_KEYS.prophetFont,APP_SETTINGS_KEYS.prophetShowQuestion,APP_SETTINGS_KEYS.prophetPosition,APP_SETTINGS_KEYS.mutedPrayers,APP_SETTINGS_KEYS.adhanSound,APP_SETTINGS_KEYS.kahfReminder,APP_SETTINGS_KEYS.kahfReminderTime,APP_SETTINGS_KEYS.readingPosition,'azkar_theme_color','azkar_counts','azkar_day_total','azkar_day_total_date',
   'azkar_tasbih_selected_word','azkar_tasbih_rounds','azkar_tasbih_round_counts','azkar_tasbih_daily_history','azkar_custom_tasbih','azkar_custom_tasbih_list',
   'azkar_azkar_item_progress_v2','azkar_azkar_item_progress_v2_migrated','azkar_azkar_occasion_progress_v1','azkar_azkar_occasion_migrated_v1','azkar_favorites','azkar_favorites_version','azkar_last_surah','azkar_last_view',
   'azkar_journey_position','azkar_daily_ayah'
@@ -70,9 +72,9 @@ export function isBackupKey(key:string){return BACKUP_KEYS.has(key) || key.start
 // preference, plus the theme color and the custom tasbih list, which the reset
 // dialog already promises to clear (azkar_custom_tasbih is already a registered
 // key). Progress and content keys (azkar_last_surah, azkar_last_view,
-// readingPosition, favorites, azkar/tasbih progress) and the downloaded audio
+// readingPosition, prophetPosition, favorites, azkar/tasbih progress) and the downloaded audio
 // are NOT reset.
 export const SETTINGS_RESET_KEYS:readonly string[]=[
-  ...Object.values(APP_SETTINGS_KEYS).filter((key)=>key!==APP_SETTINGS_KEYS.readingPosition),
+  ...Object.values(APP_SETTINGS_KEYS).filter((key)=>key!==APP_SETTINGS_KEYS.readingPosition&&key!==APP_SETTINGS_KEYS.prophetPosition),
   'azkar_theme_color','azkar_custom_tasbih_list',...LEGACY_UNUSED_KEYS,
 ]
