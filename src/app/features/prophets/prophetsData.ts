@@ -170,8 +170,8 @@ const withDetail = (story: ProphetStory): ProphetStory => {
   }
 }
 
-// One explicit chronological order (Adam to Muhammad), following the order of Ibn Kathir's Qisas al-Anbiya.
-// Ids never change, only their position in the list.
+// Editorial order, not a dated chronology: Adam first, Muhammad last, the others in the usual narrative order
+// of the stories. No dates are shown. Ids never change, only their position in the list.
 export const PROPHET_ORDER: readonly string[] = [
   'adam', 'idris', 'nuh', 'hud', 'salih', 'ibrahim', 'lut', 'ismail', 'ishaq', 'yaqub', 'yusuf', 'ayyub', 'shuayb',
   'dhu-al-kifl', 'musa', 'harun', 'dawud', 'sulayman', 'ilyas', 'al-yasa', 'yunus', 'zakariya', 'yahya', 'isa', 'muhammad',
