@@ -1,4 +1,6 @@
-# Audit map (snapshot of the audited tree, shipped as 1.4.10 code 13)
+# Audit map (snapshot of the audited tree, shipped as 1.4.10 code 13; updated for 1.4.21 code 24)
+
+Update 28 Nov 2026: current release is 1.4.21 (code 24); CI run 44 passed 151 test files / 1219 tests. Phases 1 to 4, copy buttons and the Hisn separator removal are in; see CHANGELOG.md. The test counts below are from 1.4.10.
 
 Stack: React + TanStack Router/Vite, Capacitor Android, Vitest (jsdom). Two local Capacitor plugins in plugins/ (background audio, exact alarms). Native glue is patched in by scripts/patch-android.mjs during CI (workflow .github/workflows/build-apk.yml). The android/ folder is generated in CI, not in the repo.
 
