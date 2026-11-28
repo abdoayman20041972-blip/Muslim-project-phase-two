@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const ZAKARIYA_STORY: StoryContent = {
  id: 'zakariya',
- intro: {"v": [[19, 2, 11], [3, 37, 41]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "عبد الله زكريا",
@@ -176,11 +176,6 @@ export const ZAKARIYA_STORY: StoryContent = {
     19,
     11,
     11
-   ],
-   [
-    3,
-    41,
-    41
    ]
   ]
  },

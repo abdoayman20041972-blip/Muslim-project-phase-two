@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const YAHYA_STORY: StoryContent = {
  id: 'yahya',
- intro: {"v": [[19, 7, 15], [3, 39, 39]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "البشرى باسمه",
@@ -26,7 +26,7 @@ export const YAHYA_STORY: StoryContent = {
    [
     19,
     7,
-    7
+    11
    ],
    [
     3,
@@ -52,13 +52,7 @@ export const YAHYA_STORY: StoryContent = {
    "t": "«فَأَتَيْتُ عَلَى عِيسَى وَيَحْيَى فَقَالاَ مَرْحَبًا بِكَ مِنْ أَخٍ وَنَبِيٍّ»",
    "s": "رواه البخاري (٣٢٠٧) عن مالك بن صعصعة رضي الله عنه"
   },
-  "v": [
-   [
-    3,
-    39,
-    39
-   ]
-  ]
+  "v": []
  },
  {
   "h": "سيدًا وحصورًا ونبيًّا",
@@ -83,13 +77,7 @@ export const YAHYA_STORY: StoryContent = {
     "t": "وإنما معناه: أنه معصوم من الذنوب، أي لا يأتيها كأنه حصر عنها"
    }
   ],
-  "v": [
-   [
-    3,
-    39,
-    39
-   ]
-  ]
+  "v": []
  },
  {
   "h": "خذ الكتاب بقوة",

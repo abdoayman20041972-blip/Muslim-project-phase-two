@@ -8,7 +8,7 @@ import { YUSUF_SCENES_PART_3 } from './yusufScenes3'
 // against the text of Tafsir Ibn Kathir for the same passage.
 export type YusufPara =
   | { k: 'n'; t: string }
-  | { k: 't'; w: string; t: string }
+  | { k: 't'; w: string; t: string; v?: true }
 
 export type YusufScene = {
   h: string

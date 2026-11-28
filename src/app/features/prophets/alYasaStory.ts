@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const AL_YASA_STORY: StoryContent = {
  id: 'al-yasa',
- intro: {"v": [[6, 84, 87], [38, 45, 48]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "اليسع في سورة الأنعام",

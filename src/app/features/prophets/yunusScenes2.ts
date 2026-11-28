@@ -16,11 +16,6 @@ export const YUNUS_STORY_PART_2: StoryScene[] = [
   ],
   "v": [
    [
-    21,
-    88,
-    88
-   ],
-   [
     37,
     145,
     148
@@ -59,11 +54,6 @@ export const YUNUS_STORY_PART_2: StoryScene[] = [
     10,
     98,
     98
-   ],
-   [
-    37,
-    147,
-    148
    ]
   ]
  }

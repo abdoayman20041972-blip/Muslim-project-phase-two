@@ -3,7 +3,8 @@
 // and is read at runtime from the app mushaf.
 export type StoryPara =
   | { k: 'n'; t: string }
-  | { k: 't'; w: string; t: string }
+  // v: true only for a card checked against a real copy of the tafsir; unchecked cards show as "ملخص المعنى".
+  | { k: 't'; w: string; t: string; v?: true }
 
 export type StoryVerse = [number, number, number]
 

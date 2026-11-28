@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const ILYAS_STORY: StoryContent = {
  id: 'ilyas',
- intro: {"v": [[6, 85, 85], [37, 123, 132]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "من المرسلين",

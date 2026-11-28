@@ -25,7 +25,7 @@ const BASE_STORIES: ProphetStory[] = [
     name: 'نوح',
     epithet: 'أول رسول إلى أهل الأرض',
     era: 'قوم نوح',
-    summary: 'دعا قومه ألف سنة إلا خمسين عامًا فما آمن معه إلا قليل، ثم أمره الله أن يصنع الفلك، فنجّاه ومن معه وأغرق الذين كذّبوا.',
+    summary: 'لبث في قومه ألف سنة إلا خمسين عامًا يدعوهم فما آمن معه إلا قليل، ثم أمره الله أن يصنع الفلك، فنجّاه ومن معه وأغرق الذين كذّبوا.',
     scenes: [], // replaced by the detailed scenes in withDetail (storyContent.ts)
     verse: { text: 'وَلَقَدْ أَرْسَلْنَا نُوحًا إِلَىٰ قَوْمِهِۦ فَلَبِثَ فِيهِمْ أَلْفَ سَنَةٍ إِلَّا خَمْسِينَ عَامًۭا فَأَخَذَهُمُ ٱلطُّوفَانُ وَهُمْ ظَٰلِمُونَ', ref: 'العنكبوت: ١٤' },
     lessons: ['دعا قومه ليلًا ونهارًا وجهارًا وإسرارًا', 'أمره الله أن يصنع الفلك بأعيننا ووحينا', 'قال الله له: اهبط بسلام منا وبركات عليك'],
@@ -170,4 +170,13 @@ const withDetail = (story: ProphetStory): ProphetStory => {
   }
 }
 
-export const PROPHET_STORIES: ProphetStory[] = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED].map(withDetail)
+// Editorial order, not a dated chronology: Adam first, Muhammad last, the others in the usual narrative order
+// of the stories. No dates are shown. Ids never change, only their position in the list.
+export const PROPHET_ORDER: readonly string[] = [
+  'adam', 'idris', 'nuh', 'hud', 'salih', 'ibrahim', 'lut', 'ismail', 'ishaq', 'yaqub', 'yusuf', 'ayyub', 'shuayb',
+  'dhu-al-kifl', 'musa', 'harun', 'dawud', 'sulayman', 'ilyas', 'al-yasa', 'yunus', 'zakariya', 'yahya', 'isa', 'muhammad',
+]
+
+const ALL_STORIES = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED]
+
+export const PROPHET_STORIES: ProphetStory[] = PROPHET_ORDER.map((id) => ALL_STORIES.find((s) => s.id === id)!).map(withDetail)

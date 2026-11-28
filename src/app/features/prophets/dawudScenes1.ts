@@ -165,7 +165,7 @@ export const DAWUD_STORY_PART_1: StoryScene[] = [
    ],
    [
     34,
-    10,
+    11,
     13
    ],
    [

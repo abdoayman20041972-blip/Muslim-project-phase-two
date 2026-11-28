@@ -226,7 +226,7 @@ export const MUSA_STORY_PART_1: StoryScene[] = [
   "v": [
    [
     28,
-    22,
+    23,
     25
    ]
   ]

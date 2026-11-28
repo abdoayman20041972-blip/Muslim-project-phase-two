@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const LUT_STORY: StoryContent = {
  id: 'lut',
- intro: {"v": [[7, 80, 84], [11, 77, 83], [15, 73, 74]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "إنكار الفاحشة",
@@ -26,7 +26,7 @@ export const LUT_STORY: StoryContent = {
    [
     7,
     80,
-    81
+    82
    ]
   ]
  },

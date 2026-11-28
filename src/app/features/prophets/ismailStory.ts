@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const ISMAIL_STORY: StoryContent = {
  id: 'ismail',
- intro: {"v": [[19, 54, 55], [37, 99, 111], [2, 127, 129]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "صادق الوعد",

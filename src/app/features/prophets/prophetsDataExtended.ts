@@ -88,9 +88,9 @@ export const PROPHET_STORIES_EXTENDED: ProphetStory[] = [
     era: 'نبي من بني إسرائيل',
     summary: 'جعله الله وزيرًا لموسى ونبيًّا، واستخلفه موسى في قومه، ونهى قومه عن عبادة العجل.',
     scenes: [], // replaced by the detailed scenes in withDetail (storyContent.ts)
-    verse: { text: 'وَٱجْعَل لِّى وَزِيرًۭا مِّنْ أَهْلِى', ref: 'طه: ٢٩' },
+    verse: { text: 'وَوَهَبْنَا لَهُۥ مِن رَّحْمَتِنَآ أَخَاهُ هَٰرُونَ نَبِيًّۭا', ref: 'مريم: ٥٣' },
     lessons: ['كان وزير موسى وأخاه', 'نهى قومه عن عبادة العجل', 'قال: يا ابن أم لا تأخذ بلحيتي ولا برأسي'],
-    question: 'ماذا سأل موسى ربه في أخيه هارون؟',
+    question: 'ماذا وهب الله لموسى من رحمته؟',
   },
   {
     id: 'dhu-al-kifl',

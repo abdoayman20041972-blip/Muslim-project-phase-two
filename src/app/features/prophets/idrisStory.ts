@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const IDRIS_STORY: StoryContent = {
  id: 'idris',
- intro: {"v": [[19, 56, 57]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "ذكر إدريس في سورة مريم",
@@ -42,13 +42,7 @@ export const IDRIS_STORY: StoryContent = {
    "t": "«فَأَتَيْتُ عَلَى إِدْرِيسَ فَسَلَّمْتُ عَلَيْهِ، فَقَالَ مَرْحَبًا مِنْ أَخٍ وَنَبِيٍّ»",
    "s": "رواه البخاري (٣٢٠٧) عن مالك بن صعصعة رضي الله عنه"
   },
-  "v": [
-   [
-    19,
-    56,
-    57
-   ]
-  ]
+  "v": []
  },
  {
   "h": "من الصابرين والصالحين",

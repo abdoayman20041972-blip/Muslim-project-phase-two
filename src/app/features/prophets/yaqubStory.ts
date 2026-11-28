@@ -2,7 +2,7 @@ import type { StoryContent } from './storyTypes'
 
 export const YAQUB_STORY: StoryContent = {
  id: 'yaqub',
- intro: {"v": [[2, 132, 133], [12, 83, 84], [12, 96, 98]]},
+ intro: {"v": []},
  scenes: [
  {
   "h": "وصية يعقوب لبنيه",
