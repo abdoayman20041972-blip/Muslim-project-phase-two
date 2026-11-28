@@ -32,4 +32,17 @@ describe('qibla front-end items', () => {
     expect(release).toHaveBeenCalled()
     Reflect.deleteProperty(navigator, 'wakeLock')
   })
+  it('releases a web wake lock that resolves after the screen was left', async () => {
+    const release = vi.fn(async () => {})
+    let resolve: (v: { release: typeof release }) => void = () => {}
+    const request = vi.fn(() => new Promise<{ release: typeof release }>((r) => { resolve = r }))
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true })
+    const { unmount } = render(<QiblaCompass coords={{ lat: 30.04, lng: 31.24 }} />)
+    unmount()
+    resolve({ release })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(release).toHaveBeenCalled()
+    Reflect.deleteProperty(navigator, 'wakeLock')
+  })
 })
