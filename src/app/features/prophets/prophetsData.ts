@@ -170,4 +170,13 @@ const withDetail = (story: ProphetStory): ProphetStory => {
   }
 }
 
-export const PROPHET_STORIES: ProphetStory[] = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED].map(withDetail)
+// One explicit chronological order (Adam to Muhammad), following the order of Ibn Kathir's Qisas al-Anbiya.
+// Ids never change, only their position in the list.
+export const PROPHET_ORDER: readonly string[] = [
+  'adam', 'idris', 'nuh', 'hud', 'salih', 'ibrahim', 'lut', 'ismail', 'ishaq', 'yaqub', 'yusuf', 'ayyub', 'shuayb',
+  'dhu-al-kifl', 'musa', 'harun', 'dawud', 'sulayman', 'ilyas', 'al-yasa', 'yunus', 'zakariya', 'yahya', 'isa', 'muhammad',
+]
+
+const ALL_STORIES = [...BASE_STORIES, ...PROPHET_STORIES_EXTENDED]
+
+export const PROPHET_STORIES: ProphetStory[] = PROPHET_ORDER.map((id) => ALL_STORIES.find((s) => s.id === id)!).map(withDetail)
