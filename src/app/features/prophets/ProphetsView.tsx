@@ -75,7 +75,7 @@ function StoryList({ onSelect, onBack }: { onSelect: (id: string) => void; onBac
         ))}
       </ul>
 
-      <p className="ps-source">المصادر: القرآن الكريم، وصحيح البخاري ومسلم، وأقوال ابن كثير والسلف في التفسير</p>
+      <p className="ps-source">المصادر: القرآن الكريم، وصحيح البخاري ومسلم، وأقوال المفسرين</p>
     </>
   )
 }
