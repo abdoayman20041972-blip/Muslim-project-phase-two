@@ -14,11 +14,11 @@ describe('exact ayat per story', () => {
     expect(Object.keys(EXPECTED_AYAT).sort()).toEqual(Object.keys(DETAILED_STORIES).sort())
   })
   for (const [id, content] of Object.entries(DETAILED_STORIES)) {
-    it(`${id} shows exactly the pinned ayat, each once, intro first`, () => {
+    it(`${id} shows exactly the pinned ayat in the pinned order, each once`, () => {
       const shown = [...(content.intro?.v ?? []), ...content.scenes.flatMap((s) => s.v)].flatMap(([s, a, b]) =>
         Array.from({ length: b - a + 1 }, (_, i) => `${s}:${a + i}`),
       )
-      expect(shown.slice().sort()).toEqual(expand(EXPECTED_AYAT[id]).sort())
+      expect(shown).toEqual(expand(EXPECTED_AYAT[id]))
       expect(new Set(shown).size).toBe(shown.length)
     })
   }
