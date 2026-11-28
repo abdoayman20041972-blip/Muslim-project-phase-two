@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { APP_SETTINGS_KEYS, readSetting } from '../../settings'
 import { CompassDiagnostics, emptyDiag, type CompassDiagSnapshot } from './CompassDiagnostics'
 import { magneticDeclination } from './declination'
-import { directionName, distanceToKaabaKm } from './qiblaInfo'
+import { directionName, distanceToKaabaKm, shouldRenderHeading } from './qiblaInfo'
 import { useKeepAwakeWhileOpen } from './useKeepAwakeWhileOpen'
 import {
   createHeadingFilter,
@@ -138,7 +138,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       raf = 0
       if (pending === null) return
       // Skip re-rendering the whole dial for changes the eye cannot see (< 0.25 degrees).
-      if (lastShown === null || Math.abs(pending - lastShown) >= 0.25) {
+      if (shouldRenderHeading(lastShown, pending)) {
         lastShown = pending
         setHeading(pending)
       }
@@ -451,7 +451,7 @@ export function QiblaCompass({ coords }: { coords: { lat: number; lng: number } 
       </p>
 
       <p className="q2-bearing" data-testid="q2-distance">
-        المسافة إلى مكة المكرمة نحو <bdi className="q2-num">{Math.round(distanceToKaabaKm(coords.lat, coords.lng)).toLocaleString('ar-EG')}</bdi> كم
+        المسافة إلى مكة المكرمة نحو <bdi className="q2-num">{Math.round(distanceToKaabaKm(coords.lat, coords.lng))}</bdi> كم
       </p>
 
       <p className="q2-status" aria-live="polite">{message}</p>
