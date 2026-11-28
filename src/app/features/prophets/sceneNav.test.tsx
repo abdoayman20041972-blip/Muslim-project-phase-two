@@ -1,6 +1,9 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BACKUP_KEYS, SETTINGS_RESET_KEYS, APP_SETTINGS_KEYS } from '../../settings'
+import { ScreenActiveContext } from '../../backStack'
+import { isBackupKey } from '../../settings'
+import { validateBackupEntries } from '../../backupValidation'
 import { StoryBody } from './StoryBody'
 import { readPosition, resumeScene, savePosition } from './readerPosition'
 import type { StoryContent } from './storyTypes'
@@ -80,5 +83,82 @@ describe('scene index and resume in the reader', () => {
       vi.advanceTimersByTime(500)
     })
     expect(readPosition('demo')).toBe('ج')
+  })
+})
+
+describe('hidden kept-alive screens', () => {
+  const place = (container: HTMLElement, zero: boolean) => {
+    Array.from(container.querySelectorAll<HTMLElement>('[data-scene]')).forEach((el, i) => {
+      el.getBoundingClientRect = () => ({ top: zero ? 0 : (i - 2) * 300 + 100 }) as DOMRect
+    })
+  }
+  it('a scroll while the screen is hidden does not change the saved position', () => {
+    savePosition('demo', 'ب')
+    const { container } = render(
+      <ScreenActiveContext.Provider value={false}>
+        <StoryBody content={content} fontClass="" />
+      </ScreenActiveContext.Provider>,
+    )
+    place(container, true) // hidden screen: every rect is zero, so the last scene would win
+    act(() => {
+      window.dispatchEvent(new Event('scroll'))
+      vi.advanceTimersByTime(1000)
+    })
+    expect(readPosition('demo')).toBe('ب')
+  })
+  it('saving resumes when the screen becomes active again', () => {
+    const tree = (active: boolean) => (
+      <ScreenActiveContext.Provider value={active}>
+        <StoryBody content={content} fontClass="" />
+      </ScreenActiveContext.Provider>
+    )
+    const { container, rerender } = render(tree(false))
+    rerender(tree(true))
+    place(container, false)
+    act(() => {
+      window.dispatchEvent(new Event('scroll'))
+      vi.advanceTimersByTime(500)
+    })
+    expect(readPosition('demo')).toBe('ج')
+  })
+})
+
+describe('accessibility of the scene index', () => {
+  it('toggle controls the list, and focus returns to the toggle after choosing a scene', () => {
+    render(<StoryBody content={content} fontClass="" />)
+    const toggle = screen.getByText('فهرس المشاهد (5)')
+    fireEvent.click(toggle)
+    const list = document.getElementById(toggle.getAttribute('aria-controls')!)
+    expect(list?.tagName).toBe('OL')
+    fireEvent.click(screen.getByRole('button', { name: 'ج' }))
+    expect(document.activeElement?.getAttribute('aria-controls')).toBe(toggle.getAttribute('aria-controls'))
+  })
+  it('"continue from" moves focus to the scene', () => {
+    savePosition('demo', 'د')
+    const { container } = render(<StoryBody content={content} fontClass="" />)
+    fireEvent.click(screen.getByText('تابع من: د'))
+    expect(document.activeElement).toBe(container.querySelector('[data-scene="د"]'))
+  })
+})
+
+describe('backup round trip of the position key', () => {
+  it('exports with the other keys and imports back; damaged shapes are rejected', () => {
+    savePosition('demo', 'ج')
+    localStorage.setItem('some_unrelated_key', 'x')
+    const exported: Record<string, string> = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)!
+      if (isBackupKey(k)) exported[k] = localStorage.getItem(k)!
+    }
+    expect(Object.keys(exported)).toEqual([APP_SETTINGS_KEYS.prophetPosition])
+    localStorage.clear()
+    const { valid, rejected } = validateBackupEntries(JSON.parse(JSON.stringify(exported)), isBackupKey)
+    expect(rejected).toEqual([])
+    for (const [k, v] of valid) localStorage.setItem(k, v)
+    expect(readPosition('demo')).toBe('ج')
+    for (const bad of ['[1]', '{bad', '{"demo":5}', '{"demo":""}', '"x"']) {
+      const r = validateBackupEntries({ [APP_SETTINGS_KEYS.prophetPosition]: bad }, isBackupKey)
+      expect(r.rejected).toEqual([APP_SETTINGS_KEYS.prophetPosition])
+    }
   })
 })
